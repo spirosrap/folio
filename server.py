@@ -208,13 +208,52 @@ def state():
 
 
 MARKET = {"^GSPC": "S&P 500", "^IXIC": "Nasdaq", "^DJI": "Dow Jones", "^VIX": "VIX (volatility)", "EURUSD=X": "EUR / USD"}
+POPULAR = {"BTC-USD": ("Bitcoin", "crypto")}  # last good ranking; Bitcoin is always shown
+
+
+def _screen(scr_id, count):
+    url = f"https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds={scr_id}&count={count}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.load(r)["finance"]["result"][0]["quotes"]
+
+
+def popular():
+    """Today's most traded: top 4 cryptocurrencies by 24-hour volume and top 6 US stocks by shares traded (Yahoo's rankings)."""
+    global POPULAR
+    now = time.time()
+    with _cache_lock:
+        hit = _cache.get("popular")
+    if hit and now - hit[0] < 300:
+        return hit[1]
+    try:
+        out = {"BTC-USD": ("Bitcoin", "crypto")}
+        for q in _screen("most_actives_cryptocurrencies", 25):
+            name, price = q.get("shortName") or q["symbol"], q.get("regularMarketPrice") or 0
+            pegged = 0.97 < price < 1.03 and abs(q.get("regularMarketChangePercent") or 0) < 0.3  # stablecoins
+            if pegged or re.search(r"wrapped|staked|weth|steth", name, re.I):
+                continue
+            out.setdefault(q["symbol"], (re.sub(r"\s+USD$", "", name), "crypto"))
+            if len(out) == 4:
+                break
+        for q in _screen("most_actives", 6):
+            out[q["symbol"]] = (q.get("shortName") or q["symbol"], "stock")
+        POPULAR = out
+    except Exception:
+        out = POPULAR
+    with _cache_lock:
+        _cache["popular"] = (now, out)
+    return out
 
 
 def market():
     out = []
-    for sym, qt in quotes(list(MARKET), "1d").items():
+    pop = popular()
+    names = {**{s: n for s, (n, _) in pop.items()}, **MARKET}
+    for sym, qt in quotes(list(names), "1d").items():
         if qt:
-            out.append({"symbol": sym, "name": MARKET[sym], "price": qt["price"], "prevClose": qt["prevClose"],
+            out.append({"symbol": sym, "name": names[sym], "group": "index" if sym in MARKET else "popular", "kind": pop[sym][1] if sym in pop else None,
+                        "price": qt["price"], "prevClose": qt["prevClose"],
                         "spark": [c for _, c in qt["points"]][::5]})
     return out
 

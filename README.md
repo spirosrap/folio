@@ -6,6 +6,7 @@ A small self-hosted dashboard for a stock portfolio. You record your buys and se
 - Portfolio and per-stock charts (1D, 1W, 1M, 3M, 1Y)
 - Holdings with today's move, total return, day and 52-week ranges, and weights
 - Market strip (S&P 500, Nasdaq, Dow, VIX, EUR/USD)
+- Most traded today: the four most traded cryptocurrencies and six most active US stocks (Yahoo Finance rankings, Bitcoin always included), with live prices; click one to chart it
 - News whose headlines name the companies you hold
 - Buy, sell, deposit and withdraw entries, with average-cost and realised profit tracking
 - Watchlist for stocks you don't own

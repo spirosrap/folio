@@ -167,10 +167,17 @@ dialog h3 { margin: 0 0 14px; font-size: 17px; }
 /* ---- layout: one column on phones, two on a half-screen window, three on a full 1440p monitor ---- */
 main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "strip" "sum" "chart" "hold" "rail" "news"; }
 header { grid-area: top; } .strip { grid-area: strip; } .summary { grid-area: sum; } #chartCard { grid-area: chart; }
-#holdCard { grid-area: hold; } #newsCard { grid-area: news; } .rail { grid-area: rail; }
+#holdCard { grid-area: hold; } .mid { grid-area: news; } .rail { grid-area: rail; }
+.mid { display: grid; gap: 16px; align-content: start; min-width: 0; }
 .summary { display: grid; gap: 16px; min-width: 0; }
 .rail { display: grid; gap: 16px; align-content: start; min-width: 0; }
 th.w, td.w { display: none; }
+/* holdings columns: fitTable() measures the table and drops column tiers until it fits its card */
+#holdCard th.w, #holdCard td.w { display: table-cell; }
+#holdCard.f1 td, #holdCard.f1 th { padding-left: 7px; padding-right: 7px; } #holdCard.f1 .rng .track { width: 56px; }
+#holdCard.f2 .r, #holdCard.f3 .w { display: none; }
+#holdCard.f4 .sym .sub { display: none; } #holdCard.f4 td, #holdCard.f4 th { padding-left: 5px; padding-right: 5px; }
+#holdCard.f5 .hide-s { display: none; }
 @media (min-width: 861px) {
   main { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); align-items: start; padding: 20px 24px 40px;
     grid-template-areas: "top top" "strip strip" "sum sum" "chart chart" "hold rail" "news rail"; }
@@ -182,9 +189,10 @@ th.w, td.w { display: none; }
   .summary { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 40px; }
   .hero .total { font-size: 64px; }
   #chart { height: clamp(320px, 43vh, 640px); }
-  th.w, td.w { display: table-cell; }
   td { padding: 14px 12px; } th { padding: 0 12px 10px; }
-  #newsCard { max-height: calc(100vh - 190px); overflow: auto; }
+  .mid { display: flex; flex-direction: column; gap: 20px; max-height: calc(100vh - 190px); }
+  #newsCard { flex: 1; min-height: 0; overflow: auto; }
+  #popCard { flex: none; }
   .acts { max-height: 420px; }
 }
 
@@ -197,6 +205,17 @@ th.w, td.w { display: none; }
 .ix .spark { margin: 0; flex: none; }
 @media (max-width: 1699px) { .ix .spark { display: none; } }
 @media (max-width: 1100px) { .strip { display: flex; overflow-x: auto; scrollbar-width: none; } .ix { flex: 0 0 190px; } .ix .spark { display: none; } .ix { flex-basis: 150px; } }
+
+.pop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pop button { display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-width: 0; cursor: pointer; }
+.pop button:hover { border-color: var(--text-3); }
+.pop button[aria-pressed="true"] { background: var(--surface-2); border-color: var(--accent); }
+.pop .a { flex: 1; min-width: 0; }
+.pop .k b { color: var(--text-2); font-weight: 600; }
+.pop .k { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pop .v { font-weight: 600; white-space: nowrap; }
+.pop .c { font-size: 12px; white-space: nowrap; }
+@media (min-width: 861px) and (max-width: 1699px) { .pop { grid-template-columns: repeat(5, minmax(0, 1fr)); } .pop button { flex-direction: column; align-items: stretch; gap: 2px; } .pop .a { flex: none; } }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .chips button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: transparent; color: var(--text-2); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
@@ -273,16 +292,23 @@ body.private :is(#total, #day, #tiles .v, #tiles .s, #rows td:nth-child(4), #row
   <section class="card" id="holdCard">
     <h2>Holdings</h2>
     <table>
-      <thead><tr><th>Stock</th><th class="hide-s">Today</th><th>Price</th><th class="w">Today’s P/L</th><th>Value</th><th>Return</th><th class="w">Day range</th><th class="w">52-week range</th><th class="w">Weight</th><th class="hide-s"></th></tr></thead>
+      <thead><tr><th>Stock</th><th class="hide-s">Today</th><th>Price</th><th class="w">Today’s P/L</th><th>Value</th><th>Return</th><th class="w r">Day range</th><th class="w r">52-week range</th><th class="w">Weight</th><th class="hide-s"></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div class="empty" id="noRows" hidden>No holdings yet. Record a buy to get started.</div>
   </section>
 
-  <section class="card" id="newsCard">
-    <h2>News on your stocks</h2>
-    <ul class="news" id="news"><li class="empty">Loading…</li></ul>
-  </section>
+  <div class="mid">
+    <section class="card" id="popCard">
+      <h2>Most traded today</h2>
+      <div class="pop num" id="pop"><div class="empty">Loading…</div></div>
+      <p class="note" id="popNote">The four most traded cryptocurrencies (24-hour volume, stablecoins left out) and the six most active US stocks by shares traded, ranked by Yahoo Finance.</p>
+    </section>
+    <section class="card" id="newsCard">
+      <h2>News on your stocks</h2>
+      <ul class="news" id="news"><li class="empty">Loading…</li></ul>
+    </section>
+  </div>
 
   <div class="rail">
     <section class="card">
@@ -364,7 +390,6 @@ const qty = n => +n.toFixed(6) + '';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const RANGES = [['1d', '1D', 'today'], ['5d', '1W', 'past week'], ['1mo', '1M', 'past month'], ['3mo', '3M', 'past 3 months'], ['1y', '1Y', 'past year'], ['all', 'All', 'since Folio started recording']];
 let S = null, H = null, range = '1d', colors = {}, sel = null, M = [];
-const STRIP = ['^GSPC', '^IXIC', '^DJI', '^VIX', 'EURUSD=X'];
 try { sel = localStorage.getItem('folio-sel') || null; } catch {}
 let live = false, ws = null, wsKey = '', ticks = {}, flashes = {}, renderAt = 0, renderQ = false, chartAt = 0;
 
@@ -385,11 +410,11 @@ function decodeTick(b64) {
 }
 function applyTick(t) {
   const m = M.find(m => m.symbol === t.id);
-  if (m && t.price > 0) { m.price = t.price; if (m.spark.length) m.spark[m.spark.length - 1] = t.price; return true; }
+  if (m && t.price > 0) { m.price = t.price; if (m.spark.length) m.spark[m.spark.length - 1] = t.price; }
   const w = S?.watch.find(w => w.symbol === t.id);
   if (w && t.price > 0) w.price = t.price;
   const p = S?.positions.find(p => p.symbol === t.id);
-  if (!p || !(t.price > 0) || t.time / 1000 < (p.time || 0) - 2) return !!w;
+  if (!p || !(t.price > 0) || t.time / 1000 < (p.time || 0) - 2) return !!(w || m);
   if (Math.abs(t.price - p.price) >= 0.005) flashes[p.symbol] = { dir: t.price > p.price ? 1 : -1 };
   p.price = t.price; p.time = t.time / 1000;
   if (t.mh === 1) { p.reg = t.price; p.ext = null; if (p.dayHigh) p.dayHigh = Math.max(p.dayHigh, t.price); if (p.dayLow) p.dayLow = Math.min(p.dayLow, t.price); } else if (t.mh === 0) p.ext = 'pre'; else if (t.mh >= 2) p.ext = 'post';
@@ -408,16 +433,16 @@ function recalc() {
     ext: ['pre', 'post'].find(e => S.positions.some(p => p.ext === e)) || null, extChange: ext, extPct: inv - ext ? ext / (inv - ext) * 100 : 0,
     pl: inv - S.cost, plPct: S.cost ? (inv / S.cost - 1) * 100 : 0, asOf: Math.max(0, ...S.positions.map(p => p.time || 0)) });
 }
-const priceOf = sym => (S.positions.find(p => p.symbol === sym) || S.watch.find(w => w.symbol === sym))?.price;
+const priceOf = sym => (S.positions.find(p => p.symbol === sym) || S.watch.find(w => w.symbol === sym) || M.find(m => m.group === 'popular' && m.symbol === sym))?.price;
 function setState(s) {
   S = s;
   for (const p of S.positions) { p.reg = p.qty ? p.price - p.extChange / p.qty : p.price; if (ticks[p.symbol]) applyTick(ticks[p.symbol]); }
   for (const w of S.watch) if (ticks[w.symbol]?.price > 0) w.price = ticks[w.symbol].price;
-  if (sel && !priceOf(sel)) { sel = null; H = null; }
+  if (sel && M.length && !priceOf(sel)) { sel = null; H = null; }
   recalc(); render(); connect(); loadNews();
 }
 function paint() {
-  renderQ = false; renderAt = performance.now(); render(); renderStrip();
+  renderQ = false; renderAt = performance.now(); render(); renderStrip(); renderPop();
   if (range === '1d' && H && H.v.length > 1 && !hovering && renderAt - chartAt > 1000) { chartAt = renderAt; H.v[H.v.length - 1] = sel ? (priceOf(sel) ?? H.v[H.v.length - 1]) : S.total; drawChart(); }
 }
 function onTick(t) {
@@ -427,7 +452,7 @@ function onTick(t) {
   if (!renderQ) { renderQ = true; setTimeout(paint, Math.max(0, 200 - (performance.now() - renderAt))); }
 }
 function connect() {
-  const key = S ? [...new Set([...S.positions.map(p => p.symbol), ...S.watch.map(w => w.symbol), ...STRIP])].sort().join() : '';
+  const key = S ? [...new Set([...S.positions.map(p => p.symbol), ...S.watch.map(w => w.symbol), ...M.map(m => m.symbol)])].sort().join() : '';
   if (document.hidden || !key) { ws?.close(); return; }
   if (ws && wsKey === key && ws.readyState <= 1) return;
   ws?.close(); wsKey = key;
@@ -493,7 +518,7 @@ function render() {
   const ps = [...S.positions].sort((a, b) => b.value - a.value);
   $('noRows').hidden = ps.length > 0;
   const body = $('rows'), key = ps.map(p => p.symbol).join();
-  const TD = ['', 'hide-s', 'num', 'num w', 'num', 'num', 'w', 'w', 'num w', 'hide-s'];
+  const TD = ['', 'hide-s', 'num', 'num w', 'num', 'num', 'w r', 'w r', 'num w', 'hide-s'];
   if (body.dataset.key !== key) {
     body.dataset.key = key;
     body.innerHTML = ps.map(p => `<tr data-sym="${esc(p.symbol)}" title="Show ${esc(p.symbol)} on the chart">${TD.map(c => `<td class="${c}"></td>`).join('')}</tr>`).join('');
@@ -521,6 +546,7 @@ function render() {
   });
 
   const extra = S.watch.filter(w => !held(w.symbol));
+  if (sel && !held(sel) && !extra.some(w => w.symbol === sel)) extra.push({ symbol: sel });
   const ckey = key + '|' + sel + '|' + extra.map(w => w.symbol).join();
   if ($('chips').dataset.key !== ckey) {
     $('chips').dataset.key = ckey;
@@ -568,14 +594,42 @@ function render() {
     const d = new Date(x.date + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     return `<li><div class="w">${what}<span class="sub" style="max-width:none">${d}${x.note ? ' · ' + esc(x.note) : ''}</span></div><span>${usd(amt)}</span><button class="x" data-del="${esc(x.id)}" aria-label="Remove entry" title="Remove entry">×</button></li>`;
   }).join('') || '<li class="flat">Nothing recorded yet.</li>'; }
+  fitTable();
 }
+
+// ---- fit the holdings table to its card ----
+let fitW = 0, fitKey = '';
+function fitTable(force) {
+  const card = $('holdCard'), tbl = card.querySelector('table'), key = $('rows').dataset.key || '';
+  const over = () => tbl.scrollWidth > tbl.clientWidth + 1 || tbl.offsetWidth > card.clientWidth - parseFloat(getComputedStyle(card).paddingLeft) * 2 + 1;
+  let lvl = [5, 4, 3, 2, 1].find(n => card.classList.contains('f' + n)) || 0;
+  if (force || card.clientWidth !== fitW || key !== fitKey) { lvl = 0; fitW = card.clientWidth; fitKey = key; }
+  const set = () => { for (let n = 1; n <= 5; n++) card.classList.toggle('f' + n, lvl >= n); };
+  set();
+  while (lvl < 5 && over()) { lvl++; set(); }
+}
+new ResizeObserver(() => fitTable()).observe($('holdCard'));
+document.fonts?.ready.then(() => fitTable(true));
 
 // ---- markets strip ----
 function renderStrip() {
-  $('strip').innerHTML = M.map(m => { const c = m.prevClose ? (m.price / m.prevClose - 1) * 100 : 0, d = m.symbol === 'EURUSD=X' ? 4 : 2;
+  $('strip').innerHTML = M.filter(m => m.group === 'index').map(m => { const c = m.prevClose ? (m.price / m.prevClose - 1) * 100 : 0, d = m.symbol === 'EURUSD=X' ? 4 : 2;
     return `<div class="ix"><div class="a"><div class="k">${esc(m.name)}</div><div class="v">${m.price.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}<span class="${cls(c)}">${arrow(c)} ${pct(c)}</span></div></div>${sparkSvg(m.spark, m.prevClose)}</div>`; }).join('');
 }
-async function loadMarket() { try { M = await api('/api/market'); for (const m of M) if (ticks[m.symbol]) m.price = ticks[m.symbol].price; renderStrip(); if (S && cur === 'EUR') { render(); drawChart(); } } catch {} }
+function renderPop() {
+  const list = M.filter(m => m.group === 'popular'), box = $('pop'), key = list.map(m => m.symbol).join();
+  if (!list.length) return;
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.innerHTML = list.map(m => `<button data-pop="${esc(m.symbol)}" title="Show ${esc(m.name)} on the chart"><div class="a"><div class="k"><b>${esc(m.symbol.replace(/\d*-USD$/, ''))}</b> ${m.name.toUpperCase() === m.symbol.replace(/\d*-USD$/, '') ? '' : esc(m.name)}</div><div class="v"></div></div><span class="c"></span></button>`).join('');
+  }
+  list.forEach((m, i) => { const b = box.children[i], c = m.prevClose ? (m.price / m.prevClose - 1) * 100 : 0;
+    b.setAttribute('aria-pressed', sel === m.symbol);
+    b.querySelector('.v').textContent = usd(m.price, m.price >= 1 ? 2 : m.price >= 0.01 ? 4 : 8);
+    const e = b.querySelector('.c'); e.className = 'c ' + cls(c); e.textContent = `${arrow(c)} ${pct(c)}`; });
+}
+$('pop').onclick = e => { const b = e.target.closest('[data-pop]'); if (b) select(b.dataset.pop); };
+async function loadMarket() { try { M = await api('/api/market'); for (const m of M) if (ticks[m.symbol]) m.price = ticks[m.symbol].price; renderStrip(); renderPop(); if (S) { connect(); if (cur === 'EUR') { render(); drawChart(); } } } catch {} }
 
 // ---- news ----
 const ago = t => { const m = Math.max(0, (Date.now() / 1000 - t) / 60);
@@ -746,7 +800,7 @@ $('fSym').onchange = symChanged;
 function select(sym) {
   sel = sym && sym !== sel ? sym : null;
   try { sel ? localStorage.setItem('folio-sel', sel) : localStorage.removeItem('folio-sel'); } catch {}
-  H = null; hovering = false; render(); drawChart(); loadHistory();
+  H = null; hovering = false; render(); renderPop(); drawChart(); loadHistory();
 }
 $('rows').onclick = e => {
   const b = e.target.closest('[data-trade]'); if (b) return openTrade(b.dataset.trade);
@@ -801,7 +855,7 @@ function applyPrefs() {
   $('hideBtn').textContent = hide ? 'Show' : 'Hide'; $('hideBtn').setAttribute('aria-pressed', hide);
   $('curBtn').textContent = cur;
   try { localStorage.setItem('folio-cur', cur); localStorage.setItem('folio-hide', hide ? '1' : '0'); } catch {}
-  if (S) { render(); drawChart(); }
+  if (S) { render(); renderPop(); drawChart(); }
 }
 $('hideBtn').onclick = () => { hide = !hide; applyPrefs(); };
 $('curBtn').onclick = () => { if (cur === 'USD' && !fx()) return; cur = cur === 'USD' ? 'EUR' : 'USD'; applyPrefs(); };
