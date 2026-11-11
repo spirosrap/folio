@@ -159,6 +159,10 @@ def quotes(symbols, rng):
 
 # ---------- api ----------
 
+def ui_version():
+    return str(int((ROOT / "index.html").stat().st_mtime))
+
+
 def state():
     with _lock:
         doc = load()
@@ -204,6 +208,7 @@ def state():
         "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"]}
                   for s, w in quotes(doc["watchlist"], "1d").items() if w],
         "alerts": doc["alerts"],
+        "ui": ui_version(),
     }
 
 
@@ -543,7 +548,7 @@ class Handler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(u.query)
         try:
             if method == "GET" and u.path in ("/", "/index.html"):
-                return self.send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
+                return self.send(200, (ROOT / "index.html").read_bytes().replace(b"__UI__", ui_version().encode(), 1), "text/html; charset=utf-8")
             if method == "GET" and u.path == "/icon.svg":
                 return self.send(200, (ROOT / "icon.svg").read_bytes(), "image/svg+xml")
             if method == "GET" and u.path == "/api/state":

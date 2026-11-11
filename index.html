@@ -195,6 +195,14 @@ th.w, td.w { display: none; }
   #popCard { flex: none; }
   .acts { max-height: 420px; }
 }
+/* on a big screen the whole dashboard fits the window: the chart takes the spare height, the side columns scroll inside */
+@media (min-width: 1700px) and (min-height: 1150px) {
+  main { height: 100vh; box-sizing: border-box; align-items: stretch; grid-template-rows: auto auto auto minmax(380px, 1fr) auto; }
+  #chartCard { display: flex; flex-direction: column; min-height: 0; }
+  #chart { flex: 1; height: auto; min-height: 0; }
+  .mid { max-height: none; min-height: 0; }
+  .rail { min-height: 0; overflow: auto; scrollbar-width: none; }
+}
 
 .strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .ix { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -389,6 +397,7 @@ const arrow = n => n > 0.004 ? '▲' : n < -0.004 ? '▼' : '•';
 const qty = n => +n.toFixed(6) + '';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const RANGES = [['1d', '1D', 'today'], ['5d', '1W', 'past week'], ['1mo', '1M', 'past month'], ['3mo', '3M', 'past 3 months'], ['1y', '1Y', 'past year'], ['all', 'All', 'since Folio started recording']];
+const UI = '__UI__';  // stamped by the server; a page older than the server's copy reloads itself
 let S = null, H = null, range = '1d', colors = {}, sel = null, M = [];
 try { sel = localStorage.getItem('folio-sel') || null; } catch {}
 let live = false, ws = null, wsKey = '', ticks = {}, flashes = {}, renderAt = 0, renderQ = false, chartAt = 0;
@@ -435,6 +444,7 @@ function recalc() {
 }
 const priceOf = sym => (S.positions.find(p => p.symbol === sym) || S.watch.find(w => w.symbol === sym) || M.find(m => m.group === 'popular' && m.symbol === sym))?.price;
 function setState(s) {
+  if (s.ui && !UI.startsWith('__') && s.ui !== UI) return location.reload();
   S = s;
   for (const p of S.positions) { p.reg = p.qty ? p.price - p.extChange / p.qty : p.price; if (ticks[p.symbol]) applyTick(ticks[p.symbol]); }
   for (const w of S.watch) if (ticks[w.symbol]?.price > 0) w.price = ticks[w.symbol].price;
