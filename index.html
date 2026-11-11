@@ -220,6 +220,21 @@ tbody tr.sel td { background: color-mix(in srgb, var(--accent) 9%, transparent);
 .plb .bar i.up { left: 50%; background: var(--up); border-radius: 0 4px 4px 0; }
 .plb .bar i.down { right: 50%; background: var(--down); border-radius: 4px 0 0 4px; }
 .plb .val { text-align: right; }
+
+.inl { display: flex; gap: 8px; margin-top: 10px; }
+.inl input, .inl select { font: inherit; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 0; flex: 1; }
+.inl select { flex: 0 1 auto; }
+.inl input:focus, .inl select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.rail .err { margin: 6px 0 0; min-height: 0; }
+#watch li { cursor: pointer; }
+#watch li.sel b { color: var(--accent); }
+.badge { font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--text-3); white-space: nowrap; }
+.badge.on { color: var(--text); border-color: var(--s4); }
+.btn.ghost { padding: 7px 12px; font-size: 13px; }
+@media (max-width: 560px) { #curBtn, #hideBtn { padding: 7px 8px; } #market span { display: none; } }
+/* privacy: blur what you own, keep prices and percentages readable */
+body.private :is(#total, #day, #tiles .v, #tiles .s, #rows td:nth-child(4), #rows td:nth-child(5), #rows td:nth-child(6) > span:first-child,
+  .legend li span:nth-child(3), #acts li > span, #acts .w b, .plb .val, #chartCard.pf .axis.num, #chartCard.pf .tip, #chartCard.pf #rangeChg > span) { filter: blur(9px); user-select: none; }
 </style>
 </head>
 <body>
@@ -227,7 +242,9 @@ tbody tr.sel td { background: color-mix(in srgb, var(--accent) 9%, transparent);
   <header>
     <h1><img src="/icon.svg" alt="">Folio</h1>
     <span class="pill" id="market"><i class="dot"></i><span>Loading</span></span>
-    <button class="btn" id="tradeBtn">+ Trade</button>
+    <button class="btn ghost" id="curBtn" title="Show amounts in dollars or euros (C)">USD</button>
+    <button class="btn ghost" id="hideBtn" title="Hide or show your amounts (H)">Hide</button>
+    <button class="btn" id="tradeBtn" title="Record a trade (T)">+ Trade</button>
   </header>
 
   <section class="strip num" id="strip" aria-label="Markets"></section>
@@ -278,6 +295,18 @@ tbody tr.sel td { background: color-mix(in srgb, var(--accent) 9%, transparent);
       <div class="plb num" id="plb"></div>
     </section>
     <section class="card">
+      <h2>Watchlist</h2>
+      <ul class="acts num" id="watch"></ul>
+      <form class="inl" id="watchForm"><input id="wSym" placeholder="Add a ticker, e.g. AAPL" autocomplete="off" autocapitalize="characters" aria-label="Ticker to watch"><button class="mini">Add</button></form>
+      <div class="err" id="wErr" role="alert"></div>
+    </section>
+    <section class="card">
+      <h2>Price alerts</h2>
+      <ul class="acts num" id="alerts"></ul>
+      <form class="inl" id="alertForm"><select id="aSym" aria-label="Stock"></select><select id="aOp" aria-label="Direction"><option value="above">rises above</option><option value="below">falls below</option></select><input id="aPrice" inputmode="decimal" placeholder="$ price" aria-label="Price in dollars"><button class="mini">Add</button></form>
+      <div class="err" id="aErr" role="alert"></div>
+    </section>
+    <section class="card">
       <h2>Activity</h2>
       <ul class="acts num" id="acts"></ul>
     </section>
@@ -321,14 +350,19 @@ tbody tr.sel td { background: color-mix(in srgb, var(--accent) 9%, transparent);
 
 <script>
 const $ = id => document.getElementById(id);
-const usd = (n, d = 2) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+let cur = 'USD', hide = false;
+try { cur = localStorage.getItem('folio-cur') || 'USD'; hide = localStorage.getItem('folio-hide') === '1'; } catch {}
+const money = (n, d, c) => new Intl.NumberFormat('en-US', { style: 'currency', currency: c, minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const dollars = (n, d = 2) => money(n, d, 'USD');
+const fx = () => M.find(m => m.symbol === 'EURUSD=X')?.price;  // dollars per euro
+const usd = (n, d = 2) => cur === 'EUR' && fx() ? money(n / fx(), d, 'EUR') : dollars(n, d);  // every displayed amount goes through here
 const sgn = n => (n > 0.004 ? '+' : n < -0.004 ? '−' : '') + usd(Math.abs(n));
 const pct = n => (n > 0.004 ? '+' : n < -0.004 ? '−' : '') + Math.abs(n).toFixed(2) + '%';
 const cls = n => n > 0.004 ? 'up' : n < -0.004 ? 'down' : 'flat';
 const arrow = n => n > 0.004 ? '▲' : n < -0.004 ? '▼' : '•';
 const qty = n => +n.toFixed(6) + '';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const RANGES = [['1d', '1D', 'today'], ['5d', '1W', 'past week'], ['1mo', '1M', 'past month'], ['3mo', '3M', 'past 3 months'], ['1y', '1Y', 'past year']];
+const RANGES = [['1d', '1D', 'today'], ['5d', '1W', 'past week'], ['1mo', '1M', 'past month'], ['3mo', '3M', 'past 3 months'], ['1y', '1Y', 'past year'], ['all', 'All', 'since Folio started recording']];
 let S = null, H = null, range = '1d', colors = {}, sel = null, M = [];
 const STRIP = ['^GSPC', '^IXIC', '^DJI', '^VIX', 'EURUSD=X'];
 try { sel = localStorage.getItem('folio-sel') || null; } catch {}
@@ -352,8 +386,10 @@ function decodeTick(b64) {
 function applyTick(t) {
   const m = M.find(m => m.symbol === t.id);
   if (m && t.price > 0) { m.price = t.price; if (m.spark.length) m.spark[m.spark.length - 1] = t.price; return true; }
+  const w = S?.watch.find(w => w.symbol === t.id);
+  if (w && t.price > 0) w.price = t.price;
   const p = S?.positions.find(p => p.symbol === t.id);
-  if (!p || !(t.price > 0) || t.time / 1000 < (p.time || 0) - 2) return false;
+  if (!p || !(t.price > 0) || t.time / 1000 < (p.time || 0) - 2) return !!w;
   if (Math.abs(t.price - p.price) >= 0.005) flashes[p.symbol] = { dir: t.price > p.price ? 1 : -1 };
   p.price = t.price; p.time = t.time / 1000;
   if (t.mh === 1) { p.reg = t.price; p.ext = null; if (p.dayHigh) p.dayHigh = Math.max(p.dayHigh, t.price); if (p.dayLow) p.dayLow = Math.min(p.dayLow, t.price); } else if (t.mh === 0) p.ext = 'pre'; else if (t.mh >= 2) p.ext = 'post';
@@ -372,15 +408,17 @@ function recalc() {
     ext: ['pre', 'post'].find(e => S.positions.some(p => p.ext === e)) || null, extChange: ext, extPct: inv - ext ? ext / (inv - ext) * 100 : 0,
     pl: inv - S.cost, plPct: S.cost ? (inv / S.cost - 1) * 100 : 0, asOf: Math.max(0, ...S.positions.map(p => p.time || 0)) });
 }
+const priceOf = sym => (S.positions.find(p => p.symbol === sym) || S.watch.find(w => w.symbol === sym))?.price;
 function setState(s) {
   S = s;
   for (const p of S.positions) { p.reg = p.qty ? p.price - p.extChange / p.qty : p.price; if (ticks[p.symbol]) applyTick(ticks[p.symbol]); }
-  if (sel && !S.positions.some(p => p.symbol === sel)) { sel = null; H = null; }
+  for (const w of S.watch) if (ticks[w.symbol]?.price > 0) w.price = ticks[w.symbol].price;
+  if (sel && !priceOf(sel)) { sel = null; H = null; }
   recalc(); render(); connect(); loadNews();
 }
 function paint() {
   renderQ = false; renderAt = performance.now(); render(); renderStrip();
-  if (range === '1d' && H && H.v.length > 1 && !hovering && renderAt - chartAt > 1000) { chartAt = renderAt; H.v[H.v.length - 1] = sel ? (S.positions.find(p => p.symbol === sel)?.price ?? H.v[H.v.length - 1]) : S.total; drawChart(); }
+  if (range === '1d' && H && H.v.length > 1 && !hovering && renderAt - chartAt > 1000) { chartAt = renderAt; H.v[H.v.length - 1] = sel ? (priceOf(sel) ?? H.v[H.v.length - 1]) : S.total; drawChart(); }
 }
 function onTick(t) {
   ticks[t.id] = t;
@@ -389,7 +427,7 @@ function onTick(t) {
   if (!renderQ) { renderQ = true; setTimeout(paint, Math.max(0, 200 - (performance.now() - renderAt))); }
 }
 function connect() {
-  const key = S ? [...new Set([...S.positions.map(p => p.symbol), ...STRIP])].sort().join() : '';
+  const key = S ? [...new Set([...S.positions.map(p => p.symbol), ...S.watch.map(w => w.symbol), ...STRIP])].sort().join() : '';
   if (document.hidden || !key) { ws?.close(); return; }
   if (ws && wsKey === key && ws.readyState <= 1) return;
   ws?.close(); wsKey = key;
@@ -429,7 +467,8 @@ function sparkSvg(v, prev) {
 
 function render() {
   assignColors();
-  document.title = `${usd(S.total)} · Folio`;
+  document.title = hide ? 'Folio' : `${usd(S.total)} · Folio`;
+  $('chartCard').classList.toggle('pf', !sel);
   const el = $('total'), was = el.dataset.v;
   if (was && Math.abs(S.total - was) >= 0.005) {
     el.classList.remove('tick-up', 'tick-down'); void el.offsetWidth;
@@ -481,10 +520,36 @@ function render() {
     }
   });
 
-  const ckey = key + '|' + sel;
+  const extra = S.watch.filter(w => !held(w.symbol));
+  const ckey = key + '|' + sel + '|' + extra.map(w => w.symbol).join();
   if ($('chips').dataset.key !== ckey) {
     $('chips').dataset.key = ckey;
-    $('chips').innerHTML = `<button data-sel="" aria-pressed="${!sel}">Portfolio</button>` + ps.map(p => `<button data-sel="${esc(p.symbol)}" aria-pressed="${sel === p.symbol}"><i class="sw" style="background:${colors[p.symbol]}"></i>${esc(p.symbol)}</button>`).join('');
+    $('chips').innerHTML = `<button data-sel="" aria-pressed="${!sel}">Portfolio</button>` + ps.map(p => `<button data-sel="${esc(p.symbol)}" aria-pressed="${sel === p.symbol}"><i class="sw" style="background:${colors[p.symbol]}"></i>${esc(p.symbol)}</button>`).join('')
+      + extra.map(w => `<button data-sel="${esc(w.symbol)}" aria-pressed="${sel === w.symbol}">${esc(w.symbol)}</button>`).join('');
+  }
+
+  const wl = $('watch'), wkey = S.watch.map(w => w.symbol).join(), opts = [...ps.map(p => p.symbol), ...extra.map(w => w.symbol)];
+  if (wl.dataset.key !== wkey) {
+    wl.dataset.key = wkey;
+    wl.innerHTML = S.watch.map(w => `<li data-watch="${esc(w.symbol)}" title="Show ${esc(w.symbol)} on the chart"><div class="w"><b>${esc(w.symbol)}</b><span class="sub" style="max-width:none">${esc(w.name)}</span></div><span class="p"></span><span class="c"></span><button class="x" data-unwatch="${esc(w.symbol)}" aria-label="Stop watching ${esc(w.symbol)}" title="Stop watching">×</button></li>`).join('')
+      || '<li class="flat">Track stocks you don’t own.</li>';
+  }
+  S.watch.forEach((w, i) => { const li = wl.children[i], c = w.prevClose ? (w.price / w.prevClose - 1) * 100 : 0;
+    li.classList.toggle('sel', sel === w.symbol);
+    li.querySelector('.p').textContent = usd(w.price);
+    const e = li.querySelector('.c'); e.className = 'c ' + cls(c); e.textContent = `${arrow(c)} ${pct(c)}`; });
+  if ($('aSym').dataset.key !== opts.join()) {
+    const keep = $('aSym').value;
+    $('aSym').dataset.key = opts.join();
+    $('aSym').innerHTML = opts.map(s => `<option>${esc(s)}</option>`).join('');
+    if (opts.includes(keep)) $('aSym').value = keep;
+    $('alertForm').hidden = !opts.length;
+  }
+  const alk = JSON.stringify(S.alerts);
+  if ($('alerts').dataset.key !== alk) {
+    $('alerts').dataset.key = alk;
+    $('alerts').innerHTML = S.alerts.map(a => `<li><div class="w"><b>${esc(a.symbol)}</b> ${a.op === 'above' ? 'rises above' : 'falls below'} ${dollars(a.price)}${a.fired ? `<span class="sub" style="max-width:none">Reached ${dollars(a.firedPrice)} on ${new Date(a.fired * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>` : ''}</div><span class="badge ${a.fired ? 'on' : ''}">${a.fired ? '✓ Triggered' : 'Watching'}</span><button class="x" data-unalert="${esc(a.id)}" aria-label="Remove alert" title="Remove alert">×</button></li>`).join('')
+      || '<li class="flat">Get a desktop notification when a price is reached.</li>';
   }
   const top = Math.max(1, ...ps.map(p => Math.abs(p.pl)));
   $('plb').innerHTML = ps.map(p => `<div class="r"><b>${esc(p.symbol)}</b><div class="bar"><i class="${p.pl >= 0 ? 'up' : 'down'}" style="width:${(Math.abs(p.pl) / top * 50).toFixed(1)}%"></i></div><span class="val ${cls(p.pl)}">${sgn(p.pl)}</span></div>`).join('') || '<div class="flat">Nothing held yet.</div>';
@@ -495,7 +560,7 @@ function render() {
   $('alloc').innerHTML = parts.map(([n, v, c]) => `<i style="flex:${v / sum};background:${c}" title="${esc(n)} ${(v / sum * 100).toFixed(1)}%"></i>`).join('');
   $('legend').innerHTML = parts.map(([n, v, c]) => `<li><i class="sw" style="background:${c}"></i><span class="n">${esc(n)}</span><span>${usd(v)}</span><b>${(v / sum * 100).toFixed(1)}%</b></li>`).join('');
 
-  const akey = S.transactions.map(x => x.id).join();
+  const akey = cur + S.transactions.map(x => x.id).join();
   if ($('acts').dataset.key !== akey) { $('acts').dataset.key = akey; $('acts').innerHTML = S.transactions.map(x => {
     const stock = x.type === 'buy' || x.type === 'sell';
     const what = stock ? `<b>${x.type === 'buy' ? 'Bought' : 'Sold'} ${qty(x.qty)} ${esc(x.symbol)}</b> at ${usd(x.price)}` : `<b>${x.type === 'deposit' ? 'Deposited' : 'Withdrew'}</b>`;
@@ -510,7 +575,7 @@ function renderStrip() {
   $('strip').innerHTML = M.map(m => { const c = m.prevClose ? (m.price / m.prevClose - 1) * 100 : 0, d = m.symbol === 'EURUSD=X' ? 4 : 2;
     return `<div class="ix"><div class="a"><div class="k">${esc(m.name)}</div><div class="v">${m.price.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}<span class="${cls(c)}">${arrow(c)} ${pct(c)}</span></div></div>${sparkSvg(m.spark, m.prevClose)}</div>`; }).join('');
 }
-async function loadMarket() { try { M = await api('/api/market'); for (const m of M) if (ticks[m.symbol]) m.price = ticks[m.symbol].price; renderStrip(); } catch {} }
+async function loadMarket() { try { M = await api('/api/market'); for (const m of M) if (ticks[m.symbol]) m.price = ticks[m.symbol].price; renderStrip(); if (S && cur === 'EUR') { render(); drawChart(); } } catch {} }
 
 // ---- news ----
 const ago = t => { const m = Math.max(0, (Date.now() / 1000 - t) / 60);
@@ -537,9 +602,9 @@ function drawChart() {
   hovering = false; tip.style.display = 'none';
   box.querySelector('svg')?.remove();
   box.querySelector('.empty')?.remove();
-  const lbl = RANGES.find(r => r[0] === range)[2];
+  const lbl = sel && range === 'all' ? 'past year' : RANGES.find(r => r[0] === range)[2];
   if (!H || H.t.length < 2) {
-    box.insertAdjacentHTML('beforeend', `<div class="empty">${H ? 'No price data for this range yet.' : 'Loading…'}</div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="empty">${!H ? 'Loading…' : range === 'all' && !sel ? 'Folio records your portfolio’s real value from now on. This chart fills in over the coming days.' : 'No price data for this range yet.'}</div>`);
     $('rangeChg').textContent = ''; $('chartNote').textContent = '';
     return;
   }
@@ -548,9 +613,9 @@ function drawChart() {
   let lo = Math.min(...v, ref), hi = Math.max(...v, ref);
   const pad = (hi - lo || hi * 0.01 || 1) * 0.12; lo -= pad; hi += pad;
   const x = i => pl + i / n * (W - pl - pr), y = val => pt + (hi - val) / (hi - lo) * (Hh - pt - pb);
-  const chg = v[n] - ref, up = chg >= 0;
+  const chg = v[n] - ref - (H.flow || 0), up = chg >= 0;
   $('rangeChg').innerHTML = `<span class="${cls(chg)}">${arrow(chg)} ${sgn(chg)} (${pct(ref ? chg / ref * 100 : 0)})</span> <small>${lbl}</small>`;
-  $('chartNote').textContent = range === '1d' ? 'Dashed line is the previous close. Shaded areas are pre-market and after-hours trading.' : sel ? `${sel} share price.` : 'Shows what today’s holdings and cash would have been worth over this period.';
+  $('chartNote').textContent = range === 'all' && !sel ? 'Your portfolio’s actual value, as recorded by Folio. The change shown leaves out deposits and withdrawals.' : range === '1d' ? 'Dashed line is the previous close. Shaded areas are pre-market and after-hours trading.' : sel ? `${sel} share price.` : 'Shows what today’s holdings and cash would have been worth over this period.';
   if (sel && H.avg) $('chartNote').textContent += ` Yellow dashed line is your average cost (${usd(H.avg)}), shown when it is within the chart’s range.`;
   if (H.missing.length) $('chartNote').textContent += ` No price history for ${H.missing.join(', ')}.`;
 
@@ -646,9 +711,9 @@ function updateSum() {
   const stock = type === 'buy' || type === 'sell';
   const total = stock ? val('fQty') * val('fPrice') + (type === 'buy' ? 1 : -1) * val('fFee') : val('fAmt');
   $('sumK').textContent = { buy: 'Total cost', sell: 'Proceeds', deposit: 'Added to cash', withdraw: 'Taken from cash' }[type];
-  $('sumV').textContent = usd(Math.max(0, total));
+  $('sumV').textContent = dollars(Math.max(0, total));
   const short = type === 'buy' ? total - (S?.cash || 0) : 0;
-  $('fundHint').textContent = short > 0.005 ? `Cash balance covers ${usd(S.cash)}; the other ${usd(short)} will be recorded as a deposit.` : '';
+  $('fundHint').textContent = short > 0.005 ? `Cash balance covers ${dollars(S.cash)}; the other ${dollars(short)} will be recorded as a deposit.` : '';
   const p = held($('fSym').value.trim().toUpperCase());
   $('qtyHint').innerHTML = type === 'sell' && p ? `You hold ${qty(p.qty)}. <a id="all">Sell all</a>` : '';
   if ($('all')) $('all').onclick = () => { $('fQty').value = qty(p.qty); updateSum(); };
@@ -661,7 +726,7 @@ async function symChanged() {
   try {
     const q = await api('/api/lookup?symbol=' + encodeURIComponent(sym));
     if (my !== lookupN) return;
-    $('symHint').textContent = `${q.name} · last ${usd(q.price)}`;
+    $('symHint').textContent = `${q.name} · last ${dollars(q.price)}`;
     if (!$('fPrice').value) { $('fPrice').value = q.price.toFixed(2); }
   } catch { if (my === lookupN) $('symHint').textContent = 'Ticker not found.'; }
   updateSum();
@@ -708,6 +773,52 @@ $('acts').onclick = async e => {
   try { setState(await api('/api/tx/' + id, { method: 'DELETE' })); loadHistory(); }
   catch (err) { alert(err.message); }
 };
+
+// ---- watchlist and alerts ----
+const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+$('watchForm').onsubmit = async e => {
+  e.preventDefault(); $('wErr').textContent = '';
+  const symbol = $('wSym').value.trim().toUpperCase(); if (!symbol) return;
+  try { setState(await post('/api/watch', { symbol })); $('wSym').value = ''; } catch (err) { $('wErr').textContent = err.message; }
+};
+$('watch').onclick = async e => {
+  const x = e.target.closest('[data-unwatch]');
+  if (x) { try { setState(await api('/api/watch/' + encodeURIComponent(x.dataset.unwatch), { method: 'DELETE' })); } catch (err) { $('wErr').textContent = err.message; } return; }
+  const li = e.target.closest('[data-watch]'); if (li) select(li.dataset.watch);
+};
+$('alertForm').onsubmit = async e => {
+  e.preventDefault(); $('aErr').textContent = '';
+  try { setState(await post('/api/alerts', { symbol: $('aSym').value, op: $('aOp').value, price: val('aPrice') })); $('aPrice').value = ''; } catch (err) { $('aErr').textContent = err.message; }
+};
+$('alerts').onclick = async e => {
+  const x = e.target.closest('[data-unalert]'); if (!x) return;
+  try { setState(await api('/api/alerts/' + x.dataset.unalert, { method: 'DELETE' })); } catch (err) { $('aErr').textContent = err.message; }
+};
+
+// ---- currency, privacy, keyboard ----
+function applyPrefs() {
+  document.body.classList.toggle('private', hide);
+  $('hideBtn').textContent = hide ? 'Show' : 'Hide'; $('hideBtn').setAttribute('aria-pressed', hide);
+  $('curBtn').textContent = cur;
+  try { localStorage.setItem('folio-cur', cur); localStorage.setItem('folio-hide', hide ? '1' : '0'); } catch {}
+  if (S) { render(); drawChart(); }
+}
+$('hideBtn').onclick = () => { hide = !hide; applyPrefs(); };
+$('curBtn').onclick = () => { if (cur === 'USD' && !fx()) return; cur = cur === 'USD' ? 'EUR' : 'USD'; applyPrefs(); };
+applyPrefs();
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || $('dlg').open || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 't') { e.preventDefault(); openTrade(sel && held(sel) ? sel : undefined); }
+  else if (k === 'h') $('hideBtn').click();
+  else if (k === 'c') $('curBtn').click();
+  else if (/^[1-6]$/.test(k)) $('tabs').children[k - 1]?.click();
+  else if ((k === 'arrowright' || k === 'arrowleft') && S) {
+    const list = [null, ...[...$('chips').querySelectorAll('[data-sel]')].map(b => b.dataset.sel).filter(Boolean)];
+    const next = list[(list.indexOf(sel) + (k === 'arrowright' ? 1 : -1) + list.length) % list.length];
+    if (next !== sel) select(next ?? sel);
+  }
+});
 
 refresh();
 setInterval(() => { if (!document.hidden && !$('dlg').open) refresh(); }, 5000);

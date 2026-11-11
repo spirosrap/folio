@@ -7,6 +7,7 @@ from Yahoo Finance's public chart endpoint. Standard library only.
 import json
 import os
 import re
+import subprocess
 import sys
 import threading
 import time
@@ -30,6 +31,7 @@ RANGES = {  # range -> (yahoo interval, cache seconds)
     "1y": ("1d", 1800),
 }
 
+HIST = DATA.with_name("history.jsonl")  # recorded portfolio value over time
 _lock = threading.Lock()
 _cache = {}
 _cache_lock = threading.Lock()
@@ -43,9 +45,10 @@ class Bad(Exception):
 # ---------- ledger ----------
 
 def load():
-    if not DATA.exists():
-        return {"transactions": []}
-    return json.loads(DATA.read_text())
+    doc = json.loads(DATA.read_text()) if DATA.exists() else {}
+    for key in ("transactions", "watchlist", "alerts"):
+        doc.setdefault(key, [])
+    return doc
 
 
 def save(doc):
@@ -198,6 +201,9 @@ def state():
         "realized": realized, "deposited": deposited, "market": market, "stale": stale,
         "asOf": max([r["time"] or 0 for r in rows], default=0),
         "transactions": sorted(doc["transactions"], key=lambda t: t["date"])[::-1],  # newest first
+        "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"]}
+                  for s, w in quotes(doc["watchlist"], "1d").items() if w],
+        "alerts": doc["alerts"],
     }
 
 
@@ -214,6 +220,14 @@ def market():
 
 
 def history(rng, symbol=None):
+    if rng == "all" and symbol:
+        rng = "1y"
+    if rng == "all":  # the portfolio's real recorded value
+        rows = [json.loads(l) for l in HIST.read_text().splitlines() if l.strip()] if HIST.exists() else []
+        step = max(1, len(rows) // 1500)
+        rows = rows[::step] + (rows[-1:] if rows and (len(rows) - 1) % step else [])
+        return {"t": [r["t"] for r in rows], "v": [r["v"] for r in rows], "base": None, "regular": None,
+                "missing": [], "flow": rows[-1]["d"] - rows[0]["d"] if rows else 0}
     if rng not in RANGES:
         raise Bad("Unknown range")
     with _lock:
@@ -369,6 +383,107 @@ def del_tx(tid):
         save(doc)
 
 
+def add_watch(body):
+    sym = str(body.get("symbol") or "").strip().upper()
+    if not sym:
+        raise Bad("Enter a ticker symbol.")
+    yahoo(sym, "1d")  # rejects unknown tickers
+    with _lock:
+        doc = load()
+        if sym not in doc["watchlist"]:
+            if len(doc["watchlist"]) >= 20:
+                raise Bad("The watchlist is full (20). Remove one first.")
+            doc["watchlist"].append(sym)
+            save(doc)
+
+
+def del_watch(sym):
+    with _lock:
+        doc = load()
+        doc["watchlist"] = [s for s in doc["watchlist"] if s != sym]
+        save(doc)
+
+
+def add_alert(body):
+    sym = str(body.get("symbol") or "").strip().upper()
+    op = body.get("op")
+    if not sym or op not in ("above", "below"):
+        raise Bad("Pick a stock and whether to alert above or below a price.")
+    price = num(body, "price")
+    now = yahoo(sym, "1d")["price"]
+    if (op == "above" and now >= price) or (op == "below" and now <= price):
+        raise Bad(f"{sym} is already {op} ${price:,.2f} (now ${now:,.2f}).")
+    with _lock:
+        doc = load()
+        if len(doc["alerts"]) >= 30:
+            raise Bad("Too many alerts (30). Remove one first.")
+        doc["alerts"].append({"id": uuid.uuid4().hex[:10], "symbol": sym, "op": op, "price": price, "fired": None})
+        save(doc)
+
+
+def del_alert(aid):
+    with _lock:
+        doc = load()
+        doc["alerts"] = [a for a in doc["alerts"] if a["id"] != aid]
+        save(doc)
+
+
+def check_alerts():
+    with _lock:
+        pending = [a for a in load()["alerts"] if not a.get("fired")]
+    if not pending:
+        return
+    q = quotes({a["symbol"] for a in pending}, "1d")
+    hit = {}
+    for a in pending:
+        qt = q.get(a["symbol"])
+        if qt and (qt["price"] >= a["price"] if a["op"] == "above" else qt["price"] <= a["price"]):
+            hit[a["id"]] = qt["price"]
+    if not hit:
+        return
+    fired = []
+    with _lock:
+        doc = load()
+        for a in doc["alerts"]:
+            if a["id"] in hit and not a.get("fired"):
+                a["fired"], a["firedPrice"] = int(time.time()), hit[a["id"]]
+                fired.append(a)
+        save(doc)
+    for a in fired:  # desktop notification, where the system has one
+        try:
+            subprocess.run(["notify-send", "-a", "Folio", "-i", str(ROOT / "icon.svg"),
+                            f"{a['symbol']} is {a['op']} ${a['price']:,.2f}", f"Now ${a['firedPrice']:,.2f}"],
+                           timeout=5, check=False)
+        except Exception:
+            pass
+
+
+def snapshot(was_active):
+    """Append the portfolio's value to the history file. Returns whether a market session is active."""
+    s = state()
+    if s["stale"] or (not s["positions"] and abs(s["cash"]) < 0.005):
+        return was_active
+    active = s["market"] != "closed"
+    if active or was_active is not False:  # every 5 min while trading, then once at the close
+        HIST.parent.mkdir(parents=True, exist_ok=True)
+        with HIST.open("a") as f:
+            f.write(json.dumps({"t": int(time.time()), "v": round(s["total"], 2), "d": round(s["deposited"], 2)}) + "\n")
+    return active
+
+
+def worker():
+    active, beat = None, 0
+    while True:
+        try:
+            check_alerts()
+            if beat % 10 == 0:
+                active = snapshot(active)
+        except Exception as e:
+            print("worker:", repr(e), file=sys.stderr)
+        beat += 1
+        time.sleep(30)
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -403,6 +518,16 @@ class Handler(BaseHTTPRequestHandler):
             if method == "GET" and u.path == "/api/lookup":
                 q = yahoo(qs.get("symbol", [""])[0].strip().upper(), "1d")
                 return self.send(200, {k: q[k] for k in ("symbol", "name", "price", "currency")})
+            if method == "POST" and u.path in ("/api/watch", "/api/alerts"):
+                n = int(self.headers.get("Content-Length") or 0)
+                (add_watch if u.path == "/api/watch" else add_alert)(json.loads(self.rfile.read(n) or b"{}"))
+                return self.send(200, state())
+            if method == "DELETE" and u.path.startswith("/api/watch/"):
+                del_watch(urllib.parse.unquote(u.path.rsplit("/", 1)[1]))
+                return self.send(200, state())
+            if method == "DELETE" and u.path.startswith("/api/alerts/"):
+                del_alert(u.path.rsplit("/", 1)[1])
+                return self.send(200, state())
             if method == "POST" and u.path == "/api/tx":
                 n = int(self.headers.get("Content-Length") or 0)
                 add_tx(json.loads(self.rfile.read(n) or b"{}"))
@@ -429,4 +554,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print(f"Folio on http://{HOST}:{PORT}  (data: {DATA})")
+    threading.Thread(target=worker, daemon=True).start()
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
