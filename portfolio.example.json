@@ -1,0 +1,6 @@
+{
+  "transactions": [
+    {"id": "ex-1", "type": "deposit", "date": "2026-01-05", "amount": 1000, "note": "Example"},
+    {"id": "ex-2", "type": "buy", "date": "2026-01-05", "symbol": "AAPL", "name": "Apple Inc.", "qty": 2, "price": 200, "fee": 0, "note": "Example"}
+  ]
+}

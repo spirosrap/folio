@@ -1,0 +1,12 @@
+[Unit]
+Description=Folio portfolio dashboard
+After=network-online.target
+
+[Service]
+# Adjust the path if you cloned somewhere else.
+ExecStart=/usr/bin/python3 %h/Work/folio/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
