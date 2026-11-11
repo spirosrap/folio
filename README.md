@@ -48,3 +48,7 @@ systemctl --user enable --now folio.service
 - Prices and news come from unofficial Yahoo Finance endpoints, which can change or rate-limit without notice.
 - All amounts are shown in US dollars.
 - The 1W to 1Y portfolio charts show what today's holdings would have been worth, not your actual history.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
