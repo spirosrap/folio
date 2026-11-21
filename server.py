@@ -31,7 +31,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "3.0"
+VERSION = "4.0"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -105,6 +105,7 @@ def load():
     for key in ("transactions", "watchlist", "alerts"):
         doc.setdefault(key, [])
     doc.setdefault("plan", {})
+    doc.setdefault("lab", {})
     return doc
 
 
@@ -449,7 +450,7 @@ def state():
         "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"],
                    "spark": [c for _, c in w["points"]][::5]}
                   for s, w in quotes(doc["watchlist"], "1d").items() if w],
-        "alerts": doc["alerts"], "plan": doc["plan"],
+        "alerts": doc["alerts"], "plan": doc["plan"], "lab": doc["lab"], "inbox": inbox_view(),
         "ui": ui_version(), "version": VERSION,
     }
 
@@ -524,6 +525,53 @@ def hist_rows():
     return rows
 
 
+def _rebuilt(until):
+    """One row per trading day from the first ledger entry up to the day recording began, from the entries and closing prices."""
+    with _lock:
+        doc = load()
+    txs = sorted(doc["transactions"], key=lambda t: t["date"])
+    stop = ny_day(until)
+    if not txs or txs[0]["date"] >= stop:
+        return []
+
+    def make():
+        own = list(dict.fromkeys(t["symbol"] for t in txs if t.get("symbol")))
+        got = _dailies(own + [BENCH[0]])
+        if BENCH[0] not in got:
+            raise Bad("Couldn't load the S&P 500's history.")
+        days = [d for d, _, _ in got[BENCH[0]]["rows"] if txs[0]["date"] <= d < stop]
+        if not days:
+            return []
+        px = {}
+        for s in own:
+            if s in got:
+                col, j, last = [], 0, None
+                for d in days:
+                    while j < len(got[s]["rows"]) and got[s]["rows"][j][0] <= d:
+                        last = got[s]["rows"][j][1]
+                        j += 1
+                    col.append(last)
+                px[s] = col
+        led = _ledger_on([t for t in txs if t["date"] <= days[-1]], days, px)
+        flows, paid, out = dict(led["flows"]), 0.0, []
+        for i, d in enumerate(days):
+            paid += flows.get(i, 0.0)
+            y, m, dd = map(int, d.split("-"))
+            out.append({"t": int(datetime(y, m, dd, 16, 0, tzinfo=NY).timestamp()), "v": led["v"][i], "d": round(paid, 2), "b": 1})
+        return out
+    try:
+        return cached(("rebuilt", stop, json.dumps(txs, sort_keys=True)), 21600, make)
+    except Exception as e:
+        print("rebuilt:", repr(e), file=sys.stderr)
+        return []
+
+
+def full_rows():
+    """The value history from your first entry: rebuilt day by day until recording began, then as recorded."""
+    rows = hist_rows()
+    return _rebuilt(rows[0]["t"] if rows else time.time()) + rows
+
+
 def growth(rows):
     """The portfolio's growth at each snapshot, starting from 1, with deposits and withdrawals taken out."""
     idx = [1.0] * len(rows)
@@ -535,7 +583,7 @@ def growth(rows):
 
 def insights():
     """Day-by-day results and the high-water mark, from the recorded history."""
-    rows = hist_rows()
+    rows = full_rows()
     if len(rows) < 2:
         return {"days": [], "since": rows[0]["t"] if rows else None}
     idx = growth(rows)
@@ -550,11 +598,12 @@ def insights():
         d = days.setdefault(day.strftime("%Y-%m-%d"), {"first": (r, ix), "n": 0})
         d["last"] = (r, ix)
         d["n"] += own
+        d["built"] = d.get("built") or bool(r.get("b"))
         if own and (dt.hour, dt.minute) <= (16, 5):  # a day's result is its value at the regular close
             d["reg"] = (r, ix)
     out, prev = [], None
     for date, d in days.items():
-        if d["n"] < 3:
+        if d["n"] < 3 and not d["built"]:
             continue  # a stray snapshot or two (one is taken whenever the server starts), not a day's trading
         r, ix = d.get("reg") or d["last"]
         pr, pix = prev or d["first"]
@@ -651,12 +700,22 @@ def history(rng, symbol=None, compare=False, avg=False):
     if rng == "all" and symbol:
         rng = "1y"
     if rng == "all":  # the portfolio's real recorded value
-        rows = hist_rows()
+        rows = full_rows()
         idx = growth(rows)
-        step = max(1, len(rows) // 1500)
-        keep = list(range(0, len(rows), step))
-        if rows and keep[-1] != len(rows) - 1:
-            keep.append(len(rows) - 1)
+        if rows and rows[-1]["t"] - rows[0]["t"] > 14 * 86400:  # a long stretch: the last value of each day, so time runs evenly
+            by = {}  # each day's value at the regular close, or its last one where there is none
+            for i, row in enumerate(rows):
+                at = datetime.fromtimestamp(row["t"], NY)
+                day, late = at.strftime("%Y-%m-%d"), (at.hour, at.minute) > (16, 5)
+                if day not in by or not late or by[day][1]:
+                    by[day] = (i, late)
+            keep = sorted({i for i, _ in by.values()} | {len(rows) - 1})
+            keep = keep[::max(1, len(keep) // 1500)] + ([keep[-1]] if (len(keep) - 1) % max(1, len(keep) // 1500) else [])
+        else:
+            step = max(1, len(rows) // 1500)
+            keep = list(range(0, len(rows), step))
+            if rows and keep[-1] != len(rows) - 1:
+                keep.append(len(rows) - 1)
         ts = [rows[i]["t"] for i in keep]
         out = {"t": ts, "v": [rows[i]["v"] for i in keep], "pct": [round((idx[i] - 1) * 100, 3) for i in keep],
                "base": None, "regular": None, "missing": [], "flow": rows[-1]["d"] - rows[0]["d"] if rows else 0}
@@ -984,6 +1043,454 @@ def set_plan(body):
         save(doc)
 
 
+# ---------- long history: the lab and the stress test ----------
+
+def daily(symbol):
+    """Up to ten years of daily prices: rows of (day, close, close with dividends put back in). Kept for twelve hours."""
+    def make():
+        res = fetch(f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(symbol)}?range=10y&interval=1d", timeout=20)["chart"]["result"][0]
+        meta, ind = res["meta"], res.get("indicators") or {}
+        close = (ind.get("quote") or [{}])[0].get("close") or []
+        adj = (ind.get("adjclose") or [{}])[0].get("adjclose") or close
+        off, rows = meta.get("gmtoffset") or 0, []
+        for t, c, a in zip(res.get("timestamp") or [], close, adj):
+            if c is None or c <= 0:
+                continue
+            row = (_utc_day(t + off), c, a if a and a > 0 else c)
+            if rows and rows[-1][0] == row[0]:
+                rows[-1] = row
+            else:
+                rows.append(row)
+        if len(rows) < 2:
+            raise Bad(f"No price history for {symbol}.")
+        return {"symbol": meta["symbol"], "name": meta.get("longName") or meta.get("shortName") or meta["symbol"], "rows": rows}
+    try:
+        return cached(("daily", symbol), 43200, make)
+    except Bad:
+        raise
+    except Exception:
+        raise Bad(f"Couldn't load the price history of {symbol}.")
+
+
+def _dailies(symbols):
+    """daily() for several symbols at once; the ones that fail are left out."""
+    out = {}
+    for s, f in [(s, _pool.submit(daily, s)) for s in symbols]:
+        try:
+            out[s] = f.result()
+        except Bad:
+            pass
+    return out
+
+
+def _latest(symbol, rows):
+    """Daily rows with the newest one brought up to the latest regular-hours price."""
+    try:
+        q = yahoo(symbol, "1d")
+    except Bad:
+        return rows
+    d, px, last = ny_day(q["time"] or 0), q["regular"], rows[-1]
+    if not px or d < last[0]:
+        return rows
+    return (rows[:-1] if d == last[0] else rows) + [(d, px, px * last[2] / last[1])]
+
+
+def _ledger_on(txs, days, px):
+    """Your real entries replayed over those days: the portfolio's value at each close, and the money that went in or out."""
+    qty, last, cash, j, v, flows = {}, {}, 0.0, 0, [], []
+    for i, d in enumerate(days):
+        flow = 0.0
+        while j < len(txs) and (txs[j]["date"] <= d or i == len(days) - 1):  # an entry dated after the last trading day still counts
+            t, kind = txs[j], txs[j]["type"]
+            j += 1
+            fee = float(t.get("fee") or 0)
+            if kind in ("deposit", "withdraw"):
+                amount = t["amount"] if kind == "deposit" else -t["amount"]
+                cash += amount
+                flow += amount
+            elif kind == "dividend":
+                cash += t["amount"]
+            else:
+                sign = 1 if kind == "buy" else -1
+                qty[t["symbol"]] = qty.get(t["symbol"], 0.0) + sign * t["qty"]
+                cash -= sign * t["qty"] * t["price"] + fee
+                last[t["symbol"]] = t["price"]
+        if flow:
+            flows.append([i, round(flow, 2)])
+        held = sum(q * ((px[s][i] if s in px else None) or last.get(s, 0)) for s, q in qty.items() if q > 1e-9)
+        v.append(round(cash + held, 2))
+    return {"v": v, "flows": flows}
+
+
+def lab_data(symbols, mine=False):
+    """Prices for a mix to be tested, dividends included, on the benchmark's days.
+
+    From your purchases: every trading day since your first entry, with your real portfolio replayed alongside.
+    Otherwise: ten years of weeks."""
+    syms = []
+    for s in symbols:
+        s = s.strip().upper()[:16]
+        if s and s != "CASH" and s not in syms:
+            syms.append(s)
+    if len(syms) > 12:
+        raise Bad("A mix can hold up to 12 tickers.")
+    txs, own = [], []
+    if mine:
+        with _lock:
+            doc = load()
+        txs = sorted(doc["transactions"], key=lambda t: t["date"])
+        if not txs:
+            raise Bad("Record a deposit or a buy first, and the test can start from it.")
+        own = list(dict.fromkeys(t["symbol"] for t in txs if t.get("symbol")))
+    got = _dailies(list(dict.fromkeys(syms + own + [BENCH[0]])))
+    if BENCH[0] not in got:
+        raise Bad("Couldn't load the S&P 500's history.")
+    rows = {s: _latest(s, g["rows"]) if mine else g["rows"] for s, g in got.items()}
+    week = lambda d: datetime.strptime(d, "%Y-%m-%d").isocalendar()[:2]
+    ends = [d for d, _, _ in rows[BENCH[0]] if not mine or d >= txs[0]["date"]] or [rows[BENCH[0]][-1][0]]
+    if not mine or len(ends) > 780:  # weeks: the last trading day of each
+        ends = [d for d, nxt in zip(ends, ends[1:] + [None]) if nxt is None or week(nxt) != week(d)]
+
+    def on_days(r, k=2):
+        col, j, last = [], 0, None
+        for d in ends:
+            while j < len(r) and r[j][0] <= d:
+                last = r[j][k]
+                j += 1
+            col.append(None if last is None else float(f"{last:.6g}"))
+        return col
+    stamp = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()) + 72000
+    out = {"t": [stamp(d) for d in ends],
+           "bench": {"symbol": BENCH[0], "name": BENCH[1], "v": on_days(rows[BENCH[0]])},
+           "series": [{"symbol": s, "name": got[s]["name"], "from": stamp(rows[s][0][0]), "v": on_days(rows[s])} for s in syms if s in got],
+           "missing": [s for s in syms if s not in got]}
+    if mine:
+        out["mine"] = _ledger_on(txs, ends, {s: on_days(rows[s], 1) for s in own if s in rows})
+    return out
+
+
+def set_lab(body):
+    """Save the lab's settings: the mix being tested and how it is tested."""
+    lab = {}
+    mix = body.get("mix")
+    if not isinstance(mix, dict) or len(mix) > 13:
+        raise Bad("Bad mix.")
+    try:
+        lab["mix"] = {str(k).strip().upper()[:16]: min(100.0, max(0.0, float(v))) for k, v in mix.items() if str(k).strip() and float(v) == float(v)}
+        lab["start"] = min(1e12, max(0.0, float(body.get("start", 10000))))
+        lab["monthly"] = min(1e9, max(0.0, float(body.get("monthly", 0))))
+    except (TypeError, ValueError):
+        raise Bad("Those must be numbers.")
+    if lab["start"] != lab["start"] or lab["monthly"] != lab["monthly"]:
+        raise Bad("Those must be numbers.")
+    lab["years"] = body.get("years") if body.get("years") in (1, 3, 5, 10) else 5
+    lab["rebalance"] = body.get("rebalance") if body.get("rebalance") in ("never", "yearly", "quarterly") else "yearly"
+    lab["mode"] = "past" if body.get("mode") == "past" else "mine"
+    with _lock:
+        doc = load()
+        doc["lab"] = lab
+        save(doc)
+
+
+EPISODES = [  # stretches the S&P 500 fell hard in, from its closing high to its closing low
+    ("Late 2018 sell-off", "2018-09-20", "2018-12-24"),
+    ("2020 Covid crash", "2020-02-19", "2020-03-23"),
+    ("2022 bear market", "2022-01-03", "2022-10-12"),
+    ("2025 tariff shock", "2025-02-19", "2025-04-08"),
+]
+
+
+def stress():
+    """What past market falls would do to today's holdings."""
+    with _lock:
+        doc = load()
+    pos, cash = replay(doc["transactions"])[:2]
+    if not pos:
+        return {"episodes": []}
+    key = ("stress", tuple(sorted((s, round(p["qty"], 6)) for s, p in pos.items())), round(cash, 2))
+    return cached(key, 21600, lambda: _stress(pos, cash))
+
+
+def _stress(pos, cash):
+    got = _dailies(list(pos) + [BENCH[0]])
+    if BENCH[0] not in got:
+        raise Bad("Couldn't load the S&P 500's history.")
+    q = quotes(list(pos), "1d")
+    value = {s: p["qty"] * ((q.get(s) or {}).get("price") or p["cost"] / p["qty"]) for s, p in pos.items()}
+    total = sum(value.values()) + cash
+    try:
+        beta = {h["symbol"]: h.get("beta") for h in analysis()["holdings"]}
+    except Exception:
+        beta = {}
+
+    def at(rows, day):  # the close on that day, or the last one before it
+        lo, hi = 0, len(rows)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if rows[mid][0] <= day:
+                lo = mid + 1
+            else:
+                hi = mid
+        return rows[lo - 1][1] if lo else None
+
+    brows = got[BENCH[0]]["rows"]
+    episodes = list(EPISODES)
+    year = brows[-252:]  # the worst stretch of the past year, whenever it was
+    dd = _drawdown([c for _, c, _ in year])
+    low = dd.index(min(dd))
+    if dd[low] <= -5:
+        high = max(range(low + 1), key=lambda i: year[i][1])
+        if all(not (a <= year[low][0] and year[high][0] <= b) for _, a, b in episodes):
+            episodes.append(("The past year’s deepest fall", year[high][0], year[low][0]))
+    out = []
+    for name, a, b in episodes:
+        b0, b1 = at(brows, a), at(brows, b)
+        if not b0 or not b1 or brows[0][0] > a:
+            continue
+        fall, parts, pf = b1 / b0 - 1, [], 0.0
+        for s in pos:
+            rows = (got.get(s) or {}).get("rows") or []
+            if rows and rows[0][0] <= a:
+                move, est = at(rows, b) / at(rows, a) - 1, False
+            else:  # not listed yet: what its usual link to the market suggests
+                move, est = max(-0.95, (beta.get(s) if beta.get(s) is not None else 1.0) * fall), True
+            parts.append({"symbol": s, "pct": _r(move * 100, 1), "est": est})
+            pf += value[s] / total * move if total else 0
+        out.append({"name": name, "from": a, "to": b, "bench": _r(fall * 100, 1), "pf": _r(pf * 100, 1), "parts": parts})
+    return {"episodes": out, "cash": _r(cash / total * 100, 1) if total else 0}
+
+
+# ---------- markets around the world ----------
+
+WORLD = [
+    ("United States", [("^GSPC", "S&P 500"), ("^IXIC", "Nasdaq"), ("^DJI", "Dow Jones"), ("^RUT", "Russell 2000"), ("^VIX", "VIX (volatility)")]),
+    ("Europe", [("^STOXX50E", "Euro Stoxx 50"), ("^GDAXI", "DAX · Germany"), ("^FTSE", "FTSE 100 · UK"), ("^FCHI", "CAC 40 · France"), ("GD.AT", "Athens General")]),
+    ("Asia and Pacific", [("^N225", "Nikkei 225 · Japan"), ("^HSI", "Hang Seng · Hong Kong"), ("000001.SS", "Shanghai Composite"), ("^NSEI", "Nifty 50 · India"), ("^AXJO", "ASX 200 · Australia")]),
+    ("Interest rates", [("^IRX", "US 3-month"), ("^FVX", "US 5-year"), ("^TNX", "US 10-year"), ("^TYX", "US 30-year")]),
+    ("Commodities", [("GC=F", "Gold"), ("SI=F", "Silver"), ("CL=F", "Oil · WTI"), ("BZ=F", "Oil · Brent"), ("NG=F", "Natural gas"), ("HG=F", "Copper")]),
+    ("Currencies", [("EURUSD=X", "EUR / USD"), ("GBPUSD=X", "GBP / USD"), ("JPY=X", "USD / JPY"), ("EURGBP=X", "EUR / GBP"), ("DX-Y.NYB", "Dollar index")]),
+    ("Crypto", [("BTC-USD", "Bitcoin"), ("ETH-USD", "Ethereum"), ("SOL-USD", "Solana")]),
+]
+RANKED = [("^GSPC", "S&P 500"), ("^IXIC", "Nasdaq"), ("^RUT", "Russell 2000"), ("^STOXX50E", "Euro Stoxx 50"), ("^GDAXI", "DAX"), ("^FTSE", "FTSE 100"),
+          ("GD.AT", "Athens General"), ("^N225", "Nikkei 225"), ("^HSI", "Hang Seng"), ("GC=F", "Gold"), ("SI=F", "Silver"), ("CL=F", "Oil"),
+          ("BTC-USD", "Bitcoin"), ("ETH-USD", "Ethereum"), ("DX-Y.NYB", "US dollar")]  # what the longer-run ranking compares
+EXCHANGES = [  # usual trading hours, local time
+    ("Sydney", "Australia/Sydney", (10, 0), (16, 0)), ("Tokyo", "Asia/Tokyo", (9, 0), (15, 30)), ("Hong Kong", "Asia/Hong_Kong", (9, 30), (16, 0)),
+    ("Mumbai", "Asia/Kolkata", (9, 15), (15, 30)), ("Athens", "Europe/Athens", (10, 15), (17, 20)), ("Frankfurt", "Europe/Berlin", (9, 0), (17, 30)),
+    ("London", "Europe/London", (8, 0), (16, 30)), ("New York", "America/New_York", (9, 30), (16, 0)),
+]
+
+
+def _sparks(symbols):
+    """Today's prices for many symbols in one request each twenty: {symbol: (price, previous close, closes)}."""
+    out = {}
+    for i in range(0, len(symbols), 18):
+        part = symbols[i:i + 18]
+        try:
+            res = fetch("https://query1.finance.yahoo.com/v8/finance/spark?symbols=" + urllib.parse.quote(",".join(part)) + "&range=1d&interval=5m")
+        except Exception as e:
+            print("sparks:", repr(e), file=sys.stderr)
+            continue
+        for s, r in res.items():
+            closes = [c for c in r.get("close") or [] if c is not None]
+            prev = r.get("previousClose") or r.get("chartPreviousClose")
+            if closes and prev:
+                out[s] = (closes[-1], prev, closes[::max(1, len(closes) // 48)])
+    return out
+
+
+def sessions(now):
+    """Each exchange's trading sessions around now, as [open, close] times."""
+    out = []
+    for city, zone, o, c in EXCHANGES:
+        try:
+            tz = ZoneInfo(zone)
+        except Exception:
+            continue
+        today, spans = datetime.fromtimestamp(now, tz).date(), []
+        for k in range(-1, 4):
+            d = today + timedelta(days=k)
+            if d.weekday() < 5:
+                at = lambda hm: int(datetime(d.year, d.month, d.day, hm[0], hm[1], tzinfo=tz).timestamp())
+                spans.append([at(o), at(c)])
+        out.append({"city": city, "spans": spans})
+    return out
+
+
+def _movers():
+    row = lambda q: {"symbol": q["symbol"], "name": q.get("shortName") or q.get("longName") or q["symbol"], "price": q.get("regularMarketPrice"),
+                     "pct": _r(q.get("regularMarketChangePercent") or 0), "volume": q.get("regularMarketVolume"), "cap": q.get("marketCap")}
+    out = {}
+    jobs = {k: _pool.submit(_screen, scr, 10) for k, scr in (("gainers", "day_gainers"), ("losers", "day_losers"), ("active", "most_actives"))}
+    for k, f in jobs.items():
+        try:
+            out[k] = [row(q) for q in f.result() if q.get("regularMarketPrice")]
+        except Exception:
+            out[k] = []
+    try:
+        syms = [q["symbol"] for q in fetch("https://query1.finance.yahoo.com/v1/finance/trending/US?count=14")["finance"]["result"][0]["quotes"]]
+        full = quotes_full(syms)
+        out["trending"] = [row(full[s]) for s in syms if (full.get(s) or {}).get("regularMarketPrice") and not s.startswith("^")][:10]
+    except Exception:
+        out["trending"] = []
+    if not any(out.values()):
+        raise Bad("Couldn't load the movers.")
+    return out
+
+
+def _ranked(held):
+    """How far each market, and each thing you hold, has come over a month, this year and a year."""
+    names = dict(RANKED)
+    names.update(held)
+    now, out = time.time(), []
+    year = time.gmtime(now).tm_year
+    for s, qt in quotes(list(names), "1y").items():
+        pts = (qt or {}).get("points") or []
+        if len(pts) < 30:
+            continue
+        last = pts[-1][1]
+        back = lambda keep: next((c for t, c in reversed(pts) if keep(t)), None)
+        chg = lambda base: _r((last / base - 1) * 100) if base else None
+        span = (pts[-1][0] - pts[0][0]) / 86400
+        out.append({"symbol": s, "name": names[s], "held": s in held, "m1": chg(back(lambda t: t <= now - 30 * 86400)),
+                    "ytd": chg(back(lambda t: time.gmtime(t).tm_year < year)), "y1": chg(pts[0][1]) if span > 330 else None})
+    return out
+
+
+def world():
+    """The markets page: boards of indices, rates, commodities, currencies and coins; who is open; today's movers."""
+    with _lock:
+        doc = load()
+    pos = replay(doc["transactions"])[0]
+
+    def board():
+        got = _sparks([s for _, items in WORLD for s, _ in items])
+        if not got:
+            raise Bad("Couldn't load the markets.")
+        return [{"name": g, "items": [{"symbol": s, "name": n, "price": got[s][0], "prevClose": got[s][1], "spark": got[s][2]} for s, n in items if s in got]}
+                for g, items in WORLD]
+    held = {s: s for s in pos}
+    out = {"groups": cached("world", 45, board), "sessions": sessions(time.time())}
+    for key, ttl, make in (("movers", 180, _movers), (("ranked", tuple(sorted(held))), 1800, lambda: _ranked(held))):
+        try:
+            out[key if isinstance(key, str) else key[0]] = cached(key, ttl, make)
+        except Exception:
+            out[key if isinstance(key, str) else key[0]] = {} if key == "movers" else []
+    return out
+
+
+# ---------- the inbox: things Folio noticed while you were away ----------
+
+INBOX = DATA.with_name("inbox.json")
+_inbox_lock = threading.Lock()
+NOTICE = {"moves": True, "highs": True, "earnings": True, "summary": True, "desktop": False, "movePct": 5.0}
+
+
+def inbox_load():
+    try:
+        box = json.loads(INBOX.read_text())
+    except (OSError, ValueError):
+        box = {}
+    box.setdefault("events", [])
+    box.setdefault("marks", {})
+    box.setdefault("seen", 0)
+    box["settings"] = {**NOTICE, **(box.get("settings") or {})}
+    return box
+
+
+def inbox_save(box):
+    INBOX.parent.mkdir(parents=True, exist_ok=True)
+    tmp = INBOX.with_suffix(".tmp")
+    tmp.write_text(json.dumps(box, indent=1))
+    tmp.replace(INBOX)
+
+
+def inbox_view():
+    box = inbox_load()
+    return {"events": box["events"][-40:][::-1], "seen": box["seen"], "settings": box["settings"]}
+
+
+def emit(kind, key, title, body="", symbol=None, tone=None, quiet=False):
+    """Note something worth knowing, once: key names the occurrence, so seeing it again adds nothing."""
+    now = int(time.time())
+    with _inbox_lock:
+        box = inbox_load()
+        if key in box["marks"]:
+            return False
+        box["marks"] = {k: t for k, t in box["marks"].items() if now - t < 60 * 86400}
+        box["marks"][key] = now
+        box["events"] = (box["events"] + [{"id": uuid.uuid4().hex[:10], "t": now, "kind": kind, "title": title, "body": body, "symbol": symbol, "tone": tone}])[-80:]
+        inbox_save(box)
+        desktop = box["settings"]["desktop"]
+    if desktop and not quiet:
+        try:
+            subprocess.run(["notify-send", "-a", "Folio", "-i", str(ROOT / "icon.svg"), title, body], timeout=5, check=False)
+        except Exception:
+            pass
+    return True
+
+
+def set_inbox(body):
+    with _inbox_lock:
+        box = inbox_load()
+        if body.get("seen"):
+            box["seen"] = int(time.time())
+        if body.get("clear"):
+            box["events"] = []
+        st = body.get("settings")
+        if isinstance(st, dict):
+            for k in ("moves", "highs", "earnings", "summary", "desktop"):
+                if k in st:
+                    box["settings"][k] = bool(st[k])
+            if "movePct" in st:
+                try:
+                    v = float(st["movePct"])
+                except (TypeError, ValueError):
+                    raise Bad("The size of move must be a number.")
+                if not 1 <= v <= 50:
+                    raise Bad("The size of move must be between 1 and 50 percent.")
+                box["settings"]["movePct"] = v
+        inbox_save(box)
+
+
+def notice(beat):
+    """Look over the holdings for things worth a line in the inbox."""
+    st = inbox_load()["settings"]
+    if not any(st[k] for k in ("moves", "highs", "earnings", "summary")):
+        return
+    now = time.time()
+    s = state()
+    day, ny = ny_day(now), datetime.fromtimestamp(now, NY)
+    fresh = [p for p in s["positions"] if p["time"] and ny_day(p["time"]) == day]  # traded today
+    for p in fresh:
+        sym, move = p["symbol"], p["dayPct"]
+        if st["moves"] and abs(move) >= st["movePct"]:
+            emit("move", f"move:{sym}:{day}", f"{sym} is {'up' if move > 0 else 'down'} {abs(move):.1f}% today", f"Now ${p['price']:,.2f}.", sym, "up" if move > 0 else "down")
+        if st["highs"] and p["dayHigh"] and p["wkHigh"] and p["dayHigh"] >= p["wkHigh"] * 0.99995:
+            emit("high", f"high:{sym}:{day}", f"{sym} reached its highest price in a year", f"${p['dayHigh']:,.2f} today.", sym, "up")
+        if st["highs"] and p["dayLow"] and p["wkLow"] and p["dayLow"] <= p["wkLow"] * 1.00005:
+            emit("low", f"low:{sym}:{day}", f"{sym} fell to its lowest price in a year", f"${p['dayLow']:,.2f} today.", sym, "down")
+    if st["summary"] and fresh and len(fresh) == len(s["positions"]) and ny.weekday() < 5 and ny.hour >= 16 and not s["stale"]:
+        ranked = sorted(fresh, key=lambda p: p["dayPct"])
+        pct = lambda v: f"{'+' if v > 0 else '−' if v < 0 else ''}{abs(v):.1f}%"
+        text = f"Best: {ranked[-1]['symbol']} {pct(ranked[-1]['dayPct'])}. Worst: {ranked[0]['symbol']} {pct(ranked[0]['dayPct'])}." if len(ranked) > 1 else ""
+        try:
+            b = yahoo(BENCH[0], "1d")
+            text += f" The S&P 500 {'rose' if b['regular'] >= b['prevClose'] else 'fell'} {abs(b['regular'] / b['prevClose'] - 1) * 100:.1f}%."
+        except Exception:
+            pass
+        move = s["dayPct"]
+        emit("summary", f"summary:{day}", f"The day closed {'up' if move > 0.004 else 'down' if move < -0.004 else 'flat'}"
+             + (f" {abs(move):.1f}%" if abs(move) > 0.004 else ""), text.strip(), None, "up" if move > 0 else "down" if move < 0 else None)
+    if st["earnings"] and beat % 20 == 0:
+        for ev in calendar():
+            ahead = ev["t"] - now
+            if ev["kind"] == "earnings" and -3600 < ahead < 30 * 3600:
+                when = "today" if ny_day(ev["t"]) == day else "tomorrow"
+                emit("earnings", f"earn:{ev['symbol']}:{ny_day(ev['t'])}", f"{ev['symbol']} reports earnings {when}",
+                     ("You hold it." if ev["held"] else "On your watchlist.") + (" The date is not confirmed." if ev["estimate"] else ""), ev["symbol"], None)
+
+
 def num(body, key, positive=True):
     try:
         v = float(body.get(key))
@@ -1202,6 +1709,8 @@ def check_alerts():
     for a in fired:  # desktop notification, where the system has one
         title = (f"{a['symbol']} is {'up' if a['firedPct'] > 0 else 'down'} {abs(a['firedPct']):.1f}% today" if a["op"] == "move"
                  else f"{a['symbol']} is {a['op']} ${a['price']:,.2f}")
+        emit("alert", f"alert:{a['id']}:{a['fired']}", title, f"Now ${a['firedPrice']:,.2f}.", a["symbol"],
+             ("up" if a["firedPct"] > 0 else "down") if a["op"] == "move" else None, quiet=True)
         try:
             subprocess.run(["notify-send", "-a", "Folio", "-i", str(ROOT / "icon.svg"), title, f"Now ${a['firedPrice']:,.2f}"],
                            timeout=5, check=False)
@@ -1229,6 +1738,8 @@ def worker():
             check_alerts()
             if beat % 10 == 0:
                 active = snapshot(active)
+            if beat % 2 == 0:
+                notice(beat)
         except Exception as e:
             print("worker:", repr(e), file=sys.stderr)
         beat += 1
@@ -1293,6 +1804,12 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, analysis())
                 if u.path == "/api/sectors":
                     return self.send(200, sectors())
+                if u.path == "/api/world":
+                    return self.send(200, world())
+                if u.path == "/api/stress":
+                    return self.send(200, stress())
+                if u.path == "/api/lab":
+                    return self.send(200, lab_data(arg("symbols").split(","), arg("mine") == "1"))
                 if u.path == "/api/calendar":
                     return self.send(200, calendar())
                 if u.path == "/api/detail":
@@ -1317,6 +1834,8 @@ class Handler(BaseHTTPRequestHandler):
                     rearm_alert(u.path.split("/")[3])
                 elif u.path == "/api/tx":
                     add_tx(self.body())
+                elif u.path == "/api/inbox":
+                    set_inbox(self.body())
                 else:
                     return self.send(404, {"error": "Not found"})
                 return self.send(200, state())
@@ -1325,6 +1844,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, state())
             elif method == "PUT" and u.path == "/api/plan":
                 set_plan(self.body())
+                return self.send(200, state())
+            elif method == "PUT" and u.path == "/api/lab":
+                set_lab(self.body())
                 return self.send(200, state())
             elif method == "DELETE":
                 if u.path.startswith("/api/watch/"):
