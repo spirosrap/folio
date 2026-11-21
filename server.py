@@ -2,26 +2,40 @@
 """Folio: a small self-hosted portfolio dashboard.
 
 Holdings come from a transaction ledger (data/portfolio.json); prices come
-from Yahoo Finance's public chart endpoint. Standard library only.
+from Yahoo Finance's public endpoints. Standard library only.
 """
+import csv
+import http.cookiejar
+import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+try:
+    from zoneinfo import ZoneInfo
+    NY = ZoneInfo("America/New_York")
+except Exception:  # no time zone database on this system
+    NY = timezone(timedelta(hours=-5))
+
+VERSION = "2.0"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
 HOST = os.environ.get("FOLIO_HOST", "0.0.0.0")
+UA = {"User-Agent": "Mozilla/5.0"}
 
 RANGES = {  # range -> (yahoo interval, cache seconds)
     "1d": ("1m", 5),  # with pre-market and after-hours trades
@@ -29,9 +43,12 @@ RANGES = {  # range -> (yahoo interval, cache seconds)
     "1mo": ("60m", 600),
     "3mo": ("1d", 1800),
     "1y": ("1d", 1800),
+    "5y": ("1wk", 3600),
 }
+BENCH = ("^GSPC", "S&P 500")  # what the chart's comparison view measures against
 
 HIST = DATA.with_name("history.jsonl")  # recorded portfolio value over time
+BACKUPS = DATA.with_name("backups")
 _lock = threading.Lock()
 _cache = {}
 _cache_lock = threading.Lock()
@@ -40,6 +57,29 @@ _pool = ThreadPoolExecutor(max_workers=8)
 
 class Bad(Exception):
     pass
+
+
+def cached(key, ttl, make, keep_on_error=True):
+    """A value from the cache, remade once it is older than ttl seconds."""
+    now = time.time()
+    with _cache_lock:
+        hit = _cache.get(key)
+    if hit and now - hit[0] < ttl:
+        return hit[1]
+    try:
+        out = make()
+    except Exception:
+        if hit and keep_on_error:
+            return hit[1]
+        raise
+    with _cache_lock:
+        _cache[key] = (now, out)
+    return out
+
+
+def fetch(url, timeout=10):
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
+        return json.load(r)
 
 
 # ---------- ledger ----------
@@ -51,16 +91,25 @@ def load():
     return doc
 
 
-def save(doc):
+def save(doc, backup=False):
+    """Write the ledger. With backup, the copy being replaced is kept in data/backups (the newest 30)."""
     DATA.parent.mkdir(parents=True, exist_ok=True)
+    if backup and DATA.exists():
+        try:
+            BACKUPS.mkdir(exist_ok=True)
+            shutil.copy2(DATA, BACKUPS / f"portfolio-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4]}.json")
+            for old in sorted(BACKUPS.glob("portfolio-*.json"))[:-30]:
+                old.unlink()
+        except OSError as e:
+            print("backup:", repr(e), file=sys.stderr)
     tmp = DATA.with_suffix(".tmp")
     tmp.write_text(json.dumps(doc, indent=2))
     tmp.replace(DATA)
 
 
 def replay(txs):
-    """Average-cost replay. Returns (positions, cash, realized, deposited)."""
-    pos, cash, realized, deposited = {}, 0.0, 0.0, 0.0
+    """Average-cost replay. Returns (positions, cash, realized, deposited, dividends)."""
+    pos, cash, realized, deposited, income, divs = {}, 0.0, 0.0, 0.0, 0.0, {}
     for t in sorted(txs, key=lambda t: t["date"]):  # stable: same-day keeps entry order
         kind, fee = t["type"], float(t.get("fee") or 0)
         if kind == "deposit":
@@ -69,6 +118,10 @@ def replay(txs):
         elif kind == "withdraw":
             cash -= t["amount"]
             deposited -= t["amount"]
+        elif kind == "dividend":
+            cash += t["amount"]
+            income += t["amount"]
+            divs[t["symbol"]] = divs.get(t["symbol"], 0.0) + t["amount"]
         elif kind == "buy":
             p = pos.setdefault(t["symbol"], {"symbol": t["symbol"], "name": t.get("name") or t["symbol"], "qty": 0.0, "cost": 0.0})
             p["qty"] += t["qty"]
@@ -86,7 +139,9 @@ def replay(txs):
             cash += t["qty"] * t["price"] - fee
             if p["qty"] < 1e-9:
                 del pos[t["symbol"]]
-    return pos, cash, realized, deposited
+    for s, p in pos.items():
+        p["div"] = divs.get(s, 0.0)
+    return pos, cash, realized, deposited, income
 
 
 # ---------- quotes ----------
@@ -102,12 +157,14 @@ def yahoo(symbol, rng):
     url = (f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(symbol)}"
            f"?range={rng}&interval={interval}" + ("&includePrePost=true" if rng == "1d" else ""))
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=10) as r:
-            res = json.load(r)["chart"]["result"][0]
+        res = fetch(url)["chart"]["result"][0]
         meta = res["meta"]
-        closes = (res.get("indicators", {}).get("quote") or [{}])[0].get("close") or []
-        pts = [(t, c) for t, c in zip(res.get("timestamp") or [], closes) if c is not None]
+        ind = (res.get("indicators", {}).get("quote") or [{}])[0]
+        col = lambda k: ind.get(k) or []
+        bars = [(t, o if o is not None else c, max(h if h is not None else c, c), min(l if l is not None else c, c), c, v or 0)
+                for t, o, h, l, c, v in zip(res.get("timestamp") or [], col("open"), col("high"), col("low"), col("close"), col("volume"))
+                if c is not None]
+        pts = [(b[0], b[4]) for b in bars]
         tp = meta.get("currentTradingPeriod") or {}
         state = "closed"
         for name in ("pre", "regular", "post"):
@@ -128,6 +185,8 @@ def yahoo(symbol, rng):
             "regular": reg, "ext": ext,
             "dayHigh": meta.get("regularMarketDayHigh"), "dayLow": meta.get("regularMarketDayLow"),
             "wkHigh": meta.get("fiftyTwoWeekHigh"), "wkLow": meta.get("fiftyTwoWeekLow"),
+            "volume": meta.get("regularMarketVolume"), "exchange": meta.get("fullExchangeName"),
+            "type": meta.get("instrumentType"),
             "periods": {k: [v.get("start", 0), v.get("end", 0)] for k, v in tp.items()},
             "symbol": meta["symbol"],
             "name": meta.get("longName") or meta.get("shortName") or meta["symbol"],
@@ -137,6 +196,7 @@ def yahoo(symbol, rng):
             "time": last_t,
             "state": state,
             "points": pts,
+            "bars": bars,
         }
     except Exception as e:  # keep serving the last good quote if the fetch fails
         if hit:
@@ -157,17 +217,150 @@ def quotes(symbols, rng):
     return out
 
 
+# Yahoo's fuller quote records (market cap, volume, earnings dates) need a cookie and a "crumb".
+_sess = {"op": None, "crumb": "", "at": 0.0}
+_sess_lock = threading.Lock()
+
+
+def _session(fresh=False):
+    with _sess_lock:
+        if _sess["op"] and not fresh and time.time() - _sess["at"] < 6 * 3600:
+            return _sess["op"], _sess["crumb"]
+        op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        try:
+            op.open(urllib.request.Request("https://fc.yahoo.com", headers=UA), timeout=10).read()
+        except urllib.error.HTTPError:
+            pass  # answers 404 but still hands out the cookie
+        with op.open(urllib.request.Request("https://query2.finance.yahoo.com/v1/test/getcrumb", headers=UA), timeout=10) as r:
+            crumb = r.read().decode()
+        _sess.update(op=op, crumb=crumb, at=time.time())
+        return op, crumb
+
+
+def _authed(url):
+    for attempt in (0, 1):
+        op, crumb = _session(fresh=bool(attempt))
+        try:
+            with op.open(urllib.request.Request(url + "&crumb=" + urllib.parse.quote(crumb), headers=UA), timeout=10) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if attempt or e.code not in (401, 403):
+                raise
+
+
+def quotes_full(symbols):
+    """Fuller quote records by symbol, each kept for a minute. A symbol Yahoo won't answer for maps to {}."""
+    now, out, need = time.time(), {}, []
+    with _cache_lock:
+        for s in symbols:
+            hit = _cache.get(("full", s))
+            if hit and now - hit[0] < 60:
+                out[s] = hit[1]
+            else:
+                need.append(s)
+    if need:
+        got = {}
+        try:
+            url = "https://query2.finance.yahoo.com/v7/finance/quote?symbols=" + urllib.parse.quote(",".join(need))
+            got = {r["symbol"]: r for r in _authed(url)["quoteResponse"]["result"]}
+        except Exception as e:
+            print("quotes_full:", repr(e), file=sys.stderr)
+        with _cache_lock:
+            for s in need:
+                old = _cache.get(("full", s))
+                out[s] = got.get(s) or (old[1] if old else {})
+                _cache[("full", s)] = (now, out[s])  # failures are remembered for the minute too
+    return out
+
+
+def profile(symbol):
+    """Sector, industry and a short description of a company. Kept for a day."""
+    def make():
+        try:
+            url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{urllib.parse.quote(symbol)}?modules=assetProfile"
+            p = _authed(url)["quoteSummary"]["result"][0]["assetProfile"]
+        except Exception:
+            return {}
+        about = " ".join((p.get("longBusinessSummary") or "").split())
+        if len(about) > 340:  # the first sentences that fit
+            cut = about[:340]
+            about = cut[:cut.rfind(". ") + 1] if ". " in cut[120:] else cut.rsplit(" ", 1)[0] + "…"
+        site = p.get("website") or ""
+        return {"sector": p.get("sector"), "industry": p.get("industry"), "about": about,
+                "website": site if site.startswith("https://") else None}
+    return cached(("profile", symbol), 86400, make)
+
+
+def detail(symbol):
+    """Everything the page shows about one symbol, held or not."""
+    if not symbol:
+        raise Bad("Enter a ticker symbol.")
+    qt = yahoo(symbol, "1d")
+    full = quotes_full([symbol]).get(symbol) or {}
+    g = full.get
+    kind = g("quoteType") or qt["type"]
+    prof = profile(symbol) if kind == "EQUITY" else {}
+    now = time.time()
+    return {
+        "symbol": qt["symbol"], "name": qt["name"], "price": qt["price"], "regular": qt["regular"], "prevClose": qt["prevClose"],
+        "ext": qt["ext"], "state": qt["state"], "time": qt["time"], "currency": qt["currency"],
+        "exchange": g("fullExchangeName") or qt["exchange"], "type": kind,
+        "open": g("regularMarketOpen"), "dayHigh": qt["dayHigh"], "dayLow": qt["dayLow"],
+        "wkHigh": qt["wkHigh"], "wkLow": qt["wkLow"],
+        "volume": g("regularMarketVolume") or qt["volume"], "avgVolume": g("averageDailyVolume3Month"),
+        "marketCap": g("marketCap"), "pe": g("trailingPE"), "forwardPe": g("forwardPE"), "eps": g("epsTrailingTwelveMonths"),
+        "ma50": g("fiftyDayAverage"), "ma200": g("twoHundredDayAverage"),
+        "yield": (g("trailingAnnualDividendYield") or 0) * 100 or None,
+        "earnings": next((t for t in (g("earningsTimestampStart"), g("earningsTimestamp")) if t and t > now - 43200), None),
+        "earningsEstimate": bool(g("isEarningsDateEstimate")),
+        "rating": g("averageAnalystRating"),
+        **{k: prof.get(k) for k in ("sector", "industry", "about", "website")},
+    }
+
+
+def search(q):
+    """Ticker suggestions for a few typed letters."""
+    q = " ".join(q.split())[:40]
+    if not q:
+        return []
+
+    def make():
+        res = fetch("https://query1.finance.yahoo.com/v1/finance/search?q="
+                    f"{urllib.parse.quote(q)}&quotesCount=8&newsCount=0")
+        return [{"symbol": x["symbol"], "name": x.get("longname") or x.get("shortname") or x["symbol"],
+                 "exchange": x.get("exchDisp") or "", "type": x.get("typeDisp") or ""}
+                for x in res.get("quotes") or [] if x.get("symbol") and x.get("isYahooFinance")]
+    try:
+        return cached(("search", q.lower()), 600, make)
+    except Exception:
+        raise Bad("Search isn't answering right now.")
+
+
 # ---------- api ----------
 
 def ui_version():
     return str(int((ROOT / "index.html").stat().st_mtime))
 
 
+def clock(periods, now):
+    """When the regular US session next opens, or closes if it is open now. Holidays aren't known here."""
+    reg = (periods or {}).get("regular") or [0, 0]
+    if now < reg[0]:
+        return {"opens": reg[0]}
+    if now < reg[1]:
+        return {"closes": reg[1]}
+    d = (datetime.fromtimestamp(now, NY) + timedelta(days=1)).replace(hour=9, minute=30, second=0, microsecond=0)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return {"opens": int(d.timestamp())}
+
+
 def state():
     with _lock:
         doc = load()
-    pos, cash, realized, deposited = replay(doc["transactions"])
-    q = quotes(list(pos), "1d")
+    pos, cash, realized, deposited, income = replay(doc["transactions"])
+    q = quotes(list(pos) + [BENCH[0]], "1d")
+    bench = q.pop(BENCH[0], None)
     rows, value, cost, day, ext, stale = [], 0.0, 0.0, 0.0, 0.0, []
     for sym, p in pos.items():
         qt = q.get(sym)
@@ -187,6 +380,7 @@ def state():
             **{k: (qt[k] if qt else None) for k in ("dayHigh", "dayLow", "wkHigh", "wkLow")}, "extChange": p["qty"] * (price - reg),
             "extPct": (price / reg - 1) * 100 if reg else 0,
             "pl": v - p["cost"], "plPct": (v / p["cost"] - 1) * 100 if p["cost"] else 0,
+            "dividends": p["div"],
             "spark": [c for _, c in qt["points"]] if qt else [],
             "state": qt["state"] if qt else "closed", "time": qt and qt["time"],
         })
@@ -202,25 +396,25 @@ def state():
         "ext": next((e for e in ("pre", "post") if any(r["ext"] == e for r in rows)), None),
         "extChange": ext, "extPct": ext / (value - ext) * 100 if value - ext else 0,
         "pl": value - cost, "plPct": (value / cost - 1) * 100 if cost else 0,
-        "realized": realized, "deposited": deposited, "market": market, "stale": stale,
+        "realized": realized, "dividends": income, "deposited": deposited, "market": market, "stale": stale,
+        "clock": clock(bench and bench["periods"], time.time()),
         "asOf": max([r["time"] or 0 for r in rows], default=0),
         "transactions": sorted(doc["transactions"], key=lambda t: t["date"])[::-1],  # newest first
-        "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"]}
+        "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"],
+                   "spark": [c for _, c in w["points"]][::5]}
                   for s, w in quotes(doc["watchlist"], "1d").items() if w],
         "alerts": doc["alerts"],
-        "ui": ui_version(),
+        "ui": ui_version(), "version": VERSION,
     }
 
 
-MARKET = {"^GSPC": "S&P 500", "^IXIC": "Nasdaq", "^DJI": "Dow Jones", "^VIX": "VIX (volatility)", "EURUSD=X": "EUR / USD"}
+MARKET = {"^GSPC": "S&P 500", "^IXIC": "Nasdaq", "^DJI": "Dow Jones", "^VIX": "VIX (volatility)",
+          "^TNX": "US 10-year yield", "GC=F": "Gold", "EURUSD=X": "EUR / USD"}
 POPULAR = {"BTC-USD": ("Bitcoin", "crypto")}  # last good ranking; Bitcoin is always shown
 
 
 def _screen(scr_id, count):
-    url = f"https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds={scr_id}&count={count}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        return json.load(r)["finance"]["result"][0]["quotes"]
+    return fetch(f"https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds={scr_id}&count={count}")["finance"]["result"][0]["quotes"]
 
 
 def popular():
@@ -263,27 +457,169 @@ def market():
     return out
 
 
-def history(rng, symbol=None):
+def hist_rows():
+    """The recorded value history: one {t, v, d} row per snapshot."""
+    if not HIST.exists():
+        return []
+    st = HIST.stat()
+    key = (st.st_mtime_ns, st.st_size)
+    with _cache_lock:
+        hit = _cache.get("hist")
+    if hit and hit[0] == key:
+        return hit[1]
+    rows = []
+    for line in HIST.read_text().splitlines():
+        try:
+            rows.append(json.loads(line))
+        except ValueError:
+            pass  # a half-written last line
+    with _cache_lock:
+        _cache["hist"] = (key, rows)
+    return rows
+
+
+def growth(rows):
+    """The portfolio's growth at each snapshot, starting from 1, with deposits and withdrawals taken out."""
+    idx = [1.0] * len(rows)
+    for k in range(1, len(rows)):
+        prev, flow = rows[k - 1]["v"], rows[k]["d"] - rows[k - 1]["d"]
+        idx[k] = idx[k - 1] * ((rows[k]["v"] - flow) / prev if prev > 0 else 1)
+    return idx
+
+
+def insights():
+    """Day-by-day results and the high-water mark, from the recorded history."""
+    rows = hist_rows()
+    if len(rows) < 2:
+        return {"days": [], "since": rows[0]["t"] if rows else None}
+    idx = growth(rows)
+    days = {}
+    for r, ix in zip(rows, idx):
+        dt = day = datetime.fromtimestamp(r["t"], NY)
+        if day.hour < 4:  # the small hours and weekends belong to the trading day before them
+            day -= timedelta(days=1)
+        while day.weekday() >= 5:
+            day -= timedelta(days=1)
+        own = day.date() == dt.date()
+        d = days.setdefault(day.strftime("%Y-%m-%d"), {"first": (r, ix), "n": 0})
+        d["last"] = (r, ix)
+        d["n"] += own
+        if own and (dt.hour, dt.minute) <= (16, 5):  # a day's result is its value at the regular close
+            d["reg"] = (r, ix)
+    out, prev = [], None
+    for date, d in days.items():
+        if d["n"] < 3:
+            continue  # a stray snapshot or two (one is taken whenever the server starts), not a day's trading
+        r, ix = d.get("reg") or d["last"]
+        pr, pix = prev or d["first"]
+        out.append({"date": date, "v": r["v"], "pl": round(r["v"] - pr["v"] - (r["d"] - pr["d"]), 2),
+                    "pct": round((ix / pix - 1) * 100, 3) if pix else 0})
+        prev = (r, ix)
+    if not out:
+        return {"days": [], "since": rows[0]["t"]}
+    k = max(range(len(rows)), key=lambda i: idx[i])
+    moved = [d for d in out if abs(d["pl"]) >= 0.005]
+    streak = 0
+    for d in reversed(moved):
+        sign = 1 if d["pl"] > 0 else -1
+        if streak and (streak > 0) != (sign > 0):
+            break
+        streak += sign
+    return {
+        "days": out[-60:], "since": rows[0]["t"],
+        "peak": {"v": rows[k]["v"], "t": rows[k]["t"], "now": round(rows[-1]["v"] * idx[k] / idx[-1], 2) if idx[-1] else None},
+        "drawdown": round((idx[-1] / idx[k] - 1) * 100, 3), "growth": round((idx[-1] - 1) * 100, 3),
+        "best": max(out, key=lambda d: d["pct"]), "worst": min(out, key=lambda d: d["pct"]),
+        "up": sum(d["pl"] > 0 for d in moved), "down": sum(d["pl"] < 0 for d in moved), "streak": streak,
+    }
+
+
+def _ffill(ts, pts):
+    """A (time, value) series read at each of ts, carrying the last value forward."""
+    out, j, last = [], 0, None
+    for t in ts:
+        while j < len(pts) and pts[j][0] <= t:
+            last = pts[j][1]
+            j += 1
+        out.append(last)
+    return out
+
+
+def _pct(vals, base):
+    return [None if v is None or not base else round((v / base - 1) * 100, 3) for v in vals]
+
+
+def _versus(ts, rng, symbols, names=None):
+    """Each symbol's percentage change over the chart's own timeline."""
+    out = []
+    for sym, qt in quotes(symbols, rng).items():
+        if not qt or not qt["points"]:
+            continue
+        vals = _ffill(ts, qt["points"])
+        base = qt["prevClose"] if rng == "1d" else next((v for v in vals if v is not None), None)
+        out.append({"symbol": sym, "name": (names or {}).get(sym, sym), "pct": _pct(vals, base)})
+    return out
+
+
+def _candles(bars, limit=110):
+    """Bars merged into at most `limit` candles: [time, open, high, low, close, volume]."""
+    n = max(1, -(-len(bars) // limit))
+    out = []
+    for i in range(0, len(bars), n):
+        g = bars[i:i + n]
+        out.append([g[0][0], g[0][1], max(b[2] for b in g), min(b[3] for b in g), g[-1][4], sum(b[5] for b in g)])
+    return out, n
+
+
+def history(rng, symbol=None, compare=False):
     if rng == "all" and symbol:
         rng = "1y"
     if rng == "all":  # the portfolio's real recorded value
-        rows = [json.loads(l) for l in HIST.read_text().splitlines() if l.strip()] if HIST.exists() else []
+        rows = hist_rows()
+        idx = growth(rows)
         step = max(1, len(rows) // 1500)
-        rows = rows[::step] + (rows[-1:] if rows and (len(rows) - 1) % step else [])
-        return {"t": [r["t"] for r in rows], "v": [r["v"] for r in rows], "base": None, "regular": None,
-                "missing": [], "flow": rows[-1]["d"] - rows[0]["d"] if rows else 0}
+        keep = list(range(0, len(rows), step))
+        if rows and keep[-1] != len(rows) - 1:
+            keep.append(len(rows) - 1)
+        ts = [rows[i]["t"] for i in keep]
+        out = {"t": ts, "v": [rows[i]["v"] for i in keep], "pct": [round((idx[i] - 1) * 100, 3) for i in keep],
+               "base": None, "regular": None, "missing": [], "flow": rows[-1]["d"] - rows[0]["d"] if rows else 0}
+        if compare and len(ts) > 1:  # the benchmark over the same stretch, from the shortest range that covers it
+            span = (ts[-1] - ts[0]) / 86400
+            brng = "5d" if span < 3 else "1mo" if span < 25 else "3mo" if span < 80 else "1y" if span < 350 else "5y"
+            try:
+                vals = _ffill(ts, yahoo(BENCH[0], brng)["points"])
+                base = next((v for v in vals if v is not None), None)
+                out["versus"] = [{"symbol": BENCH[0], "name": BENCH[1], "pct": _pct(vals, base)}]
+            except Bad:
+                pass
+        return out
     if rng not in RANGES:
         raise Bad("Unknown range")
     with _lock:
         doc = load()
-    pos, cash, _, _ = replay(doc["transactions"])
+    pos, cash, _, _, _ = replay(doc["transactions"])
     if symbol:  # one stock's own price
         qt = yahoo(symbol, rng)
         held = pos.get(symbol)
-        return {"t": [t for t, _ in qt["points"]], "v": [c for _, c in qt["points"]],
-                "base": qt["prevClose"] if rng == "1d" else None, "missing": [], "symbol": symbol,
-                "regular": qt["periods"].get("regular") if rng == "1d" else None,
-                "avg": held["cost"] / held["qty"] if held else None}
+        ts, vals = [t for t, _ in qt["points"]], [c for _, c in qt["points"]]
+        base = qt["prevClose"] if rng == "1d" else None
+        candles, per = _candles(qt["bars"])
+        marks = []
+        if rng != "1d" and ts:  # your trades in this stock, each on the first bar of its day
+            day = [datetime.fromtimestamp(t, NY).strftime("%Y-%m-%d") for t in ts]
+            for tx in doc["transactions"]:
+                if tx.get("symbol") == symbol and tx["type"] in ("buy", "sell") and day[0] <= tx["date"] <= day[-1]:
+                    i = next(i for i, d in enumerate(day) if d >= tx["date"])
+                    marks.append({"i": i, "type": tx["type"], "qty": tx["qty"], "price": tx["price"], "date": tx["date"]})
+        out = {"t": ts, "v": vals, "pct": _pct(vals, base or (vals[0] if vals else None)),
+               "base": base, "missing": [], "symbol": symbol, "name": qt["name"],
+               "regular": qt["periods"].get("regular") if rng == "1d" else None,
+               "avg": held["cost"] / held["qty"] if held else None,
+               "candles": candles, "per": per, "marks": marks}
+        if compare and symbol != BENCH[0]:
+            out["versus"] = _versus(ts, rng, [BENCH[0]], dict([BENCH]))
+        return out
     q = {s: v for s, v in quotes(list(pos), rng).items() if v and v["points"]}
     if not q:
         return {"t": [], "v": [], "base": None, "missing": list(pos), "regular": None}
@@ -301,29 +637,30 @@ def history(rng, symbol=None):
     if rng == "1d":
         base = cash + sum(pos[s]["qty"] * (q[s]["prevClose"] or 0) for s in series)
     regular = next(iter(q.values()))["periods"].get("regular") if rng == "1d" else None
-    return {"t": t_out, "v": v_out, "base": base, "regular": regular, "missing": [s for s in pos if s not in q]}
+    out = {"t": t_out, "v": v_out, "pct": _pct(v_out, base or (v_out[0] if v_out else None)),
+           "base": base, "regular": regular, "missing": [s for s in pos if s not in q]}
+    if compare:
+        out["versus"] = _versus(t_out, rng, [BENCH[0]] + list(q), dict([BENCH]))
+    return out
 
 
 def news():
     """Recent stories that are really about a holding, newest first."""
     with _lock:
         doc = load()
-    pos, _, _, _ = replay(doc["transactions"])
+    pos = replay(doc["transactions"])[0]
     key, now = ("news", tuple(sorted(pos))), time.time()
     with _cache_lock:
         hit = _cache.get(key)
     if hit and now - hit[0] < 300:
         return hit[1]
 
-    def fetch(sym):
-        url = ("https://query1.finance.yahoo.com/v1/finance/search?q="
-               f"{urllib.parse.quote(sym)}&newsCount=20&quotesCount=0")
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return json.load(r).get("news") or []
+    def stories_for(sym):
+        return fetch("https://query1.finance.yahoo.com/v1/finance/search?q="
+                     f"{urllib.parse.quote(sym)}&newsCount=20&quotesCount=0").get("news") or []
 
     seen, items, failed = {}, [], 0
-    for sym, fut in [(s, _pool.submit(fetch, s)) for s in pos]:
+    for sym, fut in [(s, _pool.submit(stories_for, s)) for s in pos]:
         try:
             stories = fut.result()
         except Exception:
@@ -353,7 +690,7 @@ def news():
                                 "thumb": thumb if thumb and thumb.startswith("https://") else None}
             items.append(seen[st["uuid"]])
     items.sort(key=lambda x: -x["time"])
-    out = {"items": items[:20], "failed": failed == len(pos) and bool(pos)}
+    out = {"items": items[:24], "failed": failed == len(pos) and bool(pos)}
     if hit and out["failed"]:
         return hit[1]
     if not out["failed"]:
@@ -362,12 +699,32 @@ def news():
     return out
 
 
+def calendar():
+    """Upcoming earnings reports and dividend payments for what you hold and watch, soonest first."""
+    with _lock:
+        doc = load()
+    pos = replay(doc["transactions"])[0]
+    syms = list(pos) + [s for s in doc["watchlist"] if s not in pos]
+
+    def make():
+        now, out = time.time(), []
+        for s, r in quotes_full(syms).items():
+            e = next((t for t in (r.get("earningsTimestampStart"), r.get("earningsTimestamp")) if t and t > now - 43200), None)
+            if e:
+                out.append({"symbol": s, "kind": "earnings", "t": e, "estimate": bool(r.get("isEarningsDateEstimate")), "held": s in pos})
+            d = r.get("dividendDate")
+            if d and d > now - 86400:
+                out.append({"symbol": s, "kind": "dividend", "t": d, "estimate": False, "held": s in pos})
+        return sorted(out, key=lambda x: x["t"])
+    return cached(("calendar", tuple(syms)), 1800, make) if syms else []
+
+
 def num(body, key, positive=True):
     try:
         v = float(body.get(key))
     except (TypeError, ValueError):
         v = float("nan")
-    key = {"qty": "shares"}.get(key, key)
+    key = {"qty": "shares", "pct": "percentage"}.get(key, key)
     if v != v:
         raise Bad(f"{key.capitalize()} must be a number.")
     if v != v or v in (float("inf"), float("-inf")) or (positive and v <= 0) or v < 0:
@@ -375,19 +732,25 @@ def num(body, key, positive=True):
     return v
 
 
-def add_tx(body):
+def build_tx(body, doc):
+    """A validated ledger entry from a submitted form."""
     kind = body.get("type")
     date = str(body.get("date") or time.strftime("%Y-%m-%d"))
     try:
         time.strptime(date, "%Y-%m-%d")
     except ValueError:
         raise Bad("Date must look like 2026-01-31.")
-    new = [{"id": uuid.uuid4().hex[:10], "type": kind, "date": date, "note": str(body.get("note") or "")[:200]}]
-    tx = new[0]
+    tx = {"id": uuid.uuid4().hex[:10], "type": kind, "date": date, "note": " ".join(str(body.get("note") or "").split())[:200]}
+    sym = str(body.get("symbol") or "").strip().upper()
     if kind in ("deposit", "withdraw"):
         tx["amount"] = num(body, "amount")
+    elif kind == "dividend":
+        if not sym:
+            raise Bad("Enter the ticker that paid the dividend.")
+        if not any(t.get("symbol") == sym and t["type"] == "buy" for t in doc["transactions"]):
+            raise Bad(f"There is no recorded buy of {sym}, so it can't have paid you a dividend.")
+        tx.update(symbol=sym, amount=num(body, "amount"))
     elif kind in ("buy", "sell"):
-        sym = str(body.get("symbol") or "").strip().upper()
         if not sym:
             raise Bad("Enter a ticker symbol.")
         tx.update(symbol=sym, qty=num(body, "qty"), price=num(body, "price"),
@@ -396,21 +759,48 @@ def add_tx(body):
             tx["name"] = yahoo(sym, "1d")["name"]  # also rejects unknown tickers
     else:
         raise Bad("Unknown transaction type.")
+    return tx
+
+
+def add_tx(body):
     with _lock:
         doc = load()
-        _, cash, _, _ = replay(doc["transactions"])
+    tx = build_tx(body, doc)  # may look the ticker up, so not under the lock
+    new, kind = [tx], tx["type"]
+    with _lock:
+        doc = load()
+        cash = replay(doc["transactions"])[1]
         if kind == "buy":
             short = tx["qty"] * tx["price"] + tx["fee"] - cash
             if short > 0.005:
                 if not body.get("fund"):
                     raise Bad(f"Cash balance is ${short:,.2f} short for this buy.")
-                new.insert(0, {"id": uuid.uuid4().hex[:10], "type": "deposit", "date": date,
+                new.insert(0, {"id": uuid.uuid4().hex[:10], "type": "deposit", "date": tx["date"],
                                "amount": round(short, 2), "note": f"Added to buy {tx['symbol']}"})
         if kind == "withdraw" and tx["amount"] > cash + 0.005:
             raise Bad(f"Only ${cash:,.2f} cash available to withdraw.")
         doc["transactions"].extend(new)
         replay(doc["transactions"])  # validates sells
-        save(doc)
+        save(doc, backup=True)
+
+
+def edit_tx(tid, body):
+    with _lock:
+        doc = load()
+    if not any(t["id"] == tid for t in doc["transactions"]):
+        raise Bad("That entry is already gone.")
+    tx = build_tx(body, doc)
+    tx["id"] = tid
+    with _lock:
+        doc = load()
+        i = next((i for i, t in enumerate(doc["transactions"]) if t["id"] == tid), None)
+        if i is None:
+            raise Bad("That entry is already gone.")
+        doc["transactions"][i] = tx
+        cash = replay(doc["transactions"])[1]  # validates sells
+        if cash < -0.005:
+            raise Bad(f"That change would leave the cash balance ${-cash:,.2f} below zero. Record a deposit first.")
+        save(doc, backup=True)
 
 
 def del_tx(tid):
@@ -424,7 +814,21 @@ def del_tx(tid):
         except Bad:
             raise Bad("Can't remove this entry: a later sell depends on it. Remove the sell first.")
         doc["transactions"] = keep
-        save(doc)
+        save(doc, backup=True)
+
+
+def export_csv():
+    with _lock:
+        doc = load()
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["date", "type", "symbol", "shares", "price", "fee", "amount", "note"])
+    for t in sorted(doc["transactions"], key=lambda t: t["date"]):
+        stock = t["type"] in ("buy", "sell")
+        amount = t["qty"] * t["price"] + (1 if t["type"] == "buy" else -1) * (t.get("fee") or 0) if stock else t["amount"]
+        w.writerow([t["date"], t["type"], t.get("symbol", ""), t.get("qty", ""), t.get("price", ""),
+                    t.get("fee", "") if stock else "", round(amount, 2), t.get("note", "")])
+    return buf.getvalue().encode()
 
 
 def add_watch(body):
@@ -451,17 +855,24 @@ def del_watch(sym):
 def add_alert(body):
     sym = str(body.get("symbol") or "").strip().upper()
     op = body.get("op")
-    if not sym or op not in ("above", "below"):
-        raise Bad("Pick a stock and whether to alert above or below a price.")
-    price = num(body, "price")
-    now = yahoo(sym, "1d")["price"]
-    if (op == "above" and now >= price) or (op == "below" and now <= price):
-        raise Bad(f"{sym} is already {op} ${price:,.2f} (now ${now:,.2f}).")
+    if not sym or op not in ("above", "below", "move"):
+        raise Bad("Pick a stock and what to alert on.")
+    alert = {"id": uuid.uuid4().hex[:10], "symbol": sym, "op": op, "fired": None}
+    qt = yahoo(sym, "1d")
+    if op == "move":  # a day's move of this many percent, either way; watches again each new day
+        alert["pct"] = num(body, "pct")
+        if alert["pct"] > 100:
+            raise Bad("Percentage can't be more than 100.")
+    else:
+        alert["price"] = price = num(body, "price")
+        now = qt["price"]
+        if (op == "above" and now >= price) or (op == "below" and now <= price):
+            raise Bad(f"{sym} is already {op} ${price:,.2f} (now ${now:,.2f}).")
     with _lock:
         doc = load()
         if len(doc["alerts"]) >= 30:
             raise Bad("Too many alerts (30). Remove one first.")
-        doc["alerts"].append({"id": uuid.uuid4().hex[:10], "symbol": sym, "op": op, "price": price, "fired": None})
+        doc["alerts"].append(alert)
         save(doc)
 
 
@@ -472,17 +883,47 @@ def del_alert(aid):
         save(doc)
 
 
-def check_alerts():
+def rearm_alert(aid):
     with _lock:
-        pending = [a for a in load()["alerts"] if not a.get("fired")]
+        doc = load()
+        for a in doc["alerts"]:
+            if a["id"] == aid:
+                a["fired"] = None
+                a.pop("firedPrice", None)
+                a.pop("firedPct", None)
+        save(doc)
+
+
+def ny_day(t):
+    return datetime.fromtimestamp(t, NY).strftime("%Y-%m-%d")
+
+
+def check_alerts():
+    now = time.time()
+    with _lock:
+        doc = load()
+        stale = [a for a in doc["alerts"] if a["op"] == "move" and a.get("fired") and ny_day(a["fired"]) != ny_day(now)]
+        for a in stale:  # a day-move alert watches again on each new day
+            a["fired"] = None
+        if stale:
+            save(doc)
+        pending = [a for a in doc["alerts"] if not a.get("fired")]
     if not pending:
         return
     q = quotes({a["symbol"] for a in pending}, "1d")
     hit = {}
     for a in pending:
         qt = q.get(a["symbol"])
-        if qt and (qt["price"] >= a["price"] if a["op"] == "above" else qt["price"] <= a["price"]):
-            hit[a["id"]] = qt["price"]
+        if not qt:
+            continue
+        move = (qt["price"] / qt["prevClose"] - 1) * 100 if qt["prevClose"] else 0
+        if a["op"] == "move":
+            fresh = ny_day(qt["time"] or 0) == ny_day(now)  # not yesterday's move, seen again before today's first trade
+            ok = fresh and abs(move) >= a["pct"]
+        else:
+            ok = qt["price"] >= a["price"] if a["op"] == "above" else qt["price"] <= a["price"]
+        if ok:
+            hit[a["id"]] = (qt["price"], move)
     if not hit:
         return
     fired = []
@@ -490,13 +931,14 @@ def check_alerts():
         doc = load()
         for a in doc["alerts"]:
             if a["id"] in hit and not a.get("fired"):
-                a["fired"], a["firedPrice"] = int(time.time()), hit[a["id"]]
+                a["fired"], a["firedPrice"], a["firedPct"] = int(now), hit[a["id"]][0], round(hit[a["id"]][1], 2)
                 fired.append(a)
         save(doc)
     for a in fired:  # desktop notification, where the system has one
+        title = (f"{a['symbol']} is {'up' if a['firedPct'] > 0 else 'down'} {abs(a['firedPct']):.1f}% today" if a["op"] == "move"
+                 else f"{a['symbol']} is {a['op']} ${a['price']:,.2f}")
         try:
-            subprocess.run(["notify-send", "-a", "Folio", "-i", str(ROOT / "icon.svg"),
-                            f"{a['symbol']} is {a['op']} ${a['price']:,.2f}", f"Now ${a['firedPrice']:,.2f}"],
+            subprocess.run(["notify-send", "-a", "Folio", "-i", str(ROOT / "icon.svg"), title, f"Now ${a['firedPrice']:,.2f}"],
                            timeout=5, check=False)
         except Exception:
             pass
@@ -528,60 +970,105 @@ def worker():
         time.sleep(30)
 
 
+MANIFEST = {
+    "name": "Folio", "short_name": "Folio", "start_url": "/", "display": "standalone",
+    "background_color": "#0c0f14", "theme_color": "#0c0f14",
+    "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}],
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, *a):
         pass
 
-    def send(self, code, body, ctype="application/json"):
+    def send(self, code, body, ctype="application/json", download=None):
         data = body if isinstance(body, bytes) else json.dumps(body).encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
+        if download:
+            self.send_header("Content-Disposition", f'attachment; filename="{download}"')
         self.end_headers()
         self.wfile.write(data)
+
+    def body(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        doc = json.loads(self.rfile.read(n) or b"{}")
+        if not isinstance(doc, dict):
+            raise Bad("Bad request.")
+        return doc
 
     def route(self, method):
         u = urllib.parse.urlparse(self.path)
         qs = urllib.parse.parse_qs(u.query)
+        arg = lambda k, d="": qs.get(k, [d])[0]
+        tail = urllib.parse.unquote(u.path.rsplit("/", 1)[1])
         try:
-            if method == "GET" and u.path in ("/", "/index.html"):
-                return self.send(200, (ROOT / "index.html").read_bytes().replace(b"__UI__", ui_version().encode(), 1), "text/html; charset=utf-8")
-            if method == "GET" and u.path == "/icon.svg":
-                return self.send(200, (ROOT / "icon.svg").read_bytes(), "image/svg+xml")
-            if method == "GET" and u.path == "/api/state":
+            if method == "GET":
+                if u.path in ("/", "/index.html"):
+                    return self.send(200, (ROOT / "index.html").read_bytes().replace(b"__UI__", ui_version().encode(), 1), "text/html; charset=utf-8")
+                if u.path == "/icon.svg":
+                    return self.send(200, (ROOT / "icon.svg").read_bytes(), "image/svg+xml")
+                if u.path == "/manifest.webmanifest":
+                    return self.send(200, MANIFEST, "application/manifest+json")
+                if u.path == "/api/state":
+                    return self.send(200, state())
+                if u.path == "/api/history":
+                    return self.send(200, history(arg("range", "1d"), arg("symbol").strip().upper() or None, arg("compare") == "1"))
+                if u.path == "/api/market":
+                    return self.send(200, market())
+                if u.path == "/api/news":
+                    return self.send(200, news())
+                if u.path == "/api/insights":
+                    return self.send(200, insights())
+                if u.path == "/api/calendar":
+                    return self.send(200, calendar())
+                if u.path == "/api/detail":
+                    return self.send(200, detail(arg("symbol").strip().upper()))
+                if u.path == "/api/search":
+                    return self.send(200, search(arg("q")))
+                if u.path == "/api/lookup":
+                    q = yahoo(arg("symbol").strip().upper(), "1d")
+                    return self.send(200, {k: q[k] for k in ("symbol", "name", "price", "currency")})
+                if u.path == "/api/export.csv":
+                    return self.send(200, export_csv(), "text/csv; charset=utf-8", f"folio-{time.strftime('%Y-%m-%d')}.csv")
+                if u.path == "/api/export.json":
+                    with _lock:
+                        doc = load()
+                    return self.send(200, json.dumps(doc, indent=2).encode(), "application/json", f"folio-{time.strftime('%Y-%m-%d')}.json")
+            elif method == "POST":
+                if u.path == "/api/watch":
+                    add_watch(self.body())
+                elif u.path == "/api/alerts":
+                    add_alert(self.body())
+                elif re.fullmatch(r"/api/alerts/\w+/rearm", u.path):
+                    rearm_alert(u.path.split("/")[3])
+                elif u.path == "/api/tx":
+                    add_tx(self.body())
+                else:
+                    return self.send(404, {"error": "Not found"})
                 return self.send(200, state())
-            if method == "GET" and u.path == "/api/history":
-                return self.send(200, history(qs.get("range", ["1d"])[0], qs.get("symbol", [""])[0].strip().upper() or None))
-            if method == "GET" and u.path == "/api/market":
-                return self.send(200, market())
-            if method == "GET" and u.path == "/api/news":
-                return self.send(200, news())
-            if method == "GET" and u.path == "/api/lookup":
-                q = yahoo(qs.get("symbol", [""])[0].strip().upper(), "1d")
-                return self.send(200, {k: q[k] for k in ("symbol", "name", "price", "currency")})
-            if method == "POST" and u.path in ("/api/watch", "/api/alerts"):
-                n = int(self.headers.get("Content-Length") or 0)
-                (add_watch if u.path == "/api/watch" else add_alert)(json.loads(self.rfile.read(n) or b"{}"))
+            elif method == "PUT" and u.path.startswith("/api/tx/"):
+                edit_tx(tail, self.body())
                 return self.send(200, state())
-            if method == "DELETE" and u.path.startswith("/api/watch/"):
-                del_watch(urllib.parse.unquote(u.path.rsplit("/", 1)[1]))
-                return self.send(200, state())
-            if method == "DELETE" and u.path.startswith("/api/alerts/"):
-                del_alert(u.path.rsplit("/", 1)[1])
-                return self.send(200, state())
-            if method == "POST" and u.path == "/api/tx":
-                n = int(self.headers.get("Content-Length") or 0)
-                add_tx(json.loads(self.rfile.read(n) or b"{}"))
-                return self.send(200, state())
-            if method == "DELETE" and u.path.startswith("/api/tx/"):
-                del_tx(u.path.rsplit("/", 1)[1])
+            elif method == "DELETE":
+                if u.path.startswith("/api/watch/"):
+                    del_watch(tail)
+                elif u.path.startswith("/api/alerts/"):
+                    del_alert(tail)
+                elif u.path.startswith("/api/tx/"):
+                    del_tx(tail)
+                else:
+                    return self.send(404, {"error": "Not found"})
                 return self.send(200, state())
             self.send(404, {"error": "Not found"})
         except Bad as e:
             self.send(400, {"error": str(e)})
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # the browser went away mid-answer
         except Exception as e:
             print("error:", repr(e), file=sys.stderr)
             self.send(500, {"error": "Something went wrong on the server."})
@@ -592,11 +1079,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.route("POST")
 
+    def do_PUT(self):
+        self.route("PUT")
+
     def do_DELETE(self):
         self.route("DELETE")
 
 
 if __name__ == "__main__":
-    print(f"Folio on http://{HOST}:{PORT}  (data: {DATA})")
+    print(f"Folio {VERSION} on http://{HOST}:{PORT}  (data: {DATA})")
     threading.Thread(target=worker, daemon=True).start()
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
