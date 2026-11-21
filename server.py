@@ -8,6 +8,7 @@ import csv
 import http.cookiejar
 import io
 import json
+import math
 import os
 import re
 import shutil
@@ -30,7 +31,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "2.0"
+VERSION = "3.0"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -45,6 +46,7 @@ RANGES = {  # range -> (yahoo interval, cache seconds)
     "1y": ("1d", 1800),
     "5y": ("1wk", 3600),
 }
+SPANS = {**RANGES, "2y": ("1d", 1800), "10y": ("1wk", 3600)}  # longer runs, for moving averages
 BENCH = ("^GSPC", "S&P 500")  # what the chart's comparison view measures against
 
 HIST = DATA.with_name("history.jsonl")  # recorded portfolio value over time
@@ -77,6 +79,20 @@ def cached(key, ttl, make, keep_on_error=True):
     return out
 
 
+def cached_soft(key, ttl, make, miss_ttl=300):
+    """Like cached, but a failure answers {} and is only remembered for a few minutes."""
+    with _cache_lock:
+        miss = _cache.get(("miss", key))
+    if miss and time.time() - miss[0] < miss_ttl:
+        return miss[1]
+    try:
+        return cached(key, ttl, make)
+    except Exception:
+        with _cache_lock:
+            _cache[("miss", key)] = (time.time(), {})
+        return {}
+
+
 def fetch(url, timeout=10):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
         return json.load(r)
@@ -88,6 +104,7 @@ def load():
     doc = json.loads(DATA.read_text()) if DATA.exists() else {}
     for key in ("transactions", "watchlist", "alerts"):
         doc.setdefault(key, [])
+    doc.setdefault("plan", {})
     return doc
 
 
@@ -147,7 +164,7 @@ def replay(txs):
 # ---------- quotes ----------
 
 def yahoo(symbol, rng):
-    interval, ttl = RANGES[rng]
+    interval, ttl = SPANS[rng]
     key = (symbol, rng)
     now = time.time()
     with _cache_lock:
@@ -276,11 +293,8 @@ def quotes_full(symbols):
 def profile(symbol):
     """Sector, industry and a short description of a company. Kept for a day."""
     def make():
-        try:
-            url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{urllib.parse.quote(symbol)}?modules=assetProfile"
-            p = _authed(url)["quoteSummary"]["result"][0]["assetProfile"]
-        except Exception:
-            return {}
+        url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{urllib.parse.quote(symbol)}?modules=assetProfile"
+        p = _authed(url)["quoteSummary"]["result"][0]["assetProfile"]
         about = " ".join((p.get("longBusinessSummary") or "").split())
         if len(about) > 340:  # the first sentences that fit
             cut = about[:340]
@@ -288,7 +302,38 @@ def profile(symbol):
         site = p.get("website") or ""
         return {"sector": p.get("sector"), "industry": p.get("industry"), "about": about,
                 "website": site if site.startswith("https://") else None}
-    return cached(("profile", symbol), 86400, make)
+    return cached_soft(("profile", symbol), 86400, make)
+
+
+def fundamentals(symbol):
+    """What analysts expect of a company and what it has reported. Kept for six hours."""
+    def make():
+        url = (f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{urllib.parse.quote(symbol)}"
+               "?modules=financialData,recommendationTrend,earnings,defaultKeyStatistics")
+        r = _authed(url)["quoteSummary"]["result"][0]
+        raw = lambda d, k: ((d or {}).get(k) or {}).get("raw")
+        fd, ks, er = r.get("financialData") or {}, r.get("defaultKeyStatistics") or {}, r.get("earnings") or {}
+        out = {"currency": er.get("financialCurrency") or fd.get("financialCurrency")}
+        if raw(fd, "targetMeanPrice") and raw(fd, "targetLowPrice") and raw(fd, "targetHighPrice"):
+            out["target"] = {"low": raw(fd, "targetLowPrice"), "mean": raw(fd, "targetMeanPrice"), "median": raw(fd, "targetMedianPrice"),
+                             "high": raw(fd, "targetHighPrice"), "n": raw(fd, "numberOfAnalystOpinions")}
+        keys = ("strongBuy", "buy", "hold", "sell", "strongSell")
+        out["ratings"] = [{"period": t.get("period"), "n": [int(t.get(k) or 0) for k in keys]}
+                          for t in (r.get("recommendationTrend") or {}).get("trend") or [] if sum(int(t.get(k) or 0) for k in keys)]
+        ch = er.get("earningsChart") or {}
+        out["eps"] = [{"q": x.get("date"), "actual": raw(x, "actual"), "estimate": raw(x, "estimate"), "reported": raw(x, "reportedDate")}
+                      for x in ch.get("quarterly") or [] if raw(x, "actual") is not None]
+        if raw(ch, "currentQuarterEstimate") is not None:
+            out["next"] = {"q": f"{ch.get('currentQuarterEstimateDate') or ''}{ch.get('currentQuarterEstimateYear') or ''}", "estimate": raw(ch, "currentQuarterEstimate")}
+        fc = er.get("financialsChart") or {}
+        for span in ("yearly", "quarterly"):
+            out[span] = [{"date": str(x.get("date")), "revenue": raw(x, "revenue"), "earnings": raw(x, "earnings")}
+                         for x in fc.get(span) or [] if raw(x, "revenue") is not None][-4:]
+        out["margins"] = {k: raw(fd, f) for k, f in (("gross", "grossMargins"), ("operating", "operatingMargins"), ("profit", "profitMargins"))}
+        out["growth"] = {"revenue": raw(fd, "revenueGrowth"), "earnings": raw(fd, "earningsGrowth")}
+        out["beta"] = raw(ks, "beta")
+        return out
+    return cached_soft(("fund", symbol), 21600, make)
 
 
 def detail(symbol):
@@ -314,6 +359,7 @@ def detail(symbol):
         "earnings": next((t for t in (g("earningsTimestampStart"), g("earningsTimestamp")) if t and t > now - 43200), None),
         "earningsEstimate": bool(g("isEarningsDateEstimate")),
         "rating": g("averageAnalystRating"),
+        "fund": fundamentals(symbol) if kind == "EQUITY" else {},
         **{k: prof.get(k) for k in ("sector", "industry", "about", "website")},
     }
 
@@ -403,7 +449,7 @@ def state():
         "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"],
                    "spark": [c for _, c in w["points"]][::5]}
                   for s, w in quotes(doc["watchlist"], "1d").items() if w],
-        "alerts": doc["alerts"],
+        "alerts": doc["alerts"], "plan": doc["plan"],
         "ui": ui_version(), "version": VERSION,
     }
 
@@ -571,7 +617,37 @@ def _candles(bars, limit=110):
     return out, n
 
 
-def history(rng, symbol=None, compare=False):
+AVERAGES = {"3mo": ("2y", ((50, "50-day"), (200, "200-day"))), "1y": ("2y", ((50, "50-day"), (200, "200-day"))),
+            "5y": ("10y", ((10, "10-week"), (40, "40-week")))}  # chart range -> (longer run to average over, the averages)
+
+
+def _utc_day(t):
+    return time.strftime("%Y-%m-%d", time.gmtime(t))
+
+
+def averages(symbol, rng, ts):
+    """Moving averages of the closing price, read at each of the chart's bars."""
+    if rng not in AVERAGES or not ts:
+        return []
+    span, kinds = AVERAGES[rng]
+    try:
+        pts = yahoo(symbol, span)["points"]
+    except Bad:
+        return []
+    closes, out = [c for _, c in pts], []
+    for n, name in kinds:
+        by, run = {}, 0.0
+        for i, c in enumerate(closes):
+            run += c - (closes[i - n] if i >= n else 0)
+            if i >= n - 1:
+                by[_utc_day(pts[i][0])] = run / n
+        vals = [by.get(_utc_day(t)) for t in ts]
+        if sum(v is not None for v in vals) > 1:
+            out.append({"n": n, "name": name, "v": [None if v is None else round(v, 4) for v in vals]})
+    return out
+
+
+def history(rng, symbol=None, compare=False, avg=False):
     if rng == "all" and symbol:
         rng = "1y"
     if rng == "all":  # the portfolio's real recorded value
@@ -619,6 +695,8 @@ def history(rng, symbol=None, compare=False):
                "candles": candles, "per": per, "marks": marks}
         if compare and symbol != BENCH[0]:
             out["versus"] = _versus(ts, rng, [BENCH[0]], dict([BENCH]))
+        if avg:
+            out["ma"] = averages(symbol, rng, ts)
         return out
     q = {s: v for s, v in quotes(list(pos), rng).items() if v and v["points"]}
     if not q:
@@ -717,6 +795,193 @@ def calendar():
                 out.append({"symbol": s, "kind": "dividend", "t": d, "estimate": False, "held": s in pos})
         return sorted(out, key=lambda x: x["t"])
     return cached(("calendar", tuple(syms)), 1800, make) if syms else []
+
+
+# ---------- analysis ----------
+
+def _mean(x):
+    return sum(x) / len(x)
+
+
+def _cov(x, y):
+    mx, my = _mean(x), _mean(y)
+    return sum((a - mx) * (b - my) for a, b in zip(x, y)) / (len(x) - 1)
+
+
+def _corr(x, y):
+    sx, sy = _cov(x, x), _cov(y, y)
+    return _cov(x, y) / math.sqrt(sx * sy) if sx > 0 and sy > 0 else None
+
+
+def _drawdown(vals):
+    """How far each value sits below the highest one before it, in percent."""
+    out, top = [], vals[0]
+    for v in vals:
+        top = max(top, v)
+        out.append((v / top - 1) * 100)
+    return out
+
+
+def _r(x, d=2):
+    return None if x is None else round(x, d)
+
+
+def analysis():
+    """Risk, diversification and benchmark figures for today's holdings, from a year of daily prices."""
+    with _lock:
+        doc = load()
+    pos, cash = replay(doc["transactions"])[:2]
+    flows = tuple((t["date"], t["amount"] if t["type"] == "deposit" else -t["amount"])
+                  for t in doc["transactions"] if t["type"] in ("deposit", "withdraw"))
+    key = ("analysis", tuple(sorted((s, round(p["qty"], 6)) for s, p in pos.items())), round(cash, 2), flows)
+    return cached(key, 900, lambda: _analyse(pos, cash, flows))
+
+
+def _analyse(pos, cash, flows):
+    q = quotes(list(pos) + [BENCH[0]], "1y")
+    bench = q.pop(BENCH[0], None)
+    if not bench or len(bench["points"]) < 30:
+        raise Bad("Couldn't load a year of prices for the S&P 500.")
+    days, ts, bpx = [], [], []  # one row per day the benchmark traded
+    for t, c in bench["points"]:
+        d = _utc_day(t)
+        if days and days[-1] == d:
+            bpx[-1] = c
+        else:
+            days.append(d), ts.append(t), bpx.append(c)
+    px = {}
+    for s in pos:  # each holding's close on those days, carrying the last one over gaps
+        items = sorted({_utc_day(t): c for t, c in (q.get(s) or {"points": []})["points"]}.items())
+        col, j, last = [], 0, None
+        for d in days:
+            while j < len(items) and items[j][0] <= d:
+                last = items[j][1]
+                j += 1
+            col.append(last)
+        if sum(c is not None for c in col) >= 21:
+            px[s] = col
+    rets = lambda col: [None if a is None or b is None or not a else b / a - 1 for a, b in zip(col, col[1:])]
+    rb, rs = rets(bpx), {s: rets(col) for s, col in px.items()}
+    ann = math.sqrt(252)
+
+    def pair(x, y):  # the days both series have a return for
+        both = [(a, b) for a, b in zip(x, y) if a is not None and b is not None]
+        return [a for a, _ in both], [b for _, b in both]
+
+    full = quotes_full(list(pos))
+    value = {s: p["qty"] * ((q.get(s) or {}).get("price") or p["cost"] / p["qty"]) for s, p in pos.items()}
+    total = sum(value.values()) + cash
+    hold = {}
+    for s, p in pos.items():
+        kind = (full.get(s) or {}).get("quoteType") or ((q.get(s) or {}).get("type"))
+        h = {"symbol": s, "kind": kind, "weight": _r(value[s] / total * 100 if total else 0),
+             "sector": (profile(s).get("sector") if kind == "EQUITY" else None)
+             or {"ETF": "Funds", "MUTUALFUND": "Funds", "CRYPTOCURRENCY": "Crypto"}.get(kind, "Other"),
+             "divRate": (full.get(s) or {}).get("trailingAnnualDividendRate") or (full.get(s) or {}).get("dividendRate") or 0}
+        if s in px:
+            col = [c for c in px[s] if c is not None]
+            a, b = pair(rs[s], rb)
+            h.update(days=len(a), vol=_r(math.sqrt(_cov(a, a)) * ann * 100), beta=_r(_cov(a, b) / _cov(b, b)),
+                     corr=_r(_corr(a, b)), ret=_r((col[-1] / col[0] - 1) * 100), dd=_r(min(_drawdown(col))))
+        hold[s] = h
+    out = {"asOf": int(time.time()), "holdings": list(hold.values()), "missing": [s for s in pos if s not in px],
+           "bench": {"symbol": BENCH[0], "name": BENCH[1]}}
+
+    names = list(px) + [BENCH[0]]
+    series = {**rs, BENCH[0]: rb}
+    matrix = []
+    for a in names:
+        row = []
+        for b in names:
+            x, y = pair(series[a], series[b])
+            row.append(1.0 if a == b else _r(_corr(x, y)) if len(x) >= 20 else None)
+        matrix.append(row)
+    out["matrix"] = {"names": names, "v": matrix}
+
+    # today's holdings and cash, held unchanged over the days every one of them has a price for
+    start = max((next(i for i, c in enumerate(col) if c is not None) for col in px.values()), default=0)
+    if px and len(days) - start >= 21:
+        v = [cash + sum(pos[s]["qty"] * px[s][i] for s in px) for i in range(start, len(days))]
+        rp = [b / a - 1 for a, b in zip(v, v[1:])]
+        rbw = rb[start:]
+        var = _cov(rp, rp)
+        for s in px:  # each holding's share of the swings
+            c = [pos[s]["qty"] * (px[s][start + i + 1] - px[s][start + i]) / v[i] for i in range(len(rp))]
+            hold[s]["risk"] = _r(_cov(c, rp) / var * 100) if var > 0 else None
+        try:
+            rf = yahoo("^IRX", "1d")["price"] / 100  # the 13-week Treasury bill yield
+        except Bad:
+            rf = None
+        sd = math.sqrt(var)
+        dd, ddb = _drawdown(v), _drawdown(bpx[start:])
+        low = dd.index(min(dd))
+        short = [s for s, col in px.items() if col[0] is None]
+        out["portfolio"] = {
+            "days": len(rp), "from": ts[start], "limit": max(short, key=lambda s: px[s].index(next(c for c in px[s] if c is not None))) if short else None,
+            "vol": _r(sd * ann * 100), "beta": _r(_cov(rp, rbw) / _cov(rbw, rbw)), "corr": _r(_corr(rp, rbw)),
+            "ret": _r((v[-1] / v[0] - 1) * 100), "dd": _r(min(dd)), "ddAt": ts[start + low],
+            "sharpe": _r((_mean(rp) - rf / 252) / sd * ann) if rf is not None and sd > 0 else None, "rf": _r(rf * 100) if rf is not None else None,
+        }
+        out["bench"].update(vol=_r(math.sqrt(_cov(rbw, rbw)) * ann * 100), ret=_r((bpx[-1] / bpx[start] - 1) * 100), dd=_r(min(ddb)))
+        out["under"] = {"t": ts[start:], "pf": [_r(x) for x in dd], "bench": [_r(x) for x in ddb]}
+
+    if flows:  # the same deposits and withdrawals, put into the benchmark on the same days
+        src = bench["points"]
+        if min(d for d, _ in flows) < days[0]:
+            try:
+                src = yahoo(BENCH[0], "10y")["points"]
+            except Bad:
+                pass
+        dated = [(_utc_day(t), c) for t, c in src]
+        units = sum(amt / next((c for d, c in reversed(dated) if d <= when), dated[0][1]) for when, amt in flows)
+        out["whatif"] = {"value": _r(units * bench["price"]), "approx": min(d for d, _ in flows) < dated[0][0]}
+    return out
+
+
+SECTORS = {"XLK": ("Technology", "Technology"), "XLC": ("Communication", "Communication Services"), "XLY": ("Consumer discretionary", "Consumer Cyclical"),
+           "XLF": ("Financials", "Financial Services"), "XLV": ("Health care", "Healthcare"), "XLI": ("Industrials", "Industrials"),
+           "XLP": ("Consumer staples", "Consumer Defensive"), "XLE": ("Energy", "Energy"), "XLU": ("Utilities", "Utilities"),
+           "XLB": ("Materials", "Basic Materials"), "XLRE": ("Real estate", "Real Estate")}  # fund -> (name, Yahoo's name for the sector)
+
+
+def sectors():
+    """Today's change in each part of the US market, from the sector funds that track them."""
+    def make():
+        out = []
+        for s, qt in quotes(list(SECTORS), "1d").items():
+            if qt and qt["prevClose"]:
+                out.append({"symbol": s, "name": SECTORS[s][0], "sector": SECTORS[s][1], "pct": round((qt["regular"] / qt["prevClose"] - 1) * 100, 2)})
+        if not out:
+            raise Bad("Couldn't load the sector funds.")
+        return out
+    return cached("sectors", 60, make)
+
+
+def set_plan(body):
+    """Save the planner's settings: the goal, what you add, the assumptions and the target mix."""
+    limits = {"goal": (0, 1e12), "monthly": (0, 1e9), "years": (1, 50), "growth": (-10, 30), "vol": (0, 100), "inflation": (0, 15)}
+    with _lock:
+        doc = load()
+        plan = dict(doc["plan"])
+        for k, (lo, hi) in limits.items():
+            if k in body:
+                try:
+                    v = float(body[k])
+                except (TypeError, ValueError):
+                    raise Bad("That isn't a number.")
+                if not lo <= v <= hi:  # also turns away NaN
+                    raise Bad(f"{k.capitalize()} must be between {lo:g} and {hi:g}.")
+                plan[k] = v
+        if "targets" in body:
+            t = body["targets"]
+            if not isinstance(t, dict) or len(t) > 60:
+                raise Bad("Bad target mix.")
+            try:
+                plan["targets"] = {str(k)[:16].upper(): min(100.0, max(0.0, float(v))) for k, v in t.items() if float(v) == float(v)}
+            except (TypeError, ValueError):
+                raise Bad("Targets must be numbers.")
+        doc["plan"] = plan
+        save(doc)
 
 
 def num(body, key, positive=True):
@@ -1017,13 +1282,17 @@ class Handler(BaseHTTPRequestHandler):
                 if u.path == "/api/state":
                     return self.send(200, state())
                 if u.path == "/api/history":
-                    return self.send(200, history(arg("range", "1d"), arg("symbol").strip().upper() or None, arg("compare") == "1"))
+                    return self.send(200, history(arg("range", "1d"), arg("symbol").strip().upper() or None, arg("compare") == "1", arg("avg") == "1"))
                 if u.path == "/api/market":
                     return self.send(200, market())
                 if u.path == "/api/news":
                     return self.send(200, news())
                 if u.path == "/api/insights":
                     return self.send(200, insights())
+                if u.path == "/api/analysis":
+                    return self.send(200, analysis())
+                if u.path == "/api/sectors":
+                    return self.send(200, sectors())
                 if u.path == "/api/calendar":
                     return self.send(200, calendar())
                 if u.path == "/api/detail":
@@ -1053,6 +1322,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, state())
             elif method == "PUT" and u.path.startswith("/api/tx/"):
                 edit_tx(tail, self.body())
+                return self.send(200, state())
+            elif method == "PUT" and u.path == "/api/plan":
+                set_plan(self.body())
                 return self.send(200, state())
             elif method == "DELETE":
                 if u.path.startswith("/api/watch/"):
