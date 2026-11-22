@@ -1128,6 +1128,48 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
 .flagline { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-2); padding-left: 9px; border-left: 2px solid var(--warn); display: flex; gap: 6px 10px; align-items: center; flex-wrap: wrap; }
 .ai-more .chk { margin: 10px 0 0; font-size: 13px; }
 @media (min-width: 1100px) { #next > #nxBetCard { order: 4; } #nxBetCard { grid-column: span 12; } }
+/* ================= 9.0: the markets, read ================= */
+#mkReadCard { order: -5; } #mkOddCard { order: -4; } #mkFearCard { order: -3; } #mkCurveCard { order: -2; } #mkSecCard { order: -1; }
+@media (min-width: 1100px) { #mkReadCard { grid-column: span 12; } #mkOddCard { grid-column: span 7; grid-row: span 2; } #mkFearCard, #mkCurveCard { grid-column: span 5; } #mkSecCard { grid-column: span 12; }
+  #mkSec.secl { display: block; columns: 2; column-gap: 64px; } #mkSec.secl .r { break-inside: avoid; } }
+.mk-read p.mk-head { font-size: clamp(22px, 2.2vw, 30px); line-height: 1.2; color: var(--text); margin-bottom: 14px; }
+#mkOdd td:first-child { white-space: normal; }
+@container (max-width: 520px) { #mkOdd .zb { display: none; } #mkOdd td, #mkOdd th { padding-left: 5px; padding-right: 5px; font-size: 13px; } }
+.mk-read { display: grid; gap: 22px 44px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .mk-read { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } .mk-read > :last-child { padding-left: 40px; border-left: 1px solid var(--line); } }
+.mk-head { margin: 0 0 12px; font-size: clamp(22px, 2.2vw, 30px); font-weight: 650; letter-spacing: -.018em; line-height: 1.2; }
+.mk-read p, .mk-read li { font-size: 14.5px; line-height: 1.6; color: var(--text-2); margin: 0 0 9px; } .mk-read p b, .mk-read li b { color: var(--text); font-weight: 600; }
+.mk-you { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px 18px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mk-ai h3 { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); margin: 16px 0 8px; }
+.mk-ai .ai-head { font-size: clamp(17px, 1.5vw, 20px); margin-bottom: 10px; }
+.mk-ai ul { margin: 0; padding: 0; list-style: none; } .mk-ai li { padding-left: 14px; position: relative; }
+.mk-ai li::before { content: ""; position: absolute; left: 0; top: .66em; width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
+.mk-ai .mini:disabled { opacity: .5; cursor: default; }
+#mkOddCard { container-type: inline-size; }
+#mkOdd td, #mkOdd th { padding: 8px 8px; font-size: 14px; } #mkOdd td:first-child, #mkOdd th:first-child { padding-left: 0; } #mkOdd td:last-child, #mkOdd th:last-child { padding-right: 0; }
+#mkOdd th { white-space: normal; line-height: 1.3; vertical-align: bottom; } #mkOdd tbody tr[data-sym] { cursor: pointer; }
+#mkOdd :is(.o2, .o3) { display: none; }
+@container (min-width: 560px) { #mkOdd .o2 { display: table-cell; } }
+@container (min-width: 760px) { #mkOdd .o3 { display: table-cell; } }
+.zc { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.zb { position: relative; width: clamp(70px, 14cqw, 150px); height: 10px; border-radius: 5px; background: var(--surface-2); flex: none; }
+.zb .g { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--line-2); } .zb .g.c { background: var(--text-3); }
+.zb .b { position: absolute; top: 0; bottom: 0; border-radius: 4px; min-width: 2px; }
+.zc b { font-weight: 600; min-width: 38px; text-align: right; }
+.vx { position: relative; height: 12px; display: flex; gap: 2px; margin: 26px 8px 0; }
+.vx > i { display: block; border-radius: 4px; background: color-mix(in srgb, var(--warn) var(--k), var(--surface-2)); }
+.vx .mk { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--text); }
+.vx .mk::after { content: attr(data-v); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 650; color: var(--text); padding-bottom: 2px; }
+.vx .md { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--text-3); }
+.vx-ax { display: flex; gap: 2px; margin: 6px 8px 0; font-size: 11px; color: var(--text-3); } .vx-ax span { text-align: center; white-space: nowrap; overflow: hidden; }
+.mk-say { margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: var(--text-2); } .mk-say b { color: var(--text); font-weight: 600; }
+#mkCurve { min-height: 210px; }
+.secl { display: grid; gap: 2px; }
+.secl .r { display: grid; grid-template-columns: minmax(96px, 34%) minmax(0, 1fr) 64px; gap: 12px; align-items: center; padding: 5px 0; font-size: 13.5px; }
+.secl .n { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-2); } .secl .n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .secl .n.me { color: var(--text); font-weight: 600; }
+.secl .t { position: relative; height: 12px; } .secl .t::before { content: ""; position: absolute; left: var(--z); top: -3px; bottom: -3px; width: 1px; background: var(--line-2); }
+.secl .t i { position: absolute; top: 0; bottom: 0; border-radius: 4px; min-width: 2px; }
+.secl .v { text-align: right; }
 </style>
 </head>
 <body>
@@ -1313,6 +1355,30 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     </section>
   </div>
   <div class="page" id="markets">
+    <section class="card" id="mkReadCard">
+      <div class="ch"><h2>The markets, read</h2><span class="tag num" id="mkTag"></span></div>
+      <div class="mk-read"><div id="mkRead"><div class="flat" style="font-size:13px">Reading the markets…</div></div><div class="mk-ai" id="mkAi"></div></div>
+    </section>
+    <section class="card" id="mkOddCard">
+      <div class="ch"><h2>How unusual is it</h2></div>
+      <table id="mkOdd"><thead><tr><th>Market</th><th>Last session</th><th title="The move, set against that market’s ordinary daily move over the past year. The marks are one and two ordinary days.">Against an ordinary day</th><th class="o2">One month</th><th class="o3" title="How far the price is below its highest close of the past year">From its high</th><th class="o3" title="How far the price is from its average of the past 200 trading days. Above it, the longer trend is up; below, down.">Against its 200-day average</th></tr></thead><tbody id="mkOddRows"></tbody></table>
+      <p class="note">An ordinary day is the usual size of that market’s daily move over the past year. A bar that reaches the second mark is a move you would see only a few times a year. Click a row to chart it.</p>
+    </section>
+    <section class="card" id="mkFearCard">
+      <div class="ch"><h2>How nervous traders are</h2></div>
+      <div id="mkFear"></div>
+      <p class="note">The VIX is what traders pay to insure against swings in the S&amp;P 500 over the next month. It rises when they are nervous and falls when they are calm. The dashed mark is its usual level.</p>
+    </section>
+    <section class="card" id="mkSecCard">
+      <div class="ch"><h2>Which parts of the market</h2><div class="tabs sm" id="secTabs" role="group" aria-label="Period"><button data-sec="pct">Last session</button><button data-sec="m1">Month</button></div></div>
+      <div class="secl num" id="mkSec"></div>
+      <p class="note" id="mkSecNote"></p>
+    </section>
+    <section class="card" id="mkCurveCard">
+      <div class="ch"><h2>What lending to the US pays</h2><div class="cmpl num" id="mkCurveKey"></div></div>
+      <div class="plot tipbox" id="mkCurve"></div>
+      <p class="mk-say num" id="mkCurveSay"></p>
+    </section>
     <div class="boards" id="boards"><section class="card"><h2>Markets</h2><div class="flat" style="font-size:13px">Loading the markets…</div></section></div>
     <section class="card" id="rankCard">
       <div class="ch"><h2>How far each has come</h2><div class="tabs sm" id="rankTabs" role="group" aria-label="Period"><button data-rank="day">Today</button><button data-rank="m1">Month</button><button data-rank="ytd">This year</button><button data-rank="y1">Year</button></div></div>
@@ -3208,7 +3274,94 @@ $('searchBox').onclick = openPal;
 // W: boards, sessions, movers and the longer-run ranking.
 let W = null, wAt = 0, wBusy = false, moverTab = store.get('mover', 'gainers'), rankTab = store.get('rank', 'ytd');
 const wItems = () => W ? W.groups.flatMap(g => g.items) : [];
+// PU: the markets, read: how unusual the day is, the fear gauge, rates, sectors, what it meant for you, and Claude's brief
+let PU = null, puAt = 0, puBusy = false, puPoll = null, secTab = store.get('sec', 'pct');
+const pts = (n, d = 2) => sign(n) + Math.abs(n).toFixed(d) + ' pts';
+async function loadPulse(force) {
+  if (puBusy || (!force && PU && Date.now() - puAt < 60000)) return renderPulse();
+  puBusy = true;
+  try { PU = await api('/api/pulse'); puAt = Date.now(); if (PU.claude.busy) puWatch(); } catch {}
+  puBusy = false; renderPulse();
+}
+function puWatch() {
+  if (puPoll) return;
+  puPoll = setInterval(async () => { const el = $('mkSecs'); if (el && PU?.claude.busy) el.textContent = `${Math.max(0, Math.round(Date.now() / 1000 - PU.claude.since))} s`;
+    if (Date.now() % 2000 > 1000) return;
+    try { const p = await api('/api/pulse'); PU = p; puAt = Date.now(); if (!p.claude.busy) { clearInterval(puPoll); puPoll = null; renderPulse(); } } catch {} }, 1000);
+}
+function renderPulse() {
+  if (!PU || view !== 'markets') return;
+  const R = Object.fromEntries(PU.rows.map(r => [r.symbol, r])), s = R['^GSPC'], closed = PU.state === 'closed', when = new Date(PU.asOf * 1000);
+  put($('mkTag'), closed ? `The last US session, ${when.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}` : PU.state === 'open' ? 'US market open' : 'Before or after US hours');
+  const mv = (r, d = 2) => r.kind === 'rate' ? pts(r.day) : pct(r.day, d), times = r => `${Math.abs(r.z).toFixed(1)} times an ordinary day`;
+  // ---- the day in words ----
+  if (s) { const z = s.z, dn = s.day < 0, v = PU.vix, t = R['^TNX'], you = PU.you, secs = PU.sectors || [];
+    const head = z <= -2 ? 'A hard fall for US stocks' : z <= -1 ? 'A clear down day for US stocks' : z < -0.4 ? 'A soft day for US stocks' : z <= 0.4 ? 'A quiet day for US stocks' : z < 1 ? 'A firm day for US stocks' : z < 2 ? 'A clear up day for US stocks' : 'A strong rally in US stocks';
+    const perYear = s.rarer / (s.days / 252), often = s.rarer <= 1 ? `the largest ${dn ? 'fall' : 'rise'} in about ${Math.round(s.days / 252)} years` : `A ${dn ? 'fall' : 'rise'} this large has come on ${s.rarer} of the last ${s.days.toLocaleString('en-US')} trading days, about ${perYear >= 2.5 ? `${Math.round(perYear)} times a year` : perYear >= 1.5 ? 'twice a year' : perYear >= 0.75 ? 'once a year' : `once every ${Math.round(1 / perYear)} years`}`;
+    const zone = v && (v.level < 15 ? 'calm' : v.level < 20 ? 'an ordinary level' : v.level < 30 ? 'nervous' : 'real fear');
+    const odd = PU.rows.filter(r => !['^GSPC', '^TNX', '^VIX', '^IXIC'].includes(r.symbol) && Math.abs(r.z) >= 1.5).sort((a, b) => Math.abs(b.z) - Math.abs(a.z)).slice(0, 3);
+    const live = secs.filter(x => x.pct != null), down = live.filter(x => x.pct < 0).length, best = [...live].sort((a, b) => b.pct - a.pct)[0], worst = [...live].sort((a, b) => a.pct - b.pct)[0];
+    put($('mkRead'), `<p class="mk-head">${head}</p>
+      <p>The S&amp;P 500 ${dn ? 'fell' : 'rose'} <b>${Math.abs(s.day).toFixed(2)}%</b>, <b>${times(s)}</b>.${Math.abs(z) >= 1.5 ? ` ${often[0] === 'A' ? often : `It was ${often}`}.` : ''}${R['^IXIC'] ? ` The Nasdaq, heavier in technology, ${R['^IXIC'].day < 0 ? 'fell' : 'rose'} ${Math.abs(R['^IXIC'].day).toFixed(2)}%.` : ''}</p>`
+      + (v ? `<p>The VIX, which shows how nervous traders are, ${v.level >= v.prev ? 'rose' : 'fell'} to <b>${v.level.toFixed(1)}</b>: ${zone}, higher than on ${v.below}% of days in the past ${v.years} years.${t ? ` The 10-year Treasury yield ${t.day < 0 ? 'fell' : 'rose'} ${Math.abs(t.day).toFixed(2)} points to ${t.price.toFixed(2)}%${z <= -1 && t.z <= -1 ? ', as money moved into government bonds, the usual shelter' : z <= -1 && t.z >= 1 ? ', so bonds fell with stocks and gave no shelter' : ''}.` : ''}</p>` : '')
+      + (live.length ? `<p>${down === live.length ? `All ${live.length} parts of the market fell` : down === 0 ? `All ${live.length} parts of the market rose` : `${down} of the ${live.length} parts of the market fell`}; ${esc(best.name.toLowerCase())} did best (${pct(best.pct)}) and ${esc(worst.name.toLowerCase())} worst (${pct(worst.pct)}).${odd.length ? ` Also out of the ordinary: ${words(odd.map(r => `${esc(r.name.split(' · ')[0])} ${mv(r)}`))}.` : ''}</p>` : '')
+      + (you && Math.abs(you.bench) >= 0.25 ? `<div class="mk-you num">${[['The S&amp;P 500', pct(you.bench), 'last session'], ['Your holdings usually move', you.beta.toFixed(1) + '×', 'as far as the index'], ['So to be expected', pct(you.expected), 'for your holdings'], ['They moved', `<span class="${cls(you.day)}">${pct(you.day)}</span>`, Math.abs(you.day - you.expected) < Math.max(0.6, Math.abs(you.expected) * 0.2) ? 'about what the index implied' : (you.day < you.expected ? 'worse than the index implied' : 'better than the index implied')]].map(([k, val, sub]) => `<div class="st"><div class="k">${k}</div><div class="v">${val}</div><div class="s">${sub}</div></div>`).join('')}</div>` : '')); }
+  // ---- Claude's brief ----
+  { const c = PU.claude, b = c.brief, old = b && b.asOf !== PU.asOf, ago = b && aiAgo(b.at), list = (t, xs) => xs.length ? `<h3>${t}</h3><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+    put($('mkAi'), (c.busy ? `<div class="ai-busy" role="status"><i class="spin"></i><b>Claude is reading the markets…</b><span class="num" id="mkSecs"></span></div>` : '')
+      + (b ? `<p class="ai-head">${esc(b.headline)}</p><p>${esc(b.what)}</p>${list('What seems to be behind it', b.why)}<h3>For you</h3><p>${esc(b.you)}</p>${list('Coming up', b.watch)}
+          <div class="ai-acts"><button class="mini" type="button" data-brief${c.busy ? ' disabled' : ''}>Ask again</button><span class="tag">${esc(b.model)} · ${ago} · from ${many(b.headlines, 'headline')}${old ? ' · <b>about an earlier session</b>' : ''}</span></div>`
+        : c.busy ? '<p class="hint">This usually takes under a minute.</p>'
+        : `<p class="ai-lead">The figures say what happened. Claude can read them together with the headlines and say what seems to be behind it, and what it means for what you hold.</p>${c.available ? `<div><button class="btn" type="button" data-brief>${ic('spark', 15)}Ask Claude what is going on</button></div>` : '<p class="hint">Folio reaches Claude through Claude Code, which it can’t find on this computer.</p>'}`)
+      + `<div class="err" id="mkErr" role="alert">${esc(c.error || '')}</div>`); }
+  // ---- how unusual ----
+  put($('mkOddRows'), PU.rows.map(r => { const k = Math.min(Math.abs(r.z), 4) / 4 * 50, rate = r.kind === 'rate', plain = rate || r.kind === 'vix', tone = x => plain ? '' : cls(x), f = (x, d = 1) => x == null ? '<span class="flat">—</span>' : `<span class="${tone(x)}">${rate ? pts(x) : pct(x, d)}</span>`;
+    return `<tr data-sym="${esc(r.symbol)}" title="Show ${esc(r.name)} on the chart"><td><b>${esc(r.name)}</b></td><td class="num ${tone(r.day)}">${mv(r)}</td>
+      <td class="num"><div class="zc" title="Its ordinary daily move over the past year: ${rate ? r.usual.toFixed(2) + ' points' : r.usual.toFixed(2) + '%'}. It moved at least this far, the same way, on ${r.rarer.toLocaleString('en-US')} of the last ${r.days.toLocaleString('en-US')} trading days."><div class="zb"><i class="g" style="left:25%"></i><i class="g" style="left:37.5%"></i><i class="g c" style="left:50%"></i><i class="g" style="left:62.5%"></i><i class="g" style="left:75%"></i><i class="b" style="${r.day < 0 ? `right:50%` : `left:50%`};width:${k.toFixed(1)}%;background:var(--${plain ? 'text-3' : r.day < 0 ? 'down' : 'up'})"></i></div><b>${Math.abs(r.z).toFixed(1)}×</b></div></td>
+      <td class="num o2">${f(r.m1)}</td><td class="num o3">${r.fromHigh == null ? '<span class="flat">—</span>' : r.fromHigh > -0.05 ? 'at its high' : pct(r.fromHigh, 1)}</td><td class="num o3">${f(r.vs200)}</td></tr>`; }).join(''));
+  // ---- the fear gauge ----
+  if (PU.vix) { const v = PU.vix, lo = 10, hi = 50, at = x => (clamp(x, lo, hi) - lo) / (hi - lo) * 100, zones = [[15, 'Calm', 18], [20, 'Ordinary', 38], [30, 'Nervous', 64], [50, 'Fear', 92]], w = (z, i) => z[0] - (i ? zones[i - 1][0] : lo);
+    const word = v.level < 15 ? 'Calm' : v.level < 20 ? 'Ordinary' : v.level < 30 ? 'Nervous' : 'Fear';
+    put($('mkFear'), `<div class="vx" role="img" aria-label="VIX at ${v.level.toFixed(1)}: ${word}">${zones.map((z, i) => `<i style="flex:${w(z, i)};--k:${z[2]}%"></i>`).join('')}<i class="md" style="left:${at(v.median)}%" title="Its usual level: ${v.median}"></i><i class="mk" style="left:${at(v.level)}%" data-v="${v.level.toFixed(1)}"></i></div>
+      <div class="vx-ax">${zones.map((z, i) => `<span style="flex:${w(z, i)}">${z[1]}</span>`).join('')}</div>
+      <p class="mk-say num"><b>${word}.</b> The VIX closed at <b>${v.level.toFixed(1)}</b>, ${v.level >= v.prev ? 'up' : 'down'} from ${v.prev.toFixed(1)}. It has been lower than this on <b>${v.below}%</b> of days in the past ${v.years} years, and usually sits near ${v.median}. ${v.level >= 30 ? 'Readings this high come when prices are falling fast; they have never lasted long, but nobody can say when they end.' : v.level < 15 ? 'Readings this low mean traders expect little trouble, which is not the same as there being none.' : ''}</p>`); }
+  // ---- sectors ----
+  { const key = secTab, live = (PU.sectors || []).filter(x => x[key] != null).sort((a, b) => b[key] - a[key]), max = Math.max(0.5, ...live.map(x => Math.abs(x[key]))), mine = PU.you?.sectors || {}, anyDown = live.some(x => x[key] < 0), anyUp = live.some(x => x[key] > 0), zero = anyDown && anyUp ? 50 : anyDown ? 100 : 0, span = anyDown && anyUp ? 50 : 100;
+    for (const b of $('secTabs').children) b.setAttribute('aria-pressed', b.dataset.sec === key);
+    put($('mkSec'), live.map(x => { const own = mine[x.sector] || [], wd = Math.abs(x[key]) / max * span;
+      return `<div class="r" title="${esc(x.name)}, measured by the fund ${esc(x.symbol)}"><div class="n${own.length ? ' me' : ''}">${own.map(o => `<i class="sw" style="background:${colors[o] || 'var(--neutral)'}" title="${esc(o)}"></i>`).join('')}<span>${esc(x.name)}${own.length ? ' · ' + esc(own.join(', ')) : ''}</span></div>
+        <div class="t" style="--z:${zero}%"><i style="${x[key] < 0 ? `right:${100 - zero}%` : `left:${zero}%`};width:${wd.toFixed(1)}%;background:var(--${x[key] < 0 ? 'down' : 'up'})"></i></div><div class="v ${cls(x[key])}">${pct(x[key])}</div></div>`; }).join(''));
+    put($('mkSecNote'), `The eleven parts of the US market, each measured by the fund that tracks it.${Object.keys(mine).length ? ' The ones in bold hold something of yours.' : ''} When nearly all move the same way, the whole market is being repriced; when they split, money is moving between them.`); }
+  drawCurve();
+}
+function drawCurve() {
+  const box = $('mkCurve'), W = box.clientWidth, Hh = box.clientHeight, C = PU?.curve || [];
+  if (C.length < 2 || W < 200 || Hh < 140) return;
+  const pl = 44, pr = 18, pt = 24, pb = 26, f = z => z.toFixed(1), all = C.flatMap(c => [c.now, c.month, c.year]), tk = niceTicks(Math.min(...all) - 0.15, Math.max(...all) + 0.15, 4), step = tk.ticks[1] - tk.ticks[0];
+  while (tk.ticks[0] > Math.min(...all)) tk.ticks.unshift(+(tk.ticks[0] - step).toFixed(6)); while (tk.ticks.at(-1) < Math.max(...all) + 0.12) tk.ticks.push(+(tk.ticks.at(-1) + step).toFixed(6));
+  const lo = tk.ticks[0], hi = tk.ticks.at(-1), x = i => pl + 10 + i / (C.length - 1) * (W - pl - pr - 20), y = v => pt + (1 - (v - lo) / (hi - lo)) * (Hh - pt - pb);
+  let g = '';
+  for (const t of tk.ticks) g += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${f(y(t))}" y2="${f(y(t))}"/><text class="axis num" x="${pl - 8}" y="${f(y(t) + 4)}" text-anchor="end">${t.toFixed(1)}%</text>`;
+  C.forEach((c, i) => g += `<text class="axis" x="${f(x(i))}" y="${Hh - 6}" text-anchor="${i === 0 ? 'start' : i === C.length - 1 ? 'end' : 'middle'}">${esc(c.label)}</text>`);
+  const line = (k, extra) => `<path class="line" ${extra} d="${C.map((c, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(c[k]))}`).join('')}"/>`;
+  g += line('year', 'stroke="var(--text-3)" stroke-dasharray="1 5"') + line('month', 'stroke="var(--text-3)" stroke-dasharray="6 4" stroke-width="1.5"') + line('now', 'stroke="var(--accent)"');
+  C.forEach((c, i) => { g += `<circle class="mark" cx="${f(x(i))}" cy="${f(y(c.now))}" r="4.5" fill="var(--accent)"/><text class="lbl me num" x="${f(x(i))}" y="${f(y(c.now) - 10)}" text-anchor="${i === 0 ? 'start' : i === C.length - 1 ? 'end' : 'middle'}">${c.now.toFixed(2)}%</text>`;
+    const tip = `<span>Lending for ${esc(c.label)}</span><div class="pl"><i>Now</i><em>${c.now.toFixed(2)}%</em><i>A month ago</i><em>${c.month.toFixed(2)}%</em><i>A year ago</i><em>${c.year.toFixed(2)}%</em></div>`;
+    g += `<rect class="hit" data-tip="${esc(tip)}" x="${f(x(i) - 30)}" y="${pt}" width="60" height="${Hh - pt - pb}"/>`; });
+  put($('mkCurveKey'), `<span><i class="key" style="border-color:var(--accent)"></i>Now</span><span><i class="key dashed" style="border-color:var(--text-3)"></i>A month ago</span><span><i class="key" style="border-color:var(--text-3);border-top-style:dotted"></i>A year ago</span>`);
+  const h = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="What the US government pays to borrow for three months to thirty years">${g}</svg>`;
+  if (box._h !== h) { box._h = h; box.querySelector('svg')?.remove(); box.insertAdjacentHTML('afterbegin', h); tips(box); }
+  const a = C.find(c => c.label === '3 months'), b = C.find(c => c.label === '10 years');
+  if (a && b) { const gap = b.now - a.now, was = b.year - a.year;
+    put($('mkCurveSay'), `Lending to the US government for ten years pays <b>${b.now.toFixed(2)}%</b> a year, ${Math.abs(gap) < 0.05 ? 'about the same as' : `<b>${Math.abs(gap).toFixed(2)} points ${gap > 0 ? 'more' : 'less'}</b> than`} lending for three months. ${gap > 0.05 ? 'That is the ordinary shape: a longer loan pays more.' : gap < -0.05 ? 'That is upside down. Short loans paying more than long ones has often come before a recession.' : 'A flat line like this means traders see little difference between the near and the far future.'} A year ago the gap was ${pts(was)}. These rates set what mortgages, company loans and savings pay, and when they rise, shares are worth a little less against them.`); }
+}
+$('secTabs').onclick = e => { const b = e.target.closest('[data-sec]'); if (b) { secTab = b.dataset.sec; store.set('sec', secTab); renderPulse(); } };
+$('mkOddRows').onclick = e => { const tr = e.target.closest('tr[data-sym]'); if (tr) show(tr.dataset.sym); };
+$('mkAi').onclick = async e => { const b = e.target.closest('[data-brief]'); if (!b || b.disabled || !PU) return;
+  try { PU = await post('/api/pulse/brief', {}); renderPulse(); puWatch(); } catch (err) { $('mkErr').textContent = err.message; } };
+{ const ro = new ResizeObserver(() => { if (view === 'markets' && PU) drawCurve(); }); ro.observe($('mkCurve')); }
 async function loadWorld(force) {
+  loadPulse(force);
   if (wBusy || (!force && W && Date.now() - wAt < 30000)) return renderMarkets();
   wBusy = true;
   try {
