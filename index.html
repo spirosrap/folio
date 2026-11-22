@@ -12,7 +12,9 @@
 (() => { let t = null; try { t = localStorage.getItem('folio-theme'); } catch {}
   document.documentElement.dataset.theme = t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   let v = null; try { v = localStorage.getItem('folio-view'); } catch {}
-  document.documentElement.dataset.view = ['markets', 'analysis', 'plan', 'lab'].includes(v) ? v : 'overview'; })();
+  document.documentElement.dataset.view = ['journey', 'markets', 'analysis', 'plan', 'lab'].includes(v) ? v : 'overview';
+  let a = null; try { a = localStorage.getItem('folio-accent'); } catch {}
+  if (['violet', 'rose', 'teal', 'orange'].includes(a)) document.documentElement.dataset.accent = a; })();
 </script>
 <style>
 :root {
@@ -715,20 +717,191 @@ button.search:hover { border-color: var(--line-2); color: var(--text-2); }
 
 /* five pages and the bell: keep the header on one line on a laptop */
 @media (min-width: 861px) and (max-width: 1500px) { .search { flex-basis: 170px; } #market .more { display: none; } .views { margin-left: 4px; } }
+
+/* ================= 5.0 ================= */
+/* ---- accents ---- */
+:root[data-accent="violet"] { --accent: #8672e8; } :root[data-theme="light"][data-accent="violet"] { --accent: #6a56e0; }
+:root[data-accent="rose"] { --accent: #d9508a; } :root[data-theme="light"][data-accent="rose"] { --accent: #cc3f7a; }
+:root[data-accent="teal"] { --accent: #0e9a8a; } :root[data-theme="light"][data-accent="teal"] { --accent: #0b8577; }
+:root[data-accent="orange"] { --accent: #d9642a; } :root[data-theme="light"][data-accent="orange"] { --accent: #cf5a1f; }
+.look { width: min(300px, calc(100vw - 24px)); }
+.look .f { margin-bottom: 14px; }
+.look .tabs { justify-self: start; }
+.look .btn { width: 100%; justify-content: flex-start; }
+.look .btn kbd { margin-left: auto; }
+.swatches { display: flex; gap: 8px; }
+.swatches button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; background: transparent; padding: 3px; }
+.swatches button i { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--ac); }
+.swatches button:hover { border-color: var(--line-2); }
+.swatches button[aria-pressed="true"] { border-color: var(--text); }
+.swatches [data-ac="blue"] { --ac: #3987e5; } .swatches [data-ac="violet"] { --ac: #8672e8; } .swatches [data-ac="rose"] { --ac: #d9508a; } .swatches [data-ac="teal"] { --ac: #0e9a8a; } .swatches [data-ac="orange"] { --ac: #d9642a; }
+
+/* a soft light under the pointer */
+@media (hover: hover) {
+  .card, .tile { position: relative; }
+  .card::after, .tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .4s;
+    background: radial-gradient(540px circle at var(--mx, 50%) var(--my, 0px), color-mix(in srgb, var(--accent) 8%, transparent), transparent 64%); }
+  .card:hover::after, .tile:hover::after { opacity: 1; }
+}
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; }
+
+/* the pages, within reach once the header has scrolled away */
+.dock { position: fixed; top: 10px; left: 50%; z-index: 35; transform: translate(-50%, -160%); opacity: 0; transition: transform .25s, opacity .25s; align-items: center;
+  background: color-mix(in srgb, var(--surface) 76%, transparent); backdrop-filter: blur(16px) saturate(1.5); border: 1px solid var(--line-2); border-radius: 14px; padding: 4px; box-shadow: var(--pop); }
+.dock.show { transform: translate(-50%, 0); opacity: 1; }
+.dock .sep { width: 1px; height: 18px; background: var(--line-2); margin: 0 4px; }
+.dock button { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 860px) { .dock { display: none; } }
+.walled .dock { display: none; }
+@media (max-width: 560px) { .views { order: 8; flex: 1 0 100%; margin: 0; overflow-x: auto; scrollbar-width: none; } .views button { flex: 1 0 auto; } }
+@media (min-width: 861px) and (max-width: 1500px) { #helpBtn { display: none; } .search { flex: 0 0 auto; } .search > span { display: none; } }
+@media (min-width: 861px) and (max-width: 1279px) { .search kbd { display: none; } .search { margin: 0 0 0 6px; } }
+@media (min-width: 861px) and (max-width: 1100px) { #market > span { display: none; } #market { padding: 8px 9px; } .views button { padding: 5px 8px; } }
+@media (min-width: 861px) and (max-width: 940px) { header h1 { font-size: 0; gap: 0; } }
+
+/* ---- journey ---- */
+:root[data-view="journey"] #journey { display: grid; }
+#journey.none > :not(#jStory) { display: none; }
+#journey.none :is(#jSnap, #jTitle, #jStats) { display: none; }
+.jtitle { font-size: clamp(30px, 4vw, 46px); font-weight: 680; letter-spacing: -.025em; line-height: 1.05; margin: 2px 0 12px; }
+.story { font-size: 16px; line-height: 1.62; color: var(--text-2); margin: 0 0 18px; max-width: 78ch; }
+.story b, .story span { white-space: nowrap; }
+.story b { color: var(--text); font-weight: 620; } .story b.up { color: var(--up); } .story b.down { color: var(--down); }
+.jbody { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1; }
+#jStory .pstats { align-self: end; padding-top: 16px; border-top: 1px solid var(--line); }
+@media (min-width: 1100px) and (max-width: 1899px) {
+  .jbody { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 44px; align-items: center; }
+  .jbody .story { margin-bottom: 4px; }
+  #jStory .pstats { align-self: center; border-top: 0; padding: 0 0 0 36px; border-left: 1px solid var(--line); grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 18px; }
+}
+#jStory .pstats:empty { display: none; }
+.jgrid { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); flex: 1; }
+@media (min-width: 900px) { .jgrid { grid-template-columns: minmax(0, 1fr) 310px; gap: 28px; } }
+.jmain { display: flex; flex-direction: column; min-width: 0; }
+#jPlot { min-height: clamp(280px, calc(100vh - 640px), 560px); touch-action: pan-y; }
+#jPlot svg { cursor: crosshair; }
+.plot .ext { fill: var(--text-2); font-size: 11px; }
+.plot .cur { stroke: var(--accent); stroke-width: 1.5; }
+.plot .layer { stroke: var(--surface); stroke-width: 2; stroke-linejoin: round; }
+.jscrub { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+#jRange { flex: 1; min-width: 0; height: 24px; margin: 0; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+#jRange::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p, 100%), var(--surface-2) var(--p, 100%)); }
+#jRange::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); }
+#jRange::-moz-range-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
+#jRange::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
+#jRange::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); }
+#jWhen { font-size: 13px; color: var(--text-2); min-width: 92px; text-align: right; white-space: nowrap; }
+.jday { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.jd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.jd-top b { font-size: 15px; font-weight: 620; }
+.jd-v { font-size: 32px; font-weight: 670; letter-spacing: -.02em; line-height: 1.1; }
+.jd-r { font-size: 14px; }
+.kv.jd-kv { margin-top: 2px; padding-top: 12px; }
+.jd-h { display: grid; gap: 10px; font-size: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+.jd-h:empty { display: none; }
+.jd-h .r { display: grid; grid-template-columns: 64px minmax(0, 1fr) 116px; gap: 10px; align-items: center; }
+.jd-h b { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.jd-h .tk { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.jd-h .tk i { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; }
+.jd-h .val { text-align: right; white-space: nowrap; }
+.jd-h .val .sub { font-size: 11px; }
+.acts.jd-ev { max-height: none; overflow: visible; border-top: 1px solid var(--line); padding-top: 10px; }
+.jd-ev .sub { white-space: normal; }
+.acts.miles { max-height: none; }
+.miles li { cursor: pointer; align-items: flex-start; }
+.miles li:hover .w b { color: var(--accent); }
+.miles .ico { background: color-mix(in srgb, var(--tone) 16%, transparent); color: var(--tone); }
+.miles .w b { display: block; } .miles .sub { white-space: normal; }
+.miles .when { color: var(--text-3); font-size: 12px; white-space: nowrap; padding-top: 2px; }
+.miles li.on .when { color: var(--accent); font-weight: 600; }
+#jLots td, #jMonths td { padding: 9px 8px; font-size: 14px; }
+#jLots td:first-child, #jMonths td:first-child { padding-left: 0; } #jLots td:last-child, #jMonths td:last-child { padding-right: 0; }
+#jLots tbody tr, #jMonths tbody tr { cursor: pointer; }
+#jLots th:nth-child(2) { text-align: left; }
+#jLots .sym { gap: 8px; }
+#jLots .sub, #jMonths .sub { font-size: 12px; }
+td.wbar, th.wbar { width: 20%; min-width: 70px; }
+td.wbar .plb { display: block; }
+#jLotTag { text-align: right; }
+@media (max-width: 700px) { .wbar { display: none; } #jLotTag { display: none; } }
+.calrow { display: grid; gap: 4px 32px; grid-template-columns: minmax(0, 1fr); }
+.cal { display: grid; grid-auto-flow: column; grid-template-columns: 28px; grid-template-rows: 16px repeat(5, var(--c, 16px)); grid-auto-columns: var(--c, 16px); gap: 3px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.cal > i { border-radius: 4px; cursor: pointer; position: relative; }
+.cal > i.ev::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--text); opacity: .85; }
+.cal > i:hover { outline: 2px solid var(--text-3); outline-offset: 1px; }
+.cal > i.on { outline: 2px solid var(--text); outline-offset: 1px; }
+.cal .m { grid-row: 1; font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: visible; width: 0; }
+.cal .d { grid-column: 1; font-size: 10px; color: var(--text-3); align-self: center; }
+.calscale { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-3); }
+.calscale i { width: 12px; height: 12px; border-radius: 3px; } .calscale span:first-child { margin-right: 5px; } .calscale span:last-child { margin-left: 5px; }
+@media (max-width: 560px) { .calscale span { display: none; } }
+@media (min-width: 1100px) {
+  #jLotCard { grid-column: span 8; } #jMileCard { grid-column: span 4; } #jMonthCard, #jCalCard { grid-column: span 6; }
+  #jMileCard .miles { max-height: 480px; overflow: auto; flex: 1 1 0; min-height: 300px; }
+}
+@media (min-width: 1900px) {
+  #jStory { grid-column: 1 / span 4; grid-row: 1; } #jCalCard { grid-column: 1 / span 4; grid-row: 2; } #jTimeCard { grid-column: 5 / span 8; grid-row: 1 / span 2; }
+  #jLotCard { grid-column: span 5; } #jMileCard { grid-column: span 3; } #jMonthCard { grid-column: span 4; }
+  .calrow .kv { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .story { font-size: 17px; }
+}
+
+/* ---- a picture of the journey ---- */
+#snap { width: min(760px, calc(100vw - 32px)); }
+#snapImg { display: block; width: 100%; aspect-ratio: 1200 / 630; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); }
+.chk { display: flex; align-items: center; gap: 9px; margin: 14px 0 16px; font-size: 14px; color: var(--text-2); cursor: pointer; }
+.chk input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+
+/* ---- wall display ---- */
+.walled body { overflow: hidden; }
+#wall { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: clamp(12px, 2.4vh, 30px); --wx: clamp(20px, 3.2vw, 64px); padding: clamp(18px, 3vh, 40px) var(--wx); overflow: hidden; }
+#wall[hidden] { display: none; }
+#wall::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.2s; background: radial-gradient(70vw 60vh at 14% -10%, var(--mood, transparent), transparent 70%); }
+body[data-mood="up"] #wall::before { --mood: color-mix(in srgb, var(--up) 15%, transparent); opacity: 1; }
+body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14%, transparent); opacity: 1; }
+#wall > * { position: relative; }
+#wall.idle { cursor: none; } #wallX { transition: opacity .4s; } #wall.idle #wallX { opacity: 0; }
+.wall-top { display: flex; align-items: center; gap: 14px; }
+.wall-top .brand { display: flex; align-items: center; gap: 9px; font-weight: 650; font-size: 17px; }
+.wall-top .brand img { width: 26px; height: 26px; }
+.wall-top .btn kbd { margin-left: 4px; }
+.wall-mid { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; }
+.wall-hero .label { font-size: clamp(14px, 1.3vw, 22px); color: var(--text-3); }
+.wall-total { font-size: clamp(54px, 10.5vw, 190px); font-weight: 680; letter-spacing: -.03em; line-height: 1.02; white-space: nowrap; }
+#wallDay { font-size: clamp(16px, 1.6vw, 28px); display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+#wallDay .delta small { font-size: .62em; }
+.wall-clock { text-align: right; margin-left: auto; }
+.wall-clock b { display: block; font-size: clamp(34px, 5vw, 92px); font-weight: 600; letter-spacing: -.02em; line-height: 1; }
+.wall-clock span { color: var(--text-3); font-size: clamp(14px, 1.3vw, 22px); }
+.wall-plot { min-height: 0; margin: 0 calc(-1 * var(--wx)); }
+.wall-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.wall-plot .line { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.wall-plot .base { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 5 6; }
+.wall-plot .end { fill: var(--text); stroke: var(--bg); stroke-width: 3; }
+.wall-hold { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.wt { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; min-width: 0; }
+.wt .t { display: flex; align-items: center; gap: 8px; font-size: 15px; } .wt .t span { margin-left: auto; white-space: nowrap; }
+.wt .p { font-size: clamp(20px, 1.9vw, 34px); font-weight: 640; letter-spacing: -.01em; margin-top: 2px; }
+.wt .spark { width: 100%; height: 34px; display: block; margin: 6px 0 0; }
+.wt .x { font-size: 12px; margin-top: 4px; }
+.wall-strip { display: flex; gap: 6px 28px; flex-wrap: wrap; font-size: 14px; color: var(--text-2); }
+.wall-strip b { color: var(--text-3); font-weight: 500; margin-right: 4px; } .wall-strip em { font-style: normal; margin-left: 4px; }
+@media (max-width: 700px) { .wall-clock span, .wall-strip { display: none; } .wall-hold { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-height: 620px) { .wall-strip { display: none; } }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1><img src="/icon.svg" alt="">Folio</h1>
-    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button></nav>
+    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="journey" title="Your investment from the first day (J)">Journey</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button></nav>
     <button class="search" id="searchBox" title="Search for any stock, or jump to anything"><span>Search or jump to…</span><kbd id="palKey">Ctrl K</kbd></button>
     <span class="grow"></span>
     <span class="pill" id="market"><i class="dot"></i><span>Loading</span></span>
     <button class="btn ghost icon" id="bellBtn" title="What Folio noticed for you (N)" aria-label="Noticed for you" aria-expanded="false" data-ic="bell"><em id="bellN"></em></button>
     <button class="btn ghost" id="curBtn" title="Show amounts in dollars or euros (C)">USD</button>
     <button class="btn ghost icon" id="hideBtn" title="Hide or show your amounts (H)" aria-label="Hide or show your amounts"></button>
-    <button class="btn ghost icon hide-s" id="themeBtn" title="Switch between dark and light (D)" aria-label="Switch between dark and light"></button>
+    <button class="btn ghost icon hide-s" id="themeBtn" title="Appearance: theme, accent and the wall display (D switches dark and light)" aria-label="Appearance" aria-expanded="false"></button>
     <button class="btn ghost icon hide-s" id="helpBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" data-ic="help"></button>
     <button class="btn" id="tradeBtn" title="Record a trade (T)" data-ic="plus">Trade</button>
   </header>
@@ -951,6 +1124,41 @@ button.search:hover { border-color: var(--line-2); color: var(--text-2); }
       <p class="note">Gain or loss from each part of the mix over the period, in money.</p>
     </section>
   </div>
+
+  <div class="page" id="journey">
+    <section class="card" id="jStory">
+      <div class="ch"><h2>Your journey</h2><div class="acts2"><button class="mini" id="jSnap" type="button" data-ic="image" title="Make a picture of your journey to keep or to send">Save as a picture</button></div></div>
+      <div class="jbody"><div><div class="jtitle num" id="jTitle"></div><p class="story num" id="jText">Reading your history…</p></div><div class="pstats" id="jStats"></div></div>
+    </section>
+    <section class="card" id="jTimeCard">
+      <div class="ch"><h2>Day by day</h2><div class="tabs sm" id="jMode" role="group" aria-label="What the chart shows"><button type="button" data-jm="result">Value and money in</button><button type="button" data-jm="made">What it was made of</button></div></div>
+      <div class="jgrid">
+        <div class="jmain">
+          <div class="cmpl num" id="jKey"></div>
+          <div class="plot" id="jPlot"></div>
+          <div class="jscrub"><button class="btn ghost icon" id="jPlay" type="button" aria-label="Play it from the start"></button><input type="range" id="jRange" min="0" max="0" step="1" value="0" aria-label="Day shown"><span class="num" id="jWhen"></span></div>
+        </div>
+        <aside class="jday" id="jDay" aria-label="The chosen day"></aside>
+      </div>
+      <p class="note">Each day’s value at the close, from your entries and that day’s closing prices; the last day follows live prices. Dots mark the days you put money in. Click or drag on the chart, press play, or use the arrow keys to step through.</p>
+    </section>
+    <section class="card" id="jLotCard">
+      <div class="ch"><h2>Every purchase, scored</h2><span class="tag" id="jLotTag"></span></div>
+      <table id="jLots"><thead><tr><th data-sort data-ls="date">Bought</th><th>Stock</th><th class="hide-s">Shares</th><th class="hide-s">Paid</th><th class="hide-s">Now</th><th data-sort data-ls="r">Since then</th><th class="wbar"></th><th class="hide-s">S&amp;P 500 since</th><th data-sort data-ls="edge"><span class="hide-s">Against the index</span><span class="only-s">vs S&amp;P</span></th></tr></thead><tbody id="jLotRows"></tbody></table>
+      <p class="note">Each purchase against the latest price, fees included, and against the S&amp;P 500 since that day’s close with dividends counted. “Ahead by” and “behind by” are percentage points. Click a row to see that day.</p>
+    </section>
+    <section class="card" id="jMileCard"><div class="ch"><h2>Moments</h2></div><ol class="acts miles num" id="jMiles"></ol></section>
+    <section class="card" id="jMonthCard">
+      <div class="ch"><h2>Month by month</h2></div>
+      <table id="jMonths"><thead><tr><th>Month</th><th class="hide-s">Added</th><th>Result</th><th class="wbar"></th><th>S&amp;P 500</th><th><span class="hide-s">Worth at the end</span><span class="only-s">Worth</span></th></tr></thead><tbody id="jMonthRows"></tbody></table>
+      <p class="note">Each month’s gain or loss, with the money you added left aside.</p>
+    </section>
+    <section class="card" id="jCalCard">
+      <div class="ch"><h2>Every day so far</h2><div class="calscale num" id="jCalScale"></div></div>
+      <div class="calrow"><div class="tipbox" id="jCal"></div><div class="kv" id="jCalStats"></div></div>
+      <p class="note">One square per trading day, coloured by that day’s gain or loss. A dot marks the days you traded. Click a square to see that day.</p>
+    </section>
+  </div>
 </main>
 
 <dialog id="dlg">
@@ -999,21 +1207,22 @@ button.search:hover { border-color: var(--line-2); color: var(--text-2); }
 </dialog>
 
 <dialog id="pal" aria-label="Search and commands">
-  <div class="pal-in" data-ic="search"><input id="palQ" type="text" placeholder="Search a stock, fund or coin, or type what you want to do" autocomplete="off" spellcheck="false" aria-label="Search or command"></div>
+  <div class="pal-in" data-ic="search"><input id="palQ" type="text" placeholder="Search a stock, or type what you want to do: “buy 1 nvda at 150”" autocomplete="off" spellcheck="false" aria-label="Search or command"></div>
   <ul class="pal-list num" id="palList" role="listbox"></ul>
   <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd>move</span><span><kbd>Enter</kbd>open</span><span><kbd>Esc</kbd>close</span></div>
 </dialog>
 
-<dialog id="help">
+<dialog id="help" style="width:min(520px, calc(100vw - 32px))">
   <form method="dialog">
     <h3>Keyboard shortcuts</h3>
     <dl class="keys">
-      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, or jump to anything</dd>
-      <dt><kbd>O</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Markets, Analysis, Plan, Lab</dd>
+      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”</dd>
+      <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Journey, Markets, Analysis, Plan, Lab</dd>
+      <dt><kbd>F</kbd></dt><dd>Wall display: the portfolio full screen, for a screen across the room</dd>
       <dt><kbd>N</kbd></dt><dd>What Folio noticed for you</dd>
       <dt><kbd>T</kbd></dt><dd>Record a trade</dd>
       <dt><kbd>1</kbd> to <kbd>7</kbd></dt><dd>Chart range, from one day to everything since your first entry</dd>
-      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step the chart through the portfolio and each stock</dd>
+      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step the chart through the portfolio and each stock; on Journey, step through the days</dd>
       <dt><kbd>Esc</kbd></dt><dd>Back to the portfolio chart</dd>
       <dt><kbd>B</kbd></dt><dd>Compare with the S&amp;P 500</dd>
       <dt><kbd>K</kbd></dt><dd>Line or candles, for a single stock</dd>
@@ -1035,8 +1244,33 @@ button.search:hover { border-color: var(--line-2); color: var(--text-2); }
     <label><input type="checkbox" data-n="highs">A holding reaches its highest or lowest price in a year</label>
     <label><input type="checkbox" data-n="earnings">Earnings are due within a day, for what you hold and watch</label>
     <label><input type="checkbox" data-n="summary">A line on how each trading day closed</label>
+    <label><input type="checkbox" data-n="milestones">Your portfolio passes a round amount or closes at its highest so far</label>
     <label><input type="checkbox" data-n="desktop">Also show these as desktop notifications</label>
   </form>
+</div>
+
+<div class="inbox look" id="look" role="dialog" aria-label="Appearance" hidden>
+  <div class="ch"><h2>Appearance</h2></div>
+  <div class="f"><label id="lkThemeL">Theme</label><div class="tabs" id="lkTheme" role="group" aria-labelledby="lkThemeL"><button type="button" data-th="system">System</button><button type="button" data-th="dark">Dark</button><button type="button" data-th="light">Light</button></div></div>
+  <div class="f"><label id="lkAccentL">Accent</label><div class="swatches" id="lkAccent" role="group" aria-labelledby="lkAccentL"></div></div>
+  <button class="btn ghost" id="lkWall" type="button" data-ic="screen">Wall display<kbd>F</kbd></button>
+</div>
+
+<nav class="tabs dock" id="dock" aria-label="Pages"></nav>
+
+<dialog id="snap" aria-label="A picture of your journey">
+  <h3>A picture of your journey</h3>
+  <img id="snapImg" alt="Your journey as a picture: the result so far, the value against the money put in, and your holdings">
+  <label class="chk"><input type="checkbox" id="snapAmt">Show amounts, not only percentages</label>
+  <div class="actions"><button type="button" class="btn ghost" onclick="this.closest('dialog').close()">Close</button><button type="button" class="btn ghost" id="snapCopy">Copy</button><button type="button" class="btn" id="snapSave" data-ic="download">Download</button></div>
+</dialog>
+
+<div id="wall" role="dialog" aria-label="Wall display" hidden>
+  <div class="wall-top"><span class="brand"><img src="/icon.svg" alt="">Folio</span><span class="pill" id="wallMk"></span><span class="grow"></span><button class="btn ghost" id="wallX" type="button">Leave<kbd>Esc</kbd></button></div>
+  <div class="wall-mid"><div class="wall-hero"><div class="label">Portfolio value</div><div class="wall-total num pv" id="wallTotal">—</div><div class="num" id="wallDay"></div></div><div class="wall-clock num" id="wallClock"></div></div>
+  <div class="wall-plot" id="wallPlot"></div>
+  <div class="wall-hold num" id="wallHold"></div>
+  <div class="wall-strip num" id="wallStrip"></div>
 </div>
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -1067,6 +1301,12 @@ const IC = {
   link: '<path d="M9 15l6-6"/><path d="M11 6.500 12.500 5a4.600 4.600 0 0 1 6.500 6.500L17.500 13"/><path d="M13 17.500 11.500 19A4.600 4.600 0 0 1 5 12.500L6.500 11"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h12l-2.500 4 2.500 4H5"/>',
   coin: '<circle cx="12" cy="12" r="9"/><path d="M15 9.6c-.5-1-1.600-1.600-3-1.600-1.700 0-3 .8-3 2s1.200 1.700 3 2 3 .8 3 2-1.300 2-3 2c-1.500 0-2.600-.6-3-1.600M12 6v2M12 16v2"/>',
+  play: '<path d="M8 5.500v13l11-6.500L8 5.500Z"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.500"/><path d="m4 17 5-4 4 3 3-2 4 3"/>',
+  screen: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/>',
+  route: '<circle cx="6" cy="18" r="2.500"/><circle cx="18" cy="6" r="2.500"/><path d="M8.500 18H14a3.500 3.500 0 0 0 0-7h-4a3.500 3.500 0 0 1 0-7h5.500"/>',
+  drop: '<path d="M12 3s6 6.200 6 10.500a6 6 0 0 1-12 0C6 9.200 12 3 12 3Z"/>',
 };
 const ic = (n, s = 16) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 document.querySelectorAll('[data-ic]').forEach(e => e.insertAdjacentHTML('afterbegin', ic(e.dataset.ic, e.tagName === 'A' ? 13 : 16)));
@@ -1818,7 +2058,7 @@ function reloadChart() { hovering = false; if (H) $('chart').classList.add('busy
 let beat = 0;
 async function refresh() {
   try { const n = beat++;
-    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); }
+    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); if (view === 'journey') loadJourney(); }
     if (n % 6 === 0 && view === 'markets') loadWorld();
     if (n % 120 === 0) loadCalendar();
     if (live && n % 3) return;  // the stream carries prices; this just resyncs
@@ -1950,7 +2190,7 @@ $('cancel').onclick = () => $('dlg').close();
 $('seg').onclick = e => e.target.dataset.t && !e.target.disabled && setType(e.target.dataset.t);
 $('fSym').onchange = symChanged;
 ['fQty', 'fPrice', 'fFee', 'fAmt'].forEach(id => $(id).oninput = updateSum);
-const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; if (view === 'markets') loadWorld(); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); };
+const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; jLoadAt = 0; if (view === 'journey') loadJourney(true); if (view === 'markets') loadWorld(); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); };
 
 $('form').onsubmit = async e => {
   e.preventDefault();
@@ -2006,14 +2246,14 @@ $('alerts').onclick = async e => {
 function applyPrefs() {
   document.body.classList.toggle('private', hide);
   $('hideBtn').innerHTML = ic(hide ? 'eyeoff' : 'eye'); $('hideBtn').setAttribute('aria-pressed', hide);
-  $('themeBtn').innerHTML = ic(document.documentElement.dataset.theme === 'light' ? 'moon' : 'sun');
+  $('themeBtn').innerHTML = ic('drop');
   $('curBtn').textContent = cur;
   store.set('cur', cur); store.set('hide', hide ? '1' : '0');
   if (S) { render(); renderPop(); renderPerf(); drawChart(); renderPages(); }
 }
 $('hideBtn').onclick = () => { hide = !hide; applyPrefs(); };
 $('curBtn').onclick = () => { if (cur === 'USD' && !fx()) return; cur = cur === 'USD' ? 'EUR' : 'USD'; applyPrefs(); };
-$('themeBtn').onclick = () => { const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'; document.documentElement.dataset.theme = t; store.set('theme', t); applyPrefs(); };
+const flipTheme = () => setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
 matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => { if (!store.get('theme')) { document.documentElement.dataset.theme = e.matches ? 'light' : 'dark'; applyPrefs(); } });
 $('helpBtn').onclick = () => $('help').showModal();
 applyPrefs();
@@ -2021,21 +2261,27 @@ document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && k === 'k') { e.preventDefault(); if ($('pal').open) $('pal').close(); else if (!document.querySelector('dialog[open]')) openPal(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (wallOn && !'hcd'.includes(k)) { if (k === 'escape' || k === 'f') { e.preventDefault(); wall(false); } return; }
   if (k === 'escape' && !$('inbox').hidden) return toggleInbox(false);
+  if (k === 'escape' && !$('look').hidden) return toggleLook(false);
   if (k === '/') { e.preventDefault(); openPal(); }
   else if (k === '?') $('help').showModal();
-  else if (k === 'o') setView('overview');
-  else if (k === 'a') setView('analysis');
-  else if (k === 'p') setView('plan');
-  else if (k === 'w') setView('markets');
-  else if (k === 'l') setView('lab');
+  else if (k === 'o') go('overview');
+  else if (k === 'j') go('journey');
+  else if (k === 'a') go('analysis');
+  else if (k === 'p') go('plan');
+  else if (k === 'w') go('markets');
+  else if (k === 'l') go('lab');
   else if (k === 'n') toggleInbox();
-  else if (k === 'escape' && view !== 'overview') setView('overview');
+  else if (k === 'f') wall(true);
+  else if (view === 'journey' && (k === 'arrowleft' || k === 'arrowright') && JN?.days.length) { e.preventDefault(); jSet(jIdx() + (k === 'arrowright' ? 1 : -1)); }
+  else if (view === 'journey' && k === ' ' && e.target === document.body) { e.preventDefault(); jPlay(!jTimer); }
+  else if (k === 'escape' && view !== 'overview') go('overview');
   else if (view !== 'overview' && !'tchd'.includes(k)) return;  // the rest belong to the chart
   else if (k === 't') { e.preventDefault(); openTrade(sel && held(sel) ? sel : undefined); }
   else if (k === 'h') $('hideBtn').click();
   else if (k === 'c') $('curBtn').click();
-  else if (k === 'd') $('themeBtn').click();
+  else if (k === 'd') flipTheme();
   else if (k === 'b') $('cmpBtn').click();
   else if (k === 'm' && !$('avgBtn').hidden) $('avgBtn').click();
   else if (k === 'k' && sel && mode !== 'compare') $('styleTabs').querySelector(`[data-style="${style === 'line' ? 'candles' : 'line'}"]`).click();
@@ -2060,11 +2306,18 @@ function setView(v) {
   syncViews(); window.scrollTo(0, 0);
   if (v === 'overview') { fitTable(true); drawChart(); renderPerf(); railMore(); }
   else if (v === 'markets') loadWorld();
+  else if (v === 'journey') loadJourney();
   else { loadAnalysis(); if (v === 'lab') labLoad(); }
+  if (v !== 'journey' && jTimer) jPlay(false);
   connect();
 }
-const syncViews = () => $('views').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
-$('views').onclick = e => { const v = e.target.dataset.view; if (v) setView(v); };
+// a page change asked for by hand cross-fades, where the browser can
+const go = v => { if (v === view) return; document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches ? document.startViewTransition(() => setView(v)) : setView(v); };
+$('dock').innerHTML = $('views').innerHTML + `<i class="sep"></i><button type="button" data-do="search" title="Search or jump to… (/)" aria-label="Search">${ic('search', 14)}</button><button type="button" data-do="trade" title="Record a trade (T)" aria-label="Record a trade">${ic('plus', 14)}</button>`;
+const syncViews = () => document.querySelectorAll('#views button, #dock [data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
+$('views').onclick = e => { const v = e.target.dataset.view; if (v) go(v); };
+$('dock').onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.view) go(b.dataset.view); else if (b.dataset.do === 'search') openPal(); else openTrade(sel && held(sel) ? sel : undefined); };
+new IntersectionObserver(([e]) => $('dock').classList.toggle('show', !e.isIntersecting)).observe(document.querySelector('header'));
 syncViews();
 
 // a tooltip for small charts: any mark carrying data-tip shows it while the pointer is over it
@@ -2095,7 +2348,9 @@ async function loadAnalysis(force) {
 }
 function renderPages(light) {
   if (!S) return;
-  if (view === 'analysis') renderAnalysis();
+  if (wallOn) renderWall(light);
+  if (view === 'journey') renderJourney(light);
+  else if (view === 'analysis') renderAnalysis();
   else if (view === 'plan') renderPlan(light);
   else if (view === 'markets') renderMarkets(light);
   else if (view === 'lab') renderLab(light);
@@ -2504,18 +2759,22 @@ function palLocal(q) {
   const acts = [
     ['Record a trade', 'T', () => openTrade(sel && held(sel) ? sel : undefined), 'plus', 'buy sell deposit withdraw dividend add'],
     ['Overview', 'O', () => setView('overview'), 'home', 'dashboard portfolio holdings page'],
+    ['Journey', 'J', () => setView('journey'), 'route', 'story history timeline day by day replay time machine every purchase scored months calendar moments milestones page'],
     ['Analysis', 'A', () => setView('analysis'), 'pulse', 'risk volatility beta correlation sectors drawdown page'],
     ['Markets', 'W', () => setView('markets'), 'wave', 'world indices europe asia rates commodities currencies crypto movers gainers losers trending open closed page'],
     ['Plan', 'P', () => setView('plan'), 'flag', 'goal projection target mix rebalance future page'],
     ['Lab', 'L', () => setView('lab'), 'trend', 'what if bought something else backtest test a mix against the past my purchases history page'],
     ['What Folio noticed for you', 'N', () => toggleInbox(true), 'bell', 'inbox notifications events noticed'],
+    ['Wall display', 'F', () => wall(true), 'screen', 'full screen fullscreen kiosk tv ambient monitor big'],
+    ['Save a picture of your journey', '', async () => { if (!JN) await loadJourney(true); openSnap(); }, 'image', 'share image png snapshot card screenshot'],
     ['Back to the portfolio chart', 'Esc', run(() => show(null)), 'home', 'portfolio value'],
     ['Compare with the S&P 500', 'B', run(() => $('cmpBtn').click()), 'wave', 'benchmark percent index'],
     ['Line or candles', 'K', run(() => { if (sel && mode !== 'compare') $('styleTabs').querySelector(`[data-style="${style === 'line' ? 'candles' : 'line'}"]`).click(); }), 'wave', 'candlestick chart style volume'],
     ['Moving averages', 'M', run(() => { if (!$('avgBtn').hidden) $('avgBtn').click(); else toast('Averages show on a single stock’s 3M, 1Y or 5Y chart.'); }), 'wave', '50-day 200-day average'],
     ['Dollars or euros', 'C', () => $('curBtn').click(), 'coin', 'currency usd eur'],
     ['Hide or show your amounts', 'H', () => $('hideBtn').click(), 'eye', 'privacy blur'],
-    ['Dark or light', 'D', () => $('themeBtn').click(), 'sun', 'theme mode'],
+    ['Dark or light', 'D', flipTheme, 'sun', 'theme mode appearance'],
+    ...ACCENTS.map(([k, n]) => [`Accent: ${n}`, '', () => setAccent(k), 'drop', 'colour color appearance theme accent']),
     ['Export entries as a spreadsheet (CSV)', '', () => { location.href = '/api/export.csv'; }, 'download', 'download backup'],
     ['Download a full backup (JSON)', '', () => { location.href = '/api/export.json'; }, 'download', 'export save'],
     ['Keyboard shortcuts', '?', () => $('help').showModal(), 'help', 'keys help'],
@@ -2526,7 +2785,9 @@ function palLocal(q) {
   for (const p of S?.positions || []) sym(p.symbol, p.name, 'You hold it');
   for (const w of S?.watch || []) sym(w.symbol, w.name, 'Watchlist');
   for (const m of M) sym(m.symbol, m.name, m.group === 'index' ? 'Market' : 'Most traded');
-  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 14)];
+  const en = parseEntry(q);
+  if (en) return [{ hd: 'Record' }, { name: entryText(en), key: 'Enter', fn: () => quickEntry(en), icon: 'plus', words: '' }];
+  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 16)];
   const hit = s => s.toLowerCase().includes(q);
   const a = acts.filter(x => hit(x.name) || hit(x.words)), s = syms.filter(x => hit(x.sym) || hit(x.name) || hit(x.full));
   return [...(s.length ? [{ hd: 'On this page' }, ...s] : []), ...(a.length ? [{ hd: 'Do' }, ...a] : [])];
@@ -2557,7 +2818,7 @@ function openPal() {
 $('palQ').oninput = () => {
   const q = $('palQ').value.trim().toLowerCase(), my = ++palN;
   palItems = palLocal(q); palAt = 0; palDraw(); clearTimeout(palTimer);
-  if (!q) return;
+  if (!q || parseEntry(q)) return;
   palTimer = setTimeout(async () => { try {
     const r = await api('/api/search?q=' + encodeURIComponent(q)); if (my !== palN || !$('pal').open) return;
     const have = new Set(palItems.filter(x => x.sym).map(x => x.sym)), more = r.filter(x => !have.has(x.symbol)).map(x => ({ sym: x.symbol, name: x.symbol, full: x.name, kind: [x.type, x.exchange].filter(Boolean).join(' · ') }));
@@ -2895,7 +3156,7 @@ $('mixTest').onclick = () => { if (!S) return; labInit(); const t = targetMix();
 
 // ================= inbox: what Folio noticed =================
 let evTop = null, inSeen = 0;
-const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell' };
+const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell', milestone: 'star' };
 function renderInbox() {
   const box = S.inbox || { events: [], seen: 0, settings: {} }, n = box.events.filter(e => e.t > box.seen).length;
   $('bellBtn').classList.toggle('has', n > 0); $('bellN').textContent = n > 9 ? '9+' : n || '';
@@ -2922,6 +3183,512 @@ $('inForm').onsubmit = e => e.preventDefault();
 $('inForm').onchange = async e => { const k = e.target.dataset.n; if (!k) return;
   try { const s = await post('/api/inbox', { settings: { [k]: e.target.type === 'checkbox' ? e.target.checked : parseFloat(e.target.value.replace(',', '.')) } }); S.inbox = s.inbox; }
   catch (err) { toast(err.message, true); } renderInbox(); };
+
+
+// ================= journey: your investment, day by day =================
+// JN: every trading day since the first entry (value, money put in, holdings, entries), and each purchase.
+let JN = null, jAt = null, jBusy = false, jLoadAt = 0, jDrawAt = 0, jTimer = null, jGeo = null;
+let jMode = store.get('jmode', 'result'), jSort = store.get('jsort', 'date:1').split(':');
+const jLast = () => JN.days.length - 1, jIdx = () => jAt == null ? jLast() : Math.min(jAt, jLast());
+const jDate = (i, o = { month: 'short', day: 'numeric' }) => new Date(JN.days[i] + 'T12:00').toLocaleDateString([], o);
+const jLong = i => jDate(i, { month: 'short', day: 'numeric', year: 'numeric' });
+const words = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a.at(-1);
+const many = (n, one, more = one + 's') => `${n} ${n === 1 ? one : more}`;
+const rungs = (lo, hi) => { const out = []; for (let k = 10; k <= hi; k *= 10) for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 7.5]) if (m * k > lo && m * k <= hi) out.push(m * k); return out; };
+
+async function loadJourney(force) {
+  if (jBusy) return;
+  if (!force && JN && Date.now() - jLoadAt < 45000) return renderJourney();
+  jBusy = true;
+  try {
+    const j = await api('/api/journey'), keep = JN?.days.length && jAt != null ? JN.days[jAt] : null;
+    JN = j; jLoadAt = Date.now();
+    jAt = keep && j.days.includes(keep) && j.days.indexOf(keep) < j.days.length - 1 ? j.days.indexOf(keep) : null;  // the chosen day stays chosen; otherwise follow the latest
+  } catch (e) { if (!JN) JN = { days: [], error: e.message }; }
+  jBusy = false; renderJourney();
+}
+
+// the last day is "now": it follows live prices, so the page agrees with the overview
+function jSync() {
+  const n = jLast(), ok = S.positions.every(p => { const h = JN.hold.find(h => h.symbol === p.symbol); return h && Math.abs(h.q[n] - p.qty) < 1e-6; })
+    && JN.hold.every(h => !h.q[n] || held(h.symbol));
+  if (ok && !S.stale?.length) {
+    for (const p of S.positions) JN.hold.find(h => h.symbol === p.symbol).p[n] = p.price;
+    JN.cash[n] = S.cash; JN.v[n] = S.total;
+    for (const l of JN.lots) l.now = JN.hold.find(h => h.symbol === l.symbol).p[n];
+  }
+  // each day's own result, with money put in or taken out left aside
+  const pl = [], pc = [], g = [];
+  for (let i = 0; i <= n; i++) {
+    const prev = i ? JN.v[i - 1] : 0, f = JN.flow[i];
+    pl.push(JN.v[i] - prev - f);
+    pc.push(i ? (prev > 0 ? ((JN.v[i] - f) / prev - 1) * 100 : 0) : f > 0 ? (JN.v[0] / f - 1) * 100 : 0);
+    g.push((i ? g[i - 1] : 1) * (1 + pc[i] / 100));
+  }
+  Object.assign(JN, { pl, pc, g });
+}
+
+function jMoments() {
+  const out = [], n = jLast(), add = (i, icon, tone, head, text) => out.push({ i, icon, tone, head, text });
+  const first = JN.events.filter(e => e.i === 0 && e.type === 'buy').map(e => e.symbol), seen = new Set(first);
+  add(0, 'flag', 'accent', 'The first day', `You put in <span class="pv">${usd(JN.flow[0])}</span>${first.length ? ' and bought ' + esc(words([...new Set(first)])) : ''}.`);
+  let sold = false, paid = false;
+  for (const e of JN.events) {
+    if (e.type === 'buy' && !seen.has(e.symbol)) { seen.add(e.symbol); add(e.i, 'plus', 'accent', `${esc(e.symbol)} joins`, `Your first ${esc(e.symbol)}: <span class="pv">${qty(e.qty)}</span> at ${usd(e.price)}.`); }
+    if (e.type === 'sell' && !sold) { sold = true; add(e.i, 'coin', 'neutral', 'Your first sale', `<span class="pv">${qty(e.qty)}</span> ${esc(e.symbol)} at ${usd(e.price)}.`); }
+    if (e.type === 'dividend' && !paid) { paid = true; add(e.i, 'coin', 'up', 'Your first dividend', `<span class="pv">${usd(e.amount)}</span> from ${esc(e.symbol)}.`); }
+  }
+  let top = JN.v[0];
+  for (let i = 1; i <= n; i++) if (JN.v[i] > top) {
+    const r = rungs(top, JN.v[i]).at(-1); top = JN.v[i];
+    if (r) add(i, 'trend', 'up', `Passed <span class="pv">${usd(r, 0)}</span>`, `Worth <span class="pv">${usd(JN.v[i])}</span> at the close${JN.flow[i] > 0 ? ', with the money you added that day' : ''}.`);
+  }
+  if (n >= 5) {
+    const res = JN.v.map((v, i) => v - JN.in[i]), at = f => res.indexOf(f(...res)), hiR = at(Math.max), loR = at(Math.min);
+    if (res[hiR] > 0.5) add(hiR, 'trend', 'up', 'Furthest ahead', `<span class="pv">${sgn(res[hiR])}</span> on the <span class="pv">${usd(JN.in[hiR], 0)}</span> you had put in.`);
+    if (res[loR] < -0.5) add(loR, 'fall', 'down', 'Furthest behind', `<span class="pv">${sgn(res[loR])}</span> on the <span class="pv">${usd(JN.in[loR], 0)}</span> you had put in.`);
+    const days = JN.pc.map((p, i) => i).slice(1), best = days.reduce((a, b) => JN.pc[b] > JN.pc[a] ? b : a), worst = days.reduce((a, b) => JN.pc[b] < JN.pc[a] ? b : a);
+    if (JN.pc[best] > 0) add(best, 'pulse', 'up', 'Best day', `${pct(JN.pc[best])}, <span class="pv">${sgn(JN.pl[best])}</span>.`);
+    if (JN.pc[worst] < 0) add(worst, 'pulse', 'down', 'Worst day', `${pct(JN.pc[worst])}, <span class="pv">${sgn(JN.pl[worst])}</span>.`);
+    const hiV = JN.v.indexOf(Math.max(...JN.v));
+    if (hiV < n) add(hiV, 'star', 'warn', 'Highest value', `<span class="pv">${usd(JN.v[hiV])}</span> at the close.`);
+  }
+  const t0 = new Date(JN.days[0] + 'T12:00');
+  for (const [name, mk] of [['100 days in', d => d.setDate(d.getDate() + 100)], ['Six months in', d => d.setMonth(d.getMonth() + 6)], ['One year in', d => d.setFullYear(d.getFullYear() + 1)], ['Two years in', d => d.setFullYear(d.getFullYear() + 2)], ['Five years in', d => d.setFullYear(d.getFullYear() + 5)]]) {
+    const d = new Date(t0); mk(d);
+    const key = d.toLocaleDateString('en-CA'), i = JN.days.findIndex(x => x >= key);
+    if (i > 0) add(i, 'cal', 'neutral', name, `Worth <span class="pv">${usd(JN.v[i])}</span>, with <span class="pv">${usd(JN.in[i], 0)}</span> put in.`);
+  }
+  return out.sort((a, b) => a.i - b.i);
+}
+
+function jSet(i, playing) {
+  if (!JN?.days.length) return;
+  i = clamp(Math.round(i), 0, jLast());
+  jAt = i >= jLast() ? null : i;
+  if (!playing && jTimer) jPlay(false);
+  jKnob();
+  jCursor(); renderJDay(); jLegend();
+  $('jMiles').querySelectorAll('li').forEach(li => li.classList.toggle('on', +li.dataset.i === jIdx()));
+  $('jCal').querySelector('i.on')?.classList.remove('on'); $('jCal').querySelector(`i[data-i="${jIdx()}"]`)?.classList.add('on'); $('jCal')._h = null;
+}
+function jKnob() { $('jRange').value = jIdx(); $('jRange').style.setProperty('--p', (jLast() ? jIdx() / jLast() * 100 : 100).toFixed(2) + '%'); }
+function jPlay(on) {
+  clearInterval(jTimer); jTimer = null;
+  if (on && JN?.days.length > 1) {
+    const n = JN.days.length, step = Math.max(1, Math.ceil(n / 260));
+    if (jIdx() >= n - 1) jSet(0, true);
+    jTimer = setInterval(() => { const i = Math.min(n - 1, jIdx() + step); jSet(i, true); if (i >= n - 1) jPlay(false); }, clamp(9000 / n, 28, 140));
+  }
+  $('jPlay').innerHTML = ic(jTimer ? 'pause' : 'play'); $('jPlay').setAttribute('aria-pressed', !!jTimer);
+  $('jPlay').title = jTimer ? 'Pause' : 'Play it from the start';
+}
+
+function renderJourney(light) {
+  if (!S || !JN) return;
+  if (light && (jTimer || performance.now() - jDrawAt < 2000)) return;
+  if (jGeo && JN.days.length && $('jPlot').matches(':hover')) return;  // not while the pointer is on the chart
+  const none = !JN.days.length;
+  $('journey').classList.toggle('none', none);
+  if (none) return put($('jText'), JN.error ? esc(JN.error) : 'Record your first deposit or buy with <b>+ Trade</b>. Your journey starts on that day, and this page fills in from there.');
+  jSync(); jDrawAt = performance.now();
+  const n = jLast(), since = Math.round((new Date(JN.days[n] + 'T12:00') - new Date(JN.days[0] + 'T12:00')) / 864e5);
+  const put$ = JN.in[n], res = JN.v[n] - put$, same = JN.same[n];
+  const lots = jLots(), deps = JN.flow.filter(f => f > 0).length;
+  const firstBuys = [...new Set(JN.events.filter(e => e.i === 0 && e.type === 'buy').map(e => e.symbol))];
+  const best = lots.length ? lots.reduce((a, b) => b.r > a.r ? b : a) : null;
+  const byStock = S.positions.map(p => ({ s: p.symbol, pl: p.pl })).sort((a, b) => a.pl - b.pl);
+  put($('jTitle'), since < 1 ? 'Day one' : `${many(since, 'day')} in`);
+  let text = `You started on <b>${jLong(0)}</b> with <b class="pv">${usd(JN.flow[0])}</b>${firstBuys.length ? ', buying ' + esc(words(firstBuys)) : ''}. `;
+  if (since >= 1) text += `Since then you have put in <b class="pv">${usd(put$)}</b> over ${many(deps, 'deposit')}${lots.length ? ` and made ${many(lots.length, 'purchase')}` : ''}. `;
+  text += `It is worth <b class="pv">${usd(JN.v[n])}</b> now: <b class="${cls(res)}"><span class="pv">${sgn(res)}</span>${put$ > 0 ? ` (${pct(res / put$ * 100, 1)})` : ''}</b> on the money you put in. `;
+  if (same != null && since >= 1) text += `The same money in the ${esc(JN.bench)} on the same days would be worth <b class="pv">${usd(same)}</b>. `;
+  if (best && lots.length > 1) text += `Your best purchase so far is ${esc(best.symbol)} on ${jDate(best.i)} (<span class="${cls(best.r)}">${pct(best.r, 1)}</span>)`
+    + (byStock.length > 1 && byStock[0].pl < -0.5 ? `; ${esc(byStock[0].s)} has cost you the most (<span class="pv down">${sgn(byStock[0].pl)}</span>).` : '.');
+  put($('jText'), text);
+  const st = (k, v, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${v}</div>${s ? `<div class="s num">${s}</div>` : ''}</div>`;
+  const moved = JN.pl.filter(x => Math.abs(x) >= 0.005), ups = moved.filter(x => x > 0).length, ahead = lots.filter(l => l.r > 0).length;
+  put($('jStats'), st('Put in', `<span class="pv">${usd(put$)}</span>`, many(deps, 'deposit'))
+    + st('Worth now', `<span class="pv">${usd(JN.v[n])}</span>`, `<span class="${cls(res)}">${arrow(res)} <span class="pv">${sgn(res)}</span></span>`)
+    + st('Growth, day by day', `<span class="${cls(JN.g[n] - 1)}">${pct((JN.g[n] - 1) * 100, 1)}</span>`, 'deposits left out')
+    + st(`Same money in the ${esc(JN.bench)}`, same == null ? '—' : `<span class="pv">${usd(same)}</span>`, same == null || !put$ ? '' : `<span class="${cls(same - put$)}">${pct((same / put$ - 1) * 100, 1)}</span>`)
+    + st('Days up', moved.length ? `${ups} of ${moved.length}` : '—', moved.length ? `${Math.round(ups / moved.length * 100)}% of trading days` : '')
+    + st('Purchases ahead', lots.length ? `${ahead} of ${lots.length}` : '—', lots.length ? 'worth more than you paid' : ''));
+
+  $('jMode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.jm === jMode));
+  $('jRange').max = n; $('jRange').disabled = n < 1; jKnob();
+  if (!jTimer) jPlay(false);
+  drawJourney(); renderJDay(); jLegend();
+  const ms = jMoments();
+  put($('jMiles'), ms.map(m => `<li data-i="${m.i}" class="${m.i === jIdx() ? 'on' : ''}" title="Show this day"><span class="ico" style="--tone:var(--${m.tone === 'neutral' ? 'text-3' : m.tone})">${ic(m.icon, 14)}</span><div class="w"><b>${m.head}</b><span class="sub">${m.text}</span></div><span class="when num">${jDate(m.i, m.i && JN.days[m.i].slice(0, 4) !== JN.days[n].slice(0, 4) ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' })}</span></li>`).join(''));
+  renderJLots(lots); renderJMonths(); renderJCal();
+}
+
+// ---- the chart: value against the money put in, or what the value was made of ----
+function drawJourney() {
+  const box = $('jPlot'), W = box.clientWidth, Hh = box.clientHeight;
+  if (W < 80 || Hh < 80 || !JN?.days.length) return;
+  const eur = cur === 'EUR' && fx(), k = eur ? 1 / eur : 1, fmt = (x, d = 0) => money(x, d, eur ? 'EUR' : 'USD');
+  const n = jLast(), pl = 4, pr = 62, pt = 16, pb = 22, made = jMode === 'made';
+  const v = JN.v.map(x => x * k), inn = JN.in.map(x => x * k);
+  const layers = made ? [...JN.hold.map(h => ({ name: h.symbol, col: colors[h.symbol] || 'var(--neutral)', v: h.q.map((q, i) => q * (h.p[i] || 0) * k) })), { name: 'Cash', col: 'var(--neutral)', v: JN.cash.map(c => Math.max(0, c) * k) }].filter(l => l.v.some(x => x > 0.005)) : [];
+  let lo = made ? 0 : Math.min(...v, ...inn), hi = Math.max(...v, ...inn);
+  const pad = (hi - lo || hi * 0.02 || 1) * 0.1; hi += pad; if (!made) lo = Math.max(0, lo - pad);
+  const x = i => pl + (n ? i / n : .5) * (W - pl - pr), y = val => pt + (hi - val) / (hi - lo) * (Hh - pt - pb), f = z => z.toFixed(1);
+  const { ticks, digits } = niceTicks(lo, hi, Hh < 300 ? 3 : 4);
+  let g = '';
+  for (const t of ticks) g += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${f(y(t))}" y2="${f(y(t))}"/><text class="axis num pv" x="${W - pr + 8}" y="${f(y(t) + 4)}">${fmt(t, digits)}</text>`;
+  const count = W < 520 ? 3 : 5;
+  if (n) for (let c = 0; c < count; c++) { const i = Math.round(n * c / (count - 1)); g += `<text class="axis" x="${f(x(i))}" y="${Hh - 5}" text-anchor="${c === 0 ? 'start' : c === count - 1 ? 'end' : 'middle'}">${jDate(i, JN.days[0].slice(0, 4) !== JN.days[n].slice(0, 4) ? { month: 'short', year: '2-digit' } : undefined)}</text>`; }
+  const line = a => a.map((val, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(val))}`).join('');
+  let step = `M${f(x(0))} ${f(y(inn[0]))}`, back = '';
+  for (let i = 1; i <= n; i++) step += `H${f(x(i))}V${f(y(inn[i]))}`;
+  for (let i = n; i >= 1; i--) back += `V${f(y(inn[i - 1]))}H${f(x(i - 1))}`;
+  let body = '';
+  if (made) {
+    const base = v.map(() => 0);
+    for (const l of layers) {
+      const top = l.v.map((val, i) => base[i] + val);
+      body += `<path class="layer" d="${line(top)}${[...base].map((b, i) => [i, b]).reverse().map(([i, b]) => `L${f(x(i))} ${f(y(b))}`).join('')}Z" fill="${l.col}"/>`;
+      top.forEach((t, i) => base[i] = t);
+    }
+    body += `<path class="dash" d="${step}" stroke="var(--text)"/>`;
+  } else {
+    body = `<clipPath id="jUp"><path d="${step}V${pt - 20}H${f(x(0))}Z"/></clipPath><clipPath id="jDn"><path d="${step}V${Hh}H${f(x(0))}Z"/></clipPath>`
+      + (n ? `<path d="${line(v)}L${f(x(n))} ${f(y(inn[n]))}${back}Z" fill="var(--up)" opacity=".2" clip-path="url(#jUp)"/><path d="${line(v)}L${f(x(n))} ${f(y(inn[n]))}${back}Z" fill="var(--down)" opacity=".2" clip-path="url(#jDn)"/>` : '')
+      + `<path class="line" d="${step}" stroke="var(--text-3)" style="stroke-width:1.5"/><path class="line" d="${line(v)}" stroke="var(--text)"/>`;
+    JN.flow.forEach((fl, i) => { if (fl) body += `<circle class="mark" cx="${f(x(i))}" cy="${f(y(inn[i]))}" r="3.5" fill="var(--text-3)"/>`; });
+    if (W >= 520 && n >= 8) {
+      const iHi = v.indexOf(Math.max(...v)), iLo = v.indexOf(Math.min(...v)), cx = i => clamp(x(i), pl + 34, W - pr - 34);
+      if (iHi !== iLo) body += `<text class="ext num pv" x="${f(cx(iHi))}" y="${f(y(v[iHi]) - 8)}" text-anchor="middle">${fmt(v[iHi])}</text>`;
+    }
+  }
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${made ? 'What your portfolio was made of' : 'Your portfolio’s value against the money you put in'}, day by day since ${jLong(0)}">
+    ${g}${body}
+    <g id="jHov" style="display:none"><line class="cross" y1="${pt}" y2="${Hh - pb}" style="opacity:.5"/></g>
+    <g id="jCur"><line class="cur" y1="${pt}" y2="${Hh - pb}"/><circle class="mark c2" r="4.5" fill="var(--text-3)"/><circle class="mark c1" r="5" fill="var(--text)"/></g>
+  </svg><div class="tip num"></div>`;
+  jGeo = { x, y, v, inn, n, made, W };
+  jCursor();
+  const svg = box.querySelector('svg'), tip = box.querySelector('.tip'), hov = svg.querySelector('#jHov');
+  const at = e => clamp(Math.round((e.clientX - box.getBoundingClientRect().left - pl) / Math.max(1, W - pl - pr) * n), 0, n);
+  let down = false;
+  svg.onpointerdown = e => { down = true; try { svg.setPointerCapture(e.pointerId); } catch {} jSet(at(e)); };
+  svg.onpointermove = e => {
+    const i = at(e);
+    if (down) { hov.style.display = 'none'; tip.style.display = 'none'; return jSet(i); }
+    hov.style.display = ''; hov.querySelector('line').setAttribute('x1', x(i)); hov.querySelector('line').setAttribute('x2', x(i));
+    const res = JN.v[i] - JN.in[i];
+    tip.innerHTML = `<b class="pv">${usd(JN.v[i])}</b><span>${jDate(i, { weekday: 'short', month: 'short', day: 'numeric' })} · </span><span class="${cls(res)} pv">${sgn(res)}</span>`;
+    tip.style.display = 'block'; tip.style.left = clamp(x(i), 90, Math.max(90, W - 90)) + 'px';
+  };
+  svg.onpointerup = svg.onpointercancel = () => { down = false; };
+  svg.onpointerleave = () => { hov.style.display = 'none'; tip.style.display = 'none'; };
+}
+function jCursor() {
+  const cur = $('jPlot').querySelector('#jCur'); if (!cur || !jGeo) return;
+  const i = jIdx(), { x, y, v, inn, made } = jGeo;
+  cur.querySelector('line').setAttribute('x1', x(i)); cur.querySelector('line').setAttribute('x2', x(i));
+  const c1 = cur.querySelector('.c1'), c2 = cur.querySelector('.c2');
+  c1.setAttribute('cx', x(i)); c1.setAttribute('cy', y(v[i]));
+  c2.setAttribute('cx', x(i)); c2.setAttribute('cy', y(inn[i])); c2.style.display = made ? 'none' : '';
+}
+function jLegend() {
+  if (!JN?.days.length) return;
+  const i = jIdx(), band = c => `<i class="key band" style="background:color-mix(in srgb, var(--${c}) 34%, transparent)"></i>`;
+  put($('jKey'), jMode === 'made'
+    ? JN.hold.filter(h => h.q.some(q => q > 0)).map(h => `<span><i class="sw" style="background:${colors[h.symbol] || 'var(--neutral)'}"></i>${esc(h.symbol)} <b class="pv">${usd(h.q[i] * (h.p[i] || 0), 0)}</b></span>`).join('')
+      + (JN.cash.some(c => c > 0.005) ? `<span><i class="sw" style="background:var(--neutral)"></i>Cash <b class="pv">${usd(Math.max(0, JN.cash[i]), 0)}</b></span>` : '')
+      + `<span><i class="key dashed" style="border-color:var(--text)"></i>Money you put in <b class="pv">${usd(JN.in[i], 0)}</b></span>`
+    : `<span><i class="key" style="border-color:var(--text)"></i>Portfolio value <b class="pv">${usd(JN.v[i], 0)}</b></span><span><i class="key" style="border-color:var(--text-3)"></i>Money you put in <b class="pv">${usd(JN.in[i], 0)}</b></span><span>${band('up')}Ahead</span><span>${band('down')}Behind</span>`);
+}
+
+// ---- the chosen day ----
+function renderJDay() {
+  if (!JN?.days.length) return;
+  const i = jIdx(), n = jLast(), v = JN.v[i], inn = JN.in[i], res = v - inn;
+  const dayNo = Math.round((new Date(JN.days[i] + 'T12:00') - new Date(JN.days[0] + 'T12:00')) / 864e5) + 1;
+  const rows = JN.hold.map(h => ({ s: h.symbol, q: h.q[i], p: h.p[i] || 0, val: h.q[i] * (h.p[i] || 0) })).filter(r => r.q > 0);
+  if (JN.cash[i] >= 0.5) rows.push({ s: 'Cash', val: JN.cash[i] });
+  const st = (k, val, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${val}</div>${s ? `<div class="s num">${s}</div>` : ''}</div>`;
+  const evs = JN.events.filter(e => e.i === i), line = e => e.type === 'buy' ? `Bought <span class="pv">${qty(e.qty)}</span> <b>${esc(e.symbol)}</b> at ${usd(e.price)}` : e.type === 'sell' ? `Sold <span class="pv">${qty(e.qty)}</span> <b>${esc(e.symbol)}</b> at ${usd(e.price)}`
+    : e.type === 'deposit' ? `Put in <b class="pv">${usd(e.amount)}</b>` : e.type === 'withdraw' ? `Took out <b class="pv">${usd(e.amount)}</b>` : `Dividend from <b>${esc(e.symbol)}</b>: <span class="pv">${usd(e.amount)}</span>`;
+  const icon = { buy: 'plus', sell: 'coin', deposit: 'download', withdraw: 'redo', dividend: 'coin' };
+  $('jDay').innerHTML = `<div class="jd-top"><b>${i === n && jAt == null ? 'Now' : jDate(i, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</b><span class="tag">${i === n && jAt == null ? jDate(i, { month: 'short', day: 'numeric' }) + ' · ' : ''}day ${dayNo}</span></div>
+    <div class="jd-v num pv">${usd(v)}</div>
+    <div class="jd-r num"><span class="delta ${cls(res)}"><span class="${cls(res)}">${arrow(res)} <span class="pv">${sgn(res)}</span>${inn > 0 ? ` (${pct(res / inn * 100)})` : ''}</span><small>on the money put in</small></span></div>
+    <div class="kv jd-kv">${st('Put in by then', `<span class="pv">${usd(inn)}</span>`, JN.flow[i] ? `<span class="pv">${sgn(JN.flow[i])}</span> that day` : '')}${st(i === n && jAt == null ? 'Latest day' : 'That day', `<span class="${cls(JN.pl[i])}">${pct(JN.pc[i])}</span>`, `<span class="pv">${sgn(JN.pl[i])}</span>`)}</div>
+    <div class="jd-h num">${rows.map(r => `<div class="r"><b><i class="sw" style="background:${r.s === 'Cash' ? 'var(--neutral)' : colors[r.s] || 'var(--neutral)'}"></i>${esc(r.s)}</b><div class="tk"><i style="width:${v > 0 ? clamp(r.val / v * 100, 0, 100).toFixed(1) : 0}%;background:${r.s === 'Cash' ? 'var(--neutral)' : colors[r.s] || 'var(--neutral)'}"></i></div><span class="val"><span class="pv">${usd(r.val)}</span>${r.q ? `<span class="sub"><span class="pv">${qty(r.q)}</span> × ${usd(r.p)}</span>` : `<span class="sub">${v > 0 ? (r.val / v * 100).toFixed(1) : 0}%</span>`}</span></div>`).join('')}</div>
+    ${evs.length ? `<ul class="acts jd-ev">${evs.map(e => `<li><span class="ico">${ic(icon[e.type], 14)}</span><div class="w">${line(e)}${e.note ? `<span class="sub">${esc(e.note)}</span>` : ''}</div></li>`).join('')}</ul>` : ''}`;
+  $('jWhen').textContent = jDate(i, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ---- every purchase against today's price, and against the index since its day ----
+function jLots() {
+  const n = jLast(), spNow = JN.sp[n];
+  return JN.lots.map(l => { const paid = l.price + l.fee / l.qty, r = l.now && paid ? (l.now / paid - 1) * 100 : 0, b = JN.sp[l.i] && spNow ? (spNow / JN.sp[l.i] - 1) * 100 : null;
+    return { ...l, paid, r, gain: ((l.now || paid) - paid) * l.qty, b, edge: b == null ? null : r - b }; });
+}
+function renderJLots(lots) {
+  $('jLotCard').hidden = !lots.length; if (!lots.length) return;
+  const key = { date: l => l.i, r: l => l.r, edge: l => l.edge ?? -1e9 }[jSort[0]] || (l => l.i), dir = +jSort[1] || 1;
+  const rows = lots.map((l, k) => [l, k]).sort((a, b) => (key(a[0]) - key(b[0])) * dir || a[1] - b[1]).map(a => a[0]);
+  const top = Math.max(1, ...lots.map(l => Math.abs(l.r)));
+  $('jLots').querySelectorAll('th[data-ls]').forEach(th => th.dataset.ls === jSort[0] ? th.setAttribute('aria-sort', dir < 0 ? 'descending' : 'ascending') : th.removeAttribute('aria-sort'));
+  put($('jLotRows'), rows.map(l => `<tr data-i="${l.i}" title="Show this day">
+    <td>${jDate(l.i, JN.days[l.i].slice(0, 4) !== JN.days[jLast()].slice(0, 4) ? { month: 'short', day: 'numeric', year: 'numeric' } : undefined)}</td>
+    <td><div class="sym"><i class="sw" style="background:${colors[l.symbol] || 'var(--neutral)'}"></i><b>${esc(l.symbol)}</b>${l.left < l.qty - 1e-9 ? `<span class="badge">${l.left > 1e-9 ? 'part sold' : 'sold since'}</span>` : ''}</div></td>
+    <td class="num hide-s"><span class="pv">${qty(l.qty)}</span></td><td class="num hide-s">${usd(l.paid)}</td><td class="num hide-s">${l.now ? usd(l.now) : '—'}</td>
+    <td class="num"><span class="${cls(l.r)}">${arrow(l.r)} ${pct(l.r, 1)}</span><span class="sub"><span class="only-s">paid ${usd(l.paid)}</span><span class="hide-s pv ${cls(l.gain)}">${sgn(l.gain)}</span></span></td>
+    <td class="wbar"><div class="plb"><div class="bar"><i class="${l.r >= 0 ? 'up' : 'down'}" style="width:${(Math.abs(l.r) / top * 50).toFixed(1)}%"></i></div></div></td>
+    <td class="num hide-s">${l.b == null ? '—' : `<span class="flat">${pct(l.b, 1)}</span>`}</td>
+    <td class="num">${l.edge == null ? '—' : `<span class="${cls(l.edge)}">${l.edge >= 0 ? 'ahead' : 'behind'} by ${Math.abs(l.edge).toFixed(1)}</span>`}</td></tr>`).join(''));
+  const ahead = lots.filter(l => l.r > 0).length, beat = lots.filter(l => l.edge > 0).length;
+  $('jLotTag').textContent = `${ahead} of ${lots.length} worth more than you paid · ${beat} of ${lots.length} ahead of the ${JN.bench}`;
+}
+
+// ---- each month ----
+function renderJMonths() {
+  const ms = [], n = jLast();
+  for (let i = 0; i <= n; i++) {
+    const ym = JN.days[i].slice(0, 7);
+    if (!ms.length || ms.at(-1).ym !== ym) ms.push({ ym, a: i, add: 0, pl: 0, g: 1 });
+    const m = ms.at(-1); m.b = i; m.add += JN.flow[i]; m.pl += JN.pl[i]; m.g *= 1 + JN.pc[i] / 100;
+  }
+  for (const m of ms) { const from = m.a ? JN.sp[m.a - 1] : JN.sp[0]; m.sp = from && JN.sp[m.b] ? (JN.sp[m.b] / from - 1) * 100 : null; m.r = (m.g - 1) * 100; }
+  const top = Math.max(1, ...ms.map(m => Math.abs(m.r))), years = new Set(ms.map(m => m.ym.slice(0, 4))).size > 1;
+  put($('jMonthRows'), [...ms].reverse().map((m, k) => `<tr data-i="${m.b}" title="Show the end of this month">
+    <td><span class="hide-s">${new Date(m.ym + '-15T12:00').toLocaleDateString([], years ? { month: 'short', year: 'numeric' } : { month: 'long' })}</span><span class="only-s">${new Date(m.ym + '-15T12:00').toLocaleDateString([], years ? { month: 'short', year: '2-digit' } : { month: 'short' })}</span>${k === 0 ? ' <span class="badge">so far</span>' : ''}</td>
+    <td class="num hide-s">${Math.abs(m.add) > 0.004 ? `<span class="pv">${sgn(m.add)}</span>` : '<span class="flat">—</span>'}</td>
+    <td class="num"><span class="${cls(m.r)}">${arrow(m.r)} ${pct(m.r, 1)}</span><span class="sub pv ${cls(m.pl)}">${sgn(m.pl)}</span></td>
+    <td class="wbar"><div class="plb"><div class="bar"><i class="${m.r >= 0 ? 'up' : 'down'}" style="width:${(Math.abs(m.r) / top * 50).toFixed(1)}%"></i></div></div></td>
+    <td class="num">${m.sp == null ? '—' : `<span class="flat">${pct(m.sp, 1)}</span>`}</td>
+    <td class="num"><span class="pv">${usd(JN.v[m.b], 0)}</span></td></tr>`).join(''));
+}
+
+// ---- every trading day as a square ----
+function renderJCal() {
+  const box = $('jCal'), n = jLast(), wk = d => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - (t.getDay() + 6) % 7); return Math.floor(t / 6048e5); };
+  const w0 = wk(JN.days[0]), weeks = wk(JN.days[n]) - w0 + 1, mags = JN.pc.map(Math.abs).sort((a, b) => a - b), cap = Math.max(1.5, mags[Math.floor(mags.length * .9)] || 0);
+  const size = clamp(Math.floor((Math.min(box.clientWidth || 600, $('jCalCard').clientWidth - 40) - 44) / weeks) - 3, 9, 24);
+  const busy = new Set(JN.events.map(e => e.i));
+  let h = '', seenM = '';
+  for (let i = 0; i <= n; i++) {
+    const d = new Date(JN.days[i] + 'T12:00'), col = wk(JN.days[i]) - w0 + 2, row = (d.getDay() + 6) % 7 + 2, p = JN.pc[i], ym = JN.days[i].slice(0, 7);
+    if (ym !== seenM) { seenM = ym; h += `<span class="m" style="grid-column:${col}">${d.toLocaleDateString([], { month: 'short' })}</span>`; }
+    const tone = Math.abs(p) < 0.005 ? 'var(--surface-2)' : `color-mix(in srgb, var(--${p > 0 ? 'up' : 'down'}) ${(18 + 82 * Math.min(1, Math.abs(p) / cap)).toFixed(0)}%, var(--surface-2))`;
+    h += `<i class="${busy.has(i) ? 'ev' : ''}${i === jIdx() ? ' on' : ''}" data-i="${i}" style="grid-column:${col};grid-row:${row};background:${tone}" data-tip="${esc(`<b class="${cls(p)}">${pct(p)}</b><span>${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}${hide ? '' : ' · ' + sgn(JN.pl[i])}${busy.has(i) ? ' · you traded' : ''}</span>`)}"></i>`;
+  }
+  h += ['Mon', '', 'Wed', '', 'Fri'].map((d, k) => d ? `<span class="d" style="grid-row:${k + 2}">${d}</span>` : '').join('');
+  box.style.setProperty('--c', size + 'px');
+  if (put(box, `<div class="cal">${h}</div>`)) { tips(box); box.querySelector('.cal').scrollLeft = 1e6; }
+  const moved = JN.pc.map((p, i) => [p, i]).filter(([p]) => Math.abs(p) >= 0.005), ups = moved.filter(([p]) => p > 0), dns = moved.filter(([p]) => p < 0);
+  let run = 0, longest = 0; for (const [p] of moved) { run = p > 0 ? run + 1 : 0; longest = Math.max(longest, run); }
+  const avg = a => a.length ? a.reduce((s, [p]) => s + p, 0) / a.length : 0;
+  const st = (k, v, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${v}</div>${s ? `<div class="s num">${s}</div>` : ''}</div>`;
+  put($('jCalStats'), st('Days up', `${ups.length} of ${moved.length}`, moved.length ? `${Math.round(ups.length / moved.length * 100)}%` : '')
+    + st('An average up day', ups.length ? `<span class="up">${pct(avg(ups))}</span>` : '—', '') + st('An average down day', dns.length ? `<span class="down">${pct(avg(dns))}</span>` : '—', '')
+    + st('Longest run up', longest ? many(longest, 'day') : '—', ''));
+  $('jCalScale').innerHTML = `<span>${pct(-cap, 1)} or worse</span>${[-1, -.5, -.15, 0, .15, .5, 1].map(z => `<i style="background:${z ? `color-mix(in srgb, var(--${z > 0 ? 'up' : 'down'}) ${(18 + 82 * Math.abs(z)).toFixed(0)}%, var(--surface-2))` : 'var(--surface-2)'}"></i>`).join('')}<span>${pct(cap, 1)} or better</span>`;
+}
+
+$('jMode').onclick = e => { const m = e.target.dataset.jm; if (m && m !== jMode) { jMode = m; store.set('jmode', m); renderJourney(); } };
+$('jRange').oninput = () => jSet(+$('jRange').value);
+$('jPlay').onclick = () => jPlay(!jTimer);
+const jJump = e => { const el = e.target.closest('[data-i]'); if (!el) return; jSet(+el.dataset.i);
+  const r = $('jTimeCard').getBoundingClientRect(); if (r.top < 60 || r.bottom > innerHeight) $('jTimeCard').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+for (const id of ['jMiles', 'jLotRows', 'jMonthRows', 'jCal']) $(id).addEventListener('click', jJump);
+$('jLots').querySelector('thead').onclick = e => { const th = e.target.closest('th[data-ls]'); if (!th) return;
+  jSort = [th.dataset.ls, th.dataset.ls === jSort[0] ? -jSort[1] : th.dataset.ls === 'date' ? 1 : -1]; store.set('jsort', jSort.join(':')); renderJLots(jLots()); };
+new ResizeObserver(() => { if (view === 'journey' && JN?.days.length) { drawJourney(); renderJCal(); } }).observe($('jPlot'));
+
+// ================= appearance: theme and accent =================
+const ACCENTS = [['blue', 'Blue'], ['violet', 'Violet'], ['rose', 'Rose'], ['teal', 'Teal'], ['orange', 'Orange']];
+function setTheme(t) {  // 'dark', 'light', or 'system' to follow the computer
+  store.set('theme', t === 'system' ? null : t);
+  document.documentElement.dataset.theme = t === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : t;
+  applyPrefs(); renderLook();
+}
+function setAccent(a) { document.documentElement.dataset.accent = a; store.set('accent', a === 'blue' ? null : a); renderLook(); if (S) { drawChart(); renderPages(); } }
+function renderLook() {
+  const th = store.get('theme') || 'system', ac = document.documentElement.dataset.accent || 'blue';
+  $('lkTheme').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.th === th));
+  put($('lkAccent'), ACCENTS.map(([k, n]) => `<button type="button" data-ac="${k}" aria-pressed="${k === ac}" title="${n}" aria-label="${n} accent"><i></i></button>`).join(''));
+}
+function toggleLook(on = $('look').hidden) {
+  $('look').hidden = !on; $('themeBtn').setAttribute('aria-expanded', on);
+  if (!on) return;
+  toggleInbox(false); renderLook();
+  const r = $('themeBtn').getBoundingClientRect(), el = $('look');
+  el.style.top = r.bottom + 8 + 'px'; el.style.right = clamp(innerWidth - r.right, 12, Math.max(12, innerWidth - 12 - el.offsetWidth)) + 'px';
+}
+$('themeBtn').onclick = e => { e.stopPropagation(); toggleLook(); };
+$('lkTheme').onclick = e => { const t = e.target.dataset.th; if (t) setTheme(t); };
+$('lkAccent').onclick = e => { const b = e.target.closest('[data-ac]'); if (b) setAccent(b.dataset.ac); };
+$('lkWall').onclick = () => { toggleLook(false); wall(true); };
+document.addEventListener('pointerdown', e => { if (!$('look').hidden && !e.target.closest('#look, #themeBtn')) toggleLook(false); });
+addEventListener('resize', () => toggleLook(false));
+
+// a soft light under the pointer on whichever card it is over
+if (matchMedia('(hover: hover)').matches) document.querySelector('main').addEventListener('pointermove', e => {
+  const c = e.target.closest?.('.card, .tile'); if (!c) return;
+  const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left).toFixed(0) + 'px'); c.style.setProperty('--my', (e.clientY - r.top).toFixed(0) + 'px');
+}, { passive: true });
+
+// ================= wall display: the portfolio on a screen across the room (F) =================
+let wallOn = false, WH = null, wallAt = 0, wallDrawAt = 0, wallLock = null, wallTimer = null, wallIdle = null;
+async function loadWall() { wallAt = Date.now(); try { WH = await api('/api/history?range=1d'); wallDrawAt = 0; renderWall(); } catch {} }
+async function wall(on = !wallOn) {
+  if (on === wallOn) return;
+  wallOn = on; $('wall').hidden = !on; document.documentElement.classList.toggle('walled', on);
+  clearInterval(wallTimer);
+  if (on) {
+    toggleInbox(false); toggleLook(false);
+    try { await document.documentElement.requestFullscreen(); } catch {}
+    try { wallLock = await navigator.wakeLock.request('screen'); } catch {}
+    loadWall(); renderWall();
+    wallTimer = setInterval(() => { wallClock(); if (Date.now() - wallAt > 60000) loadWall(); }, 1000);
+  } else {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    try { wallLock?.release(); } catch {} wallLock = null;
+    if (view === 'overview') { drawChart(); renderPerf(); } else renderPages();
+  }
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && wallOn) wall(false); });
+document.addEventListener('visibilitychange', async () => { if (wallOn && !document.hidden) try { wallLock = await navigator.wakeLock.request('screen'); } catch {} });
+$('wallX').onclick = () => wall(false);
+$('wall').onpointermove = () => { $('wall').classList.remove('idle'); clearTimeout(wallIdle); wallIdle = setTimeout(() => $('wall').classList.add('idle'), 3000); };
+function wallClock() {
+  const d = new Date();
+  put($('wallClock'), `<b>${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</b><span>${d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</span>`);
+}
+function renderWall(light) {
+  if (!wallOn || !S) return;
+  wallClock();
+  const moved = S.dayChange, mk = { open: 'Market open', pre: 'Pre-market', post: 'After hours', closed: 'Market closed' }[S.market], ck = clockText();
+  put($('wallMk'), `<i class="dot ${live ? 'live' : S.market}"></i><span>${live ? 'Live · ' : ''}${mk}${ck ? ' · ' + ck : ''}</span>`);
+  $('wallTotal').textContent = usd(S.total);
+  const chg = (c, p, l) => `<span class="delta ${cls(c)}"><span class="${cls(c)}">${arrow(c)} <span class="pv">${sgn(c)}</span> (${pct(p)})</span><small>${l}</small></span>`;
+  put($('wallDay'), (S.ext === 'pre' ? '' : chg(moved, S.dayPct, S.market === 'closed' ? 'at the last close' : 'today')) + (S.ext ? chg(S.extChange, S.extPct, S.ext === 'pre' ? 'pre-market' : 'after hours') : ''));
+  const ps = [...S.positions].sort((a, b) => b.value - a.value).slice(0, 8);
+  put($('wallHold'), ps.map(p => `<div class="wt"><div class="t"><i class="sw" style="background:${colors[p.symbol]}"></i><b>${esc(p.symbol)}</b><span class="${cls(p.dayPct)}">${arrow(p.dayPct)} ${pct(p.dayPct)}</span></div><div class="p">${usd(p.price)}</div>${sparkSvg(p.spark, p.prevClose, 160)}${p.ext ? `<div class="x"><span class="tag">${p.ext === 'pre' ? 'Pre-market' : 'After hours'}</span> <span class="${cls(p.extPct)}">${pct(p.extPct)}</span></div>` : ''}</div>`).join(''));
+  put($('wallStrip'), M.filter(m => m.group === 'index').map(m => { const c = m.prevClose ? (m.price / m.prevClose - 1) * 100 : 0; return `<span><b>${esc(m.name.replace(' (volatility)', ''))}</b> ${plain(m.price, m.price < 10 ? 4 : 2)} <em class="${cls(c)}">${arrow(c)} ${pct(c)}</em></span>`; }).join(''));
+  if (!light || performance.now() - wallDrawAt > 1500) drawWall();
+}
+function drawWall() {
+  const box = $('wallPlot'), W = box.clientWidth, Hh = box.clientHeight;
+  if (!WH || WH.v.length < 2 || W < 80 || Hh < 60) return;
+  wallDrawAt = performance.now();
+  const v = [...WH.v], n = v.length - 1; if (S.total > 0) v[n] = S.total;
+  const ref = WH.base ?? v[0];
+  let lo = Math.min(...v, ref), hi = Math.max(...v, ref); const pad = (hi - lo || hi * .01 || 1) * .14; lo -= pad; hi += pad;
+  const x = i => i / n * W, y = val => 8 + (hi - val) / (hi - lo) * (Hh - 16), f = z => z.toFixed(1);
+  const d = v.map((val, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(val))}`).join(''), tone = v[n] >= ref ? 'var(--up)' : 'var(--down)';
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" role="img" aria-label="Your portfolio’s value today">
+    <defs><linearGradient id="wallFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${tone}" stop-opacity=".28"/><stop offset="1" stop-color="${tone}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${d}L${W} ${Hh}L0 ${Hh}Z" fill="url(#wallFade)"/><line x1="0" x2="${W}" y1="${f(y(ref))}" y2="${f(y(ref))}" class="base"/>
+    <path d="${d}" class="line"/><circle cx="${f(x(n))}" cy="${f(y(v[n]))}" r="6" class="end"/></svg>`;
+}
+new ResizeObserver(() => { if (wallOn) drawWall(); }).observe($('wallPlot'));
+
+// ================= a picture of the journey, to keep or to send =================
+const snapCol = v => { const m = /var\((--[\w-]+)\)/.exec(v || ''); return m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : v; };
+function snapSvg(amounts) {
+  const c = n => snapCol(`var(--${n})`), n = jLast(), W = 1200, Hh = 630, x0 = 64, x1 = 760, y0 = 330, y1 = 540;
+  const put$ = JN.in[n], res = JN.v[n] - put$, rp = put$ > 0 ? res / put$ * 100 : 0, tone = res >= 0 ? c('up') : c('down');
+  const since = Math.round((new Date(JN.days[n] + 'T12:00') - new Date(JN.days[0] + 'T12:00')) / 864e5);
+  const lo = Math.min(...JN.v, ...JN.in) * .96, hi = Math.max(...JN.v, ...JN.in) * 1.03;
+  const x = i => x0 + (n ? i / n : .5) * (x1 - x0), y = v => y0 + (hi - v) / (hi - lo || 1) * (y1 - y0), f = z => z.toFixed(1);
+  const line = JN.v.map((v, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(v))}`).join('');
+  let step = `M${f(x(0))} ${f(y(JN.in[0]))}`, back = '';
+  for (let i = 1; i <= n; i++) step += `H${f(x(i))}V${f(y(JN.in[i]))}`;
+  for (let i = n; i >= 1; i--) back += `V${f(y(JN.in[i - 1]))}H${f(x(i - 1))}`;
+  const rib = `${line}L${f(x(n))} ${f(y(JN.in[n]))}${back}Z`;
+  const T = (tx, ty, s, o = '') => `<text x="${tx}" y="${ty}" ${o}>${esc(s)}</text>`;
+  const rows = [...S.positions].sort((a, b) => b.value - a.value).slice(0, 6);
+  const same = JN.same[n], sp = same != null && put$ > 0 ? (same / put$ - 1) * 100 : null;
+  const dl = i => jDate(i, { month: 'short', day: 'numeric', year: 'numeric' });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+    <defs><radialGradient id="g" cx="12%" cy="0%" r="75%"><stop offset="0" stop-color="${tone}" stop-opacity=".2"/><stop offset="1" stop-color="${tone}" stop-opacity="0"/></radialGradient>
+    <clipPath id="u"><path d="${step}V0H${f(x(0))}Z"/></clipPath><clipPath id="d"><path d="${step}V${Hh}H${f(x(0))}Z"/></clipPath></defs>
+    <rect width="${W}" height="${Hh}" fill="${c('bg')}"/><rect width="${W}" height="${Hh}" fill="url(#g)"/>
+    <g transform="translate(64 52) scale(.3125)"><rect width="128" height="128" rx="28" fill="${c('surface-2')}"/><path d="M22 86 46 62l18 14 42-42" fill="none" stroke="${c('accent')}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="106" cy="34" r="9" fill="${c('text')}"/></g>
+    ${T(116, 80, 'Folio', `font-size="24" font-weight="650" fill="${c('text')}"`)}
+    ${T(W - 64, 80, `${dl(0)} – ${dl(n)}`, `font-size="20" fill="${c('text-3')}" text-anchor="end"`)}
+    ${T(64, 150, since < 1 ? 'DAY ONE' : `${since} ${since === 1 ? 'DAY' : 'DAYS'} IN`, `font-size="18" font-weight="600" letter-spacing="1.5" fill="${c('text-3')}"`)}
+    ${amounts ? T(64, 232, usd(JN.v[n]), `font-size="84" font-weight="680" letter-spacing="-2" fill="${c('text')}"`) + T(64, 282, `${sgn(res)} (${pct(rp, 1)}) on ${usd(put$)} put in`, `font-size="26" font-weight="550" fill="${tone}"`)
+      : T(64, 236, pct(rp, 1), `font-size="92" font-weight="680" letter-spacing="-2" fill="${tone}"`) + T(64, 282, 'on the money put in', `font-size="26" fill="${c('text-2')}"`)}
+    ${n ? `<path d="${rib}" fill="${c('up')}" opacity=".22" clip-path="url(#u)"/><path d="${rib}" fill="${c('down')}" opacity=".22" clip-path="url(#d)"/>` : ''}
+    <path d="${step}" fill="none" stroke="${c('text-3')}" stroke-width="2" stroke-linejoin="round"/><path d="${line}" fill="none" stroke="${c('text')}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${f(x(n))}" cy="${f(y(JN.v[n]))}" r="7" fill="${c('text')}" stroke="${c('bg')}" stroke-width="3"/>
+    <g font-size="17" fill="${c('text-3')}"><line x1="64" x2="92" y1="584" y2="584" stroke="${c('text')}" stroke-width="3.5" stroke-linecap="round"/>${T(102, 590, 'Portfolio value')}<line x1="252" x2="280" y1="584" y2="584" stroke="${c('text-3')}" stroke-width="2"/>${T(290, 590, 'Money put in')}</g>
+    ${T(820, 150, 'HOLDINGS', `font-size="18" font-weight="600" letter-spacing="1.5" fill="${c('text-3')}"`)}
+    ${rows.map((p, k) => { const yy = 200 + k * 54, w = S.total ? p.value / S.total * 100 : 0;
+      return `<rect x="820" y="${yy - 17}" width="18" height="18" rx="5" fill="${snapCol(colors[p.symbol]) || c('neutral')}"/>${T(852, yy, p.symbol, `font-size="24" font-weight="650" fill="${c('text')}"`)}${T(1000, yy, w.toFixed(0) + '%', `font-size="22" fill="${c('text-2')}" text-anchor="end"`)}${T(W - 64, yy, pct(p.plPct, 1), `font-size="24" font-weight="600" fill="${p.pl >= 0 ? c('up') : c('down')}" text-anchor="end"`)}`; }).join('')}
+    ${sp == null ? '' : T(W - 64, 590, `Same money in the ${JN.bench}: ${pct(sp, 1)}`, `font-size="19" fill="${c('text-3')}" text-anchor="end"`)}
+  </svg>`;
+}
+const snapPng = () => new Promise((res, rej) => {
+  const img = new Image();
+  img.onload = () => { const cv = document.createElement('canvas'); cv.width = 2400; cv.height = 1260; cv.getContext('2d').drawImage(img, 0, 0, 2400, 1260); cv.toBlob(b => b ? res(b) : rej(new Error('Could not draw the picture.')), 'image/png'); };
+  img.onerror = () => rej(new Error('Could not draw the picture.'));
+  img.src = $('snapImg').src;
+});
+function drawSnap() { $('snapImg').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(snapSvg($('snapAmt').checked)); }
+function openSnap() {
+  if (!JN?.days.length || !S) return toast('Record a deposit or a buy first.', true);
+  $('snapAmt').checked = false; $('snapCopy').hidden = !(navigator.clipboard && window.ClipboardItem);
+  drawSnap(); $('snap').showModal();
+}
+$('jSnap').onclick = openSnap;
+$('snapAmt').onchange = drawSnap;
+$('snapSave').onclick = async () => { try { const a = document.createElement('a'); a.href = URL.createObjectURL(await snapPng()); a.download = `folio-${todayStr()}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); toast('Picture saved to your downloads'); } catch (err) { toast(err.message, true); } };
+$('snapCopy').onclick = async () => { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': snapPng() })]); toast('Picture copied'); } catch (err) { toast('Could not copy the picture. Download it instead.', true); } };
+$('snap').onclick = e => { if (e.target === $('snap')) $('snap').close(); };
+
+// ================= typing an entry: "buy 1 tsla at 403.46 on jun 16" =================
+const MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+function parseEntry(q) {
+  const m = /^(buy|bought|sell|sold|deposit|deposited|withdraw|withdrew|dividend)\b(.*)$/.exec(q.trim().toLowerCase()); if (!m) return null;
+  const type = { buy: 'buy', bought: 'buy', sell: 'sell', sold: 'sell', deposit: 'deposit', deposited: 'deposit', withdraw: 'withdraw', withdrew: 'withdraw', dividend: 'dividend' }[m[1]];
+  let rest = ' ' + m[2] + ' ', date = null;
+  const iso = d => new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10), now = new Date();
+  const ymd = (y, mo, d) => { const yr = y ? +y : now.getFullYear(), t = new Date(yr, mo, +d, 12); if (!y && t > now) t.setFullYear(yr - 1); return t.getMonth() === mo && t <= now ? iso(t) : null; };
+  const mon = `(${MON.join('|')})[a-z]*\\.?`, ord = '(\\d{1,2})(?:st|nd|rd|th)?';
+  const take = (re, fn) => { if (date) return; const x = re.exec(rest); if (!x) return; const d = fn(x); if (d) { date = d; rest = rest.replace(x[0], ' '); } };
+  take(/\b(?:on\s+)?(\d{4})-(\d{1,2})-(\d{1,2})\b/, x => ymd(x[1], x[2] - 1, x[3]));
+  take(new RegExp(`\\b(?:on\\s+)?${mon}\\s+${ord}(?:,?\\s+(\\d{4}))?\\b`), x => ymd(x[3], MON.indexOf(x[1]), x[2]));
+  take(new RegExp(`\\b(?:on\\s+)?${ord}\\s+(?:of\\s+)?${mon}(?:,?\\s+(\\d{4}))?\\b`), x => ymd(x[3], MON.indexOf(x[2]), x[1]));
+  take(/\b(today|yesterday)\b/, x => iso(new Date(now - (x[1] === 'yesterday' ? 864e5 : 0))));
+  const N = '(\\d[\\d,]*(?:\\.\\d+)?|\\.\\d+)', num = s => parseFloat(s.replace(/,/g, ''));
+  let price = null, amount = null, x;
+  if ((x = new RegExp(`(?:\\bat|@|\\bfor)\\s*\\$?\\s*${N}`).exec(rest))) { price = num(x[1]); rest = rest.replace(x[0], ' '); }
+  if ((x = new RegExp(`\\$\\s*${N}|${N}\\s*(?:\\$|usd\\b|dollars?\\b)`).exec(rest))) { amount = num(x[1] || x[2]); rest = rest.replace(x[0], ' '); }
+  const nums = [...rest.matchAll(new RegExp(`(?<![\\w.])${N}(?![\\w.])`, 'g'))].map(y => num(y[1]));
+  const sym = rest.replace(new RegExp(`(?<![\\w.])${N}(?![\\w.])`, 'g'), ' ').split(/[\s,]+/).filter(w => w && !/^(shares?|of|on|a|an|the|each|per|in|to|from|worth|stock|x)$/.test(w)).join(' ');
+  const e = { type, date };
+  if (isStock(type)) { e.symbol = sym; e.qty = nums[0] ?? null; e.price = price ?? nums[1] ?? null; e.amount = amount; if (!e.symbol) return null; }
+  else { e.amount = amount ?? nums[0] ?? price ?? null; if (type === 'dividend') { e.symbol = sym; if (!e.symbol) return null; } }
+  return e;
+}
+const knownSym = s => { const u = s.toUpperCase(), all = [...(S?.positions || []), ...(S?.watch || []), ...M];
+  return all.find(p => p.symbol === u)?.symbol || (s.length >= 3 && all.find(p => (p.name || '').toLowerCase().split(/[\s,.]+/).some(w => w === s.toLowerCase()))?.symbol) || null; };
+function entryText(e) {
+  const sym = e.symbol ? knownSym(e.symbol) || e.symbol.toUpperCase() : '', q = e.qty ?? (e.amount && e.price ? +(e.amount / e.price).toFixed(6) : null);
+  const when = e.date ? ' · ' + new Date(e.date + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  if (isStock(e.type)) return `${e.type === 'buy' ? 'Buy' : 'Sell'} ${q != null ? qty(q) + ' ' : ''}${sym}${e.price ? ' at ' + dollars(e.price, dec(e.price)) : ''}${when}`;
+  return `${{ deposit: 'Deposit', withdraw: 'Withdraw', dividend: 'Dividend from ' + sym }[e.type]}${e.amount ? (e.type === 'dividend' ? ': ' : ' ') + dollars(e.amount) : ''}${when}`;
+}
+async function quickEntry(e) {
+  let sym = e.symbol ? knownSym(e.symbol) : null;
+  if (e.symbol && !sym) { try { sym = (await api('/api/search?q=' + encodeURIComponent(e.symbol)))[0]?.symbol; } catch {} sym ||= e.symbol.toUpperCase(); }
+  openTrade(sym || undefined);
+  if (isStock(e.type)) { if (e.price) $('fPrice').value = e.price; const q = e.qty ?? (e.amount && e.price ? +(e.amount / e.price).toFixed(6) : null); if (q) $('fQty').value = q; }
+  else if (e.amount) $('fAmt').value = e.amount;
+  if (e.date) $('fDate').value = e.date;
+  setType(e.type);
+  (isStock(e.type) ? (!$('fQty').value ? $('fQty') : !$('fPrice').value ? $('fPrice') : $('save')) : !$('fAmt').value ? $('fAmt') : $('save')).focus();
+}
 
 refresh();
 setInterval(() => { if (!document.hidden && !document.querySelector('dialog[open]')) refresh(); }, 5000);

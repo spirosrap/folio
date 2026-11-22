@@ -8,6 +8,7 @@ A small self-hosted dashboard for a stock portfolio. You record your buys and se
 - One box (`/` or `Ctrl K`) to search for any stock, fund, index or coin and chart it without owning it, or to run any command
 - Details for the charted stock: day and 52-week range, volume, market value, P/E, next earnings date, a short company description, and your own position and break-even
 - For companies, three more panels beside the chart: analysts' price targets and recommendations, reported profit against expectations with sales and margins, and each of your own trades measured against today's price
+- **Journey** page: your investment from the first day. A short account of where you stand; a day-by-day chart of the portfolio's value against the money you put in (or of what it was made of) that you can scrub, step through or play back, with what you held and what you did on the chosen day; every purchase scored against today's price and against the S&P 500 since its day; the moments worth remembering (round amounts passed, best and worst day, furthest ahead and behind); each month's result; and every trading day as a coloured square. It can also be saved as a picture to keep or send, with or without amounts
 - **Markets** page: indices in the US, Europe and Asia, interest rates, commodities, currencies and coins with live prices; which exchanges are trading right now, on your clock; today's gainers, losers, most traded and trending US stocks; and a ranking of how far each market and each of your holdings has come today, this month, this year and over a year
 - **Analysis** page: yearly swing (volatility), beta, deepest fall and Sharpe ratio of today's holdings; a risk-against-return chart; which holding causes how much of the swings; how closely your stocks move together; falls from the high against the S&P 500; what past market falls (2018, 2020, 2022, 2025 and the past year's worst) would do to today's holdings; your money by sector; today's move in each US market sector; and a few plain-language findings at the top
 - **Plan** page: a goal, a monthly amount and your assumptions, drawn as the range of two thousand simulated futures with the chance of getting there; and a target mix that shows how far each holding is from its target and the trades (or buys only, with new money) that would close the gap
@@ -18,14 +19,16 @@ A small self-hosted dashboard for a stock portfolio. You record your buys and se
 - Most traded today: the four most traded cryptocurrencies and six most active US stocks (Yahoo Finance rankings, Bitcoin always included), with live prices; click one to chart it
 - News whose headlines name the companies you hold, with a filter per stock
 - Coming up: earnings reports and dividend payments for the stocks you hold and watch
+- Entries can be typed into the search box in plain words (`buy 1 tsla at 403.46 on jun 16`, `deposit 200 yesterday`): Folio fills in the trade form for you to check and save
 - Buy, sell, dividend, deposit and withdraw entries with notes, with average-cost and realised profit tracking; entries can be edited
 - Watchlist for stocks you don't own
 - Alerts with a desktop notification (uses `notify-send` where available): a price reached, or a move of so many percent in a day. Checked every 30 seconds while the server runs
-- An inbox (the bell) where Folio leaves a line when a holding moves sharply, reaches a 52-week high or low, or is about to report earnings, and one on how each trading day closed; each kind can be switched off, or also sent to the desktop
+- An inbox (the bell) where Folio leaves a line when a holding moves sharply, reaches a 52-week high or low, or is about to report earnings, when the portfolio passes a round amount or closes at its highest so far, and one on how each trading day closed; each kind can be switched off, or also sent to the desktop
 - The **All** chart range: your portfolio's real value since your first entry, sampled every 5 minutes while markets trade, and rebuilt from your entries for the days before Folio was running
 - Export of every entry as CSV, and a backup copy of the ledger before every change
 - Amounts in dollars or euros, and a privacy mode that blurs what you own
-- Layouts for a phone, a half-screen window and a full 1440p monitor, in light and dark, with a switch
+- A wall display (`F`): the portfolio full screen with today's line, your holdings, the indices and a clock, for a screen across the room
+- Layouts for a phone, a half-screen window and a full 1440p monitor, in light and dark (or following the system), with a choice of accent colour
 
 No dependencies: one Python file (standard library only) and one HTML page.
 
@@ -51,12 +54,13 @@ There is no login. With the default `FOLIO_HOST`, anyone on your network can vie
 
 | Key | Action |
 |---|---|
-| `/` or `Ctrl K` | Search for any ticker, or run any command |
-| `O` `W` `A` `P` `L` | Overview, Markets, Analysis, Plan, Lab |
+| `/` or `Ctrl K` | Search for any ticker, run any command, or type an entry |
+| `O` `J` `W` `A` `P` `L` | Overview, Journey, Markets, Analysis, Plan, Lab |
+| `F` | Wall display (`Esc` leaves it) |
 | `N` | What Folio noticed for you |
 | `T` | Record a trade |
 | `1` to `7` | Chart range: 1D, 1W, 1M, 3M, 1Y, 5Y, All |
-| `←` `→` | Cycle the chart through the portfolio and each stock |
+| `←` `→` | Cycle the chart through the portfolio and each stock; on Journey, step through the days (`Space` plays) |
 | `Esc` | Back to the portfolio chart, or to the Overview |
 | `B` | Compare with the S&P 500 |
 | `K` | Line or candles, for a single stock |
@@ -90,6 +94,7 @@ systemctl --user enable --now folio.service
 - The Analysis page measures today's holdings over the past year of daily prices, or over the days all of them have traded if one is newer. It describes what happened, not what will.
 - The Plan page's projection is a simulation from the growth and swings you type in, shown in today's money. It is not a forecast, and nothing in Folio is investment advice.
 - The Lab replays past prices with dividends put back in (daily from your own purchases, weekly from a made-up start), without fees, taxes or currency costs. From your purchases, the mix and the index buy at each deposit day's closing price, so entries logged at other prices or on other days than you really bought shift the comparison. A ticker that started trading inside the period joins the mix when it lists. A good past is not a promise.
+- The Journey page values each past day at its closing prices from your entries, and the last day at live prices. A purchase is compared with the S&P 500 from the close of the day it is dated, dividends counted.
 - The stress test measures today's holdings between the S&P 500's high and low in each stretch. A holding that was not trading then is estimated from how it has moved with the market since.
 - Market opening times, in the header and on the Markets page, are the usual hours and don't know about holidays.
 

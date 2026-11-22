@@ -31,7 +31,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "4.0"
+VERSION = "5.0"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -1379,11 +1379,122 @@ def world():
     return out
 
 
+# ---------- the journey: your investment replayed day by day ----------
+
+def journey():
+    """Every trading day since your first entry: what you held, what it was worth, what you had put in.
+
+    Also each purchase with the index's level on its day, so a buy can be measured against the S&P 500 since."""
+    with _lock:
+        doc = load()
+    txs = sorted(doc["transactions"], key=lambda t: t["date"])
+    if not txs:
+        return {"days": []}
+    own = list(dict.fromkeys(t["symbol"] for t in txs if t.get("symbol")))
+    got = _dailies(own + [BENCH[0]])
+    if BENCH[0] not in got:
+        raise Bad("Couldn't load the S&P 500's history.")
+    rows = {s: _latest(s, g["rows"]) for s, g in got.items()}
+    days = [d for d, _, _ in rows[BENCH[0]] if d >= txs[0]["date"]] or [rows[BENCH[0]][-1][0]]
+
+    def on_days(r, k):
+        col, j, last = [], 0, None
+        for d in days:
+            while j < len(r) and r[j][0] <= d:
+                last = r[j][k]
+                j += 1
+            col.append(last)
+        return col
+    px = {s: on_days(rows[s], 1) for s in own if s in rows}
+    sp = on_days(rows[BENCH[0]], 2)
+    names = {t["symbol"]: t.get("name") or t["symbol"] for t in txs if t.get("symbol")}
+    qty, last, cash, paid, units, j = {}, {}, 0.0, 0.0, 0.0, 0
+    v, put, cashes, flows, same, events, lots = [], [], [], [], [], [], []
+    hold = {s: {"symbol": s, "name": got[s]["name"] if s in got else names[s], "q": [], "p": []} for s in own}
+    for i, d in enumerate(days):
+        flow = 0.0
+        while j < len(txs) and (txs[j]["date"] <= d or i == len(days) - 1):  # an entry dated after the last trading day still counts
+            t, kind = txs[j], txs[j]["type"]
+            j += 1
+            fee, sym = float(t.get("fee") or 0), t.get("symbol")
+            if kind in ("deposit", "withdraw"):
+                amount = t["amount"] if kind == "deposit" else -t["amount"]
+                cash += amount
+                flow += amount
+            elif kind == "dividend":
+                cash += t["amount"]
+            else:
+                sign = 1 if kind == "buy" else -1
+                qty[sym] = qty.get(sym, 0.0) + sign * t["qty"]
+                cash -= sign * t["qty"] * t["price"] + fee
+                last[sym] = t["price"]
+                if kind == "buy":
+                    lots.append({"id": t.get("id"), "i": i, "date": t["date"], "symbol": sym, "qty": t["qty"], "price": t["price"], "fee": fee, "left": t["qty"]})
+                else:  # a sale uses up the oldest purchases first
+                    need = t["qty"]
+                    for lot in lots:
+                        if lot["symbol"] == sym and lot["left"] > 1e-9 and need > 1e-9:
+                            take = min(lot["left"], need)
+                            lot["left"] -= take
+                            need -= take
+            events.append({"i": i, "id": t.get("id"), "type": kind, "date": t["date"], "symbol": sym, "qty": t.get("qty"),
+                           "price": t.get("price"), "amount": t.get("amount"), "fee": fee or None, "note": t.get("note") or None})
+        paid += flow
+        if flow and sp[i]:
+            units += flow / sp[i]
+        held = 0.0
+        for s in own:
+            q = qty.get(s, 0.0)
+            q = q if q > 1e-9 else 0.0
+            p = (px[s][i] if s in px else None) or last.get(s)
+            hold[s]["q"].append(round(q, 6))
+            hold[s]["p"].append(p and float(f"{p:.6g}"))
+            held += q * (p or 0)
+        v.append(round(cash + held, 2))
+        put.append(round(paid, 2))
+        cashes.append(round(cash, 2))
+        flows.append(round(flow, 2))
+        same.append(round(units * sp[i], 2) if sp[i] else None)
+    for lot in lots:
+        lot["left"] = round(lot["left"], 6)
+        lot["now"] = hold[lot["symbol"]]["p"][-1]
+    stamp = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()) + 72000
+    return {"days": days, "t": [stamp(d) for d in days], "v": v, "in": put, "cash": cashes, "flow": flows,
+            "same": same, "sp": [x and float(f"{x:.7g}") for x in sp], "bench": BENCH[1],
+            "hold": list(hold.values()), "events": events, "lots": lots,
+            "missing": [s for s in own if s not in got]}
+
+
+def _rungs(lo, hi):
+    """Round amounts between lo and hi: 1, 1.5, 2, 2.5, 3, 4, 5 and 7.5 times each power of ten."""
+    out, k = [], 10.0
+    while k <= hi:
+        out += [m * k for m in (1, 1.5, 2, 2.5, 3, 4, 5, 7.5) if lo < m * k <= hi]
+        k *= 10
+    return out
+
+
+def milestones(s):
+    """At the close: a line when the portfolio ends the day at its highest so far, passes a round amount, or moves into profit."""
+    ins = insights()
+    days = ins.get("days") or []
+    if len(days) < 2 or days[-1]["date"] != ny_day(time.time()):
+        return
+    today, before = days[-1], days[-2]
+    money = lambda x: f"${x:,.0f}"
+    for rung in _rungs(before["v"], today["v"])[-1:]:
+        emit("milestone", f"mile:{rung:.0f}", f"Your portfolio passed {money(rung)}", f"It closed the day at ${today['v']:,.2f}.", None, "up")
+    if ins.get("peak") and ny_day(ins["peak"]["t"]) == today["date"] and ins["drawdown"] > -0.05 and len(days) >= 5:
+        emit("milestone", f"peak:{today['date']}", "Your portfolio closed at its highest so far", f"Up {ins['growth']:.1f}% since your first entry, deposits left out." if ins["growth"] > 0 else "", None, "up")
+    if s["deposited"] > 0 and s["total"] >= s["deposited"] and before["v"] < s["deposited"] - (today["v"] - before["v"] - today["pl"]):
+        emit("milestone", f"profit:{today['date']}", "Your portfolio is worth more than you put in", f"Worth ${s['total']:,.2f} against ${s['deposited']:,.2f} put in.", None, "up")
+
+
 # ---------- the inbox: things Folio noticed while you were away ----------
 
 INBOX = DATA.with_name("inbox.json")
 _inbox_lock = threading.Lock()
-NOTICE = {"moves": True, "highs": True, "earnings": True, "summary": True, "desktop": False, "movePct": 5.0}
+NOTICE = {"moves": True, "highs": True, "earnings": True, "summary": True, "milestones": True, "desktop": False, "movePct": 5.0}
 
 
 def inbox_load():
@@ -1439,7 +1550,7 @@ def set_inbox(body):
             box["events"] = []
         st = body.get("settings")
         if isinstance(st, dict):
-            for k in ("moves", "highs", "earnings", "summary", "desktop"):
+            for k in ("moves", "highs", "earnings", "summary", "milestones", "desktop"):
                 if k in st:
                     box["settings"][k] = bool(st[k])
             if "movePct" in st:
@@ -1456,7 +1567,7 @@ def set_inbox(body):
 def notice(beat):
     """Look over the holdings for things worth a line in the inbox."""
     st = inbox_load()["settings"]
-    if not any(st[k] for k in ("moves", "highs", "earnings", "summary")):
+    if not any(st[k] for k in ("moves", "highs", "earnings", "summary", "milestones")):
         return
     now = time.time()
     s = state()
@@ -1482,6 +1593,8 @@ def notice(beat):
         move = s["dayPct"]
         emit("summary", f"summary:{day}", f"The day closed {'up' if move > 0.004 else 'down' if move < -0.004 else 'flat'}"
              + (f" {abs(move):.1f}%" if abs(move) > 0.004 else ""), text.strip(), None, "up" if move > 0 else "down" if move < 0 else None)
+    if st["milestones"] and fresh and len(fresh) == len(s["positions"]) and ny.weekday() < 5 and ny.hour >= 16 and not s["stale"]:
+        milestones(s)
     if st["earnings"] and beat % 20 == 0:
         for ev in calendar():
             ahead = ev["t"] - now
@@ -1810,6 +1923,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, stress())
                 if u.path == "/api/lab":
                     return self.send(200, lab_data(arg("symbols").split(","), arg("mine") == "1"))
+                if u.path == "/api/journey":
+                    return self.send(200, journey())
                 if u.path == "/api/calendar":
                     return self.send(200, calendar())
                 if u.path == "/api/detail":
