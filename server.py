@@ -4,6 +4,7 @@
 Holdings come from a transaction ledger (data/portfolio.json); prices come
 from Yahoo Finance's public endpoints. Standard library only.
 """
+import bisect
 import csv
 import http.cookiejar
 import io
@@ -32,7 +33,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "6.1"
+VERSION = "6.2"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -166,6 +167,63 @@ def replay(txs):
 
 # ---------- quotes ----------
 
+PRICED = ("EQUITY", "ETF", "MUTUALFUND")  # what is brought into dollars; indexes and currency pairs stay as they are
+SP500 = {"VOO", "IVV", "SPY", "SPLG"}, {"VUAA", "VUSA", "VUAG", "CSPX", "CSP1", "SXR8", "IUSA", "SPY5", "SPYL", "SPXS", "SPXP"}  # funds that track the S&P 500: US listings, European listings
+
+
+def tracks(symbol):
+    """The index a fund follows, for the funds Folio knows to be S&P 500 trackers."""
+    base, dot, _ = symbol.partition(".")
+    return BENCH[0] if (base in SP500[1] if dot else base in SP500[0]) else None
+
+
+def _fx_pair(cur):
+    """The Yahoo pair that turns a currency into dollars, and what to divide a quote by first (London quotes in pence)."""
+    if cur in ("GBp", "GBX"):
+        return "GBPUSD=X", 100.0
+    return (f"{cur}USD=X", 1.0) if cur and cur != "USD" and re.fullmatch(r"[A-Z]{3}", cur) else (None, 1.0)
+
+
+def _in_dollars(q, fx, div):
+    """A quote in another currency, restated in dollars at the exchange rate of each moment. The original stays under "native"."""
+    pts = fx["points"]
+    ts = [t for t, _ in pts]
+
+    def at(t):  # the rate at or just before t
+        i = bisect.bisect_right(ts, t) - 1
+        return (pts[max(i, 0)][1] if pts else fx["price"]) / div
+    now, prev = fx["price"] / div, (fx["prevClose"] or fx["price"]) / div
+    out = dict(q)
+    for k in ("regular", "price", "dayHigh", "dayLow", "wkHigh", "wkLow"):
+        out[k] = None if q[k] is None else q[k] * now
+    out["prevClose"] = None if q["prevClose"] is None else q["prevClose"] * prev
+    out["points"] = [(t, c * at(t)) for t, c in q["points"]]
+    out["bars"] = [(t, o * r, h * r, l * r, c * r, v) for t, o, h, l, c, v in q["bars"] for r in (at(t),)]
+    out["native"] = {"currency": "GBP" if div != 1 else q["currency"], "price": q["price"] / div, "rate": fx["price"]}
+    out["currency"] = "USD"
+    return out
+
+
+def _target_usd(target, qt):
+    """Analysts' targets come in the listing's currency; in dollars, like the price beside them."""
+    nat = (qt or {}).get("native")
+    if not target or not nat or not nat.get("price"):
+        return target
+    r = qt["price"] / nat["price"]
+    return {k: (v * r if k != "n" and v is not None else v) for k, v in target.items()}
+
+
+def rate_on(cur, date):
+    """Dollars for one unit of a currency on a day: that day's close, or the latest rate for today."""
+    pair = f"{cur}USD=X"
+    if date < time.strftime("%Y-%m-%d"):
+        rows = daily(pair)["rows"]
+        i = bisect.bisect_right([r[0] for r in rows], date) - 1
+        if i >= 0:
+            return rows[i][1]
+    return yahoo(pair, "1d")["price"]
+
+
 def yahoo(symbol, rng):
     interval, ttl = SPANS[rng]
     key = (symbol, rng)
@@ -218,6 +276,9 @@ def yahoo(symbol, rng):
             "points": pts,
             "bars": bars,
         }
+        pair, div = _fx_pair(out["currency"]) if out["type"] in PRICED else (None, 1.0)
+        if pair:
+            out = _in_dollars(out, yahoo(pair, rng), div)
     except Exception as e:  # keep serving the last good quote if the fetch fails
         if hit:
             return hit[1]
@@ -1065,6 +1126,12 @@ def daily(symbol):
                 rows.append(row)
         if len(rows) < 2:
             raise Bad(f"No price history for {symbol}.")
+        pair, div = _fx_pair(meta.get("currency")) if meta.get("instrumentType") in PRICED else (None, 1.0)
+        if pair:  # into dollars, at each day's rate
+            fx = daily(pair)["rows"]
+            days = [r[0] for r in fx]
+            rate = lambda d: fx[max(bisect.bisect_right(days, d) - 1, 0)][1] / div
+            rows = [(d, c * rate(d), a * rate(d)) for d, c, a in rows]
         return {"symbol": meta["symbol"], "name": meta.get("longName") or meta.get("shortName") or meta["symbol"], "rows": rows}
     try:
         return cached(("daily", symbol), 43200, make)
@@ -1562,7 +1629,7 @@ def next_data():
             col.append(last)
         return [None if a is None or b is None else b / a - 1 for a, b in zip(col, col[1:])]
     names = [s for s in syms if s in got] + [BENCH[0]]
-    rets = {s: moves(got[s]["rows"]) for s in names}
+    rets = {s: moves(got[tracks(s) or s]["rows"]) for s in names}  # a fund that follows the index moves as the index does; its own closes come at another hour
 
     def cov(a, b):
         both = [(x, y) for x, y in zip(rets[a], rets[b]) if x is not None and y is not None]
@@ -1579,9 +1646,9 @@ def next_data():
         qt = q.get(s)
         if not qt:
             continue
-        target = (funds[s].result() if s in funds else {}).get("target")
+        target = _target_usd((funds[s].result() if s in funds else {}).get("target"), qt)
         cands.append({"symbol": s, "name": qt["name"], "kind": kinds[s], "currency": qt["currency"],
-                      "held": s in pos, "watch": s in watch, "idea": s in ideas,
+                      "held": s in pos, "watch": s in watch, "idea": s in ideas, "tracks": tracks(s), "native": qt.get("native"),
                       "price": qt["price"], "prevClose": qt["prevClose"], "wkHigh": qt["wkHigh"], "wkLow": qt["wkLow"],
                       "target": target, "rating": (full.get(s) or {}).get("averageAnalystRating")})
     out["cands"] = cands
@@ -1792,6 +1859,10 @@ def _packet(doc, facts, budget):
         c = {"symbol": s, "name": qt["name"], "kind": (kinds[s] or "").lower() or None, "currency": qt["currency"], "price": rnd(qt["price"]),
              "week52_low": rnd(qt["wkLow"]), "week52_high": rnd(qt["wkHigh"]), "sector": pr.get("sector"), "industry": pr.get("industry"),
              "why_listed": "held" if s in pos else "on their watchlist" if s in watch else "an idea they added to weigh"}
+        if tracks(s):
+            c["note"] = "A fund that tracks the S&P 500 index. Folio measures its swing by the index itself."
+        if qt.get("native"):
+            c["bought_in"] = qt["native"]["currency"] + ", shown here in dollars at today's rate"
         if s in pos:
             p = pos[s]
             v = p["qty"] * qt["price"]
@@ -1800,7 +1871,7 @@ def _packet(doc, facts, budget):
                             "gain_pct": rnd((v / p["cost"] - 1) * 100, 1) if p["cost"] else None, "share_of_portfolio_pct": rnd(v / total * 100, 1) if total else None,
                             "first_bought": buys[0] if buys else None, "last_bought": buys[-1] if buys else None}
         if f.get("target"):
-            t = f["target"]
+            t = _target_usd(f["target"], qt)
             c["analysts"] = {"target_low": rnd(t["low"]), "target_mean": rnd(t["mean"]), "target_high": rnd(t["high"]), "count": t.get("n"), "rating": fr.get("averageAnalystRating")}
             if f.get("ratings"):
                 c["analysts"]["strong_buy_buy_hold_sell_strong_sell"] = f["ratings"][0]["n"]
@@ -1813,7 +1884,7 @@ def _packet(doc, facts, budget):
         if e:
             c["next_earnings"] = day(e)
         cands.append(c)
-    if nx.get("broad") is not False:
+    if nx.get("broad") is not False and not any(tracks(s) for s in syms):
         cands.append({"symbol": FUND, "name": "An S&P 500 index fund, whichever one the investor can buy", "kind": "fund", "why_listed": "a broad fund Folio weighs beside the holdings",
                       "note": "Measured here by the S&P 500 index itself. It already contains the large US companies, the investor's holdings among them where they are in the index."})
     try:
@@ -1831,7 +1902,7 @@ def _packet(doc, facts, budget):
         "habit": {k: h.get(k) for k in ("typical", "lo", "hi", "gap", "since", "due", "monthly") if h.get(k) is not None}
                  | {"meaning": "typical, lo, hi: the middle and range of the last five buying days, in dollars. gap: usual days between buys. since: days since the last one. monthly: dollars a month over the last 90 days."},
         "plan": plan or None,
-        "target_mix_they_set": {(FUND if k == BENCH[0] else k): v for k, v in (nx.get("target") or {}).items()} or None,
+        "target_mix_they_set": {(next((s for s in syms if tracks(s)), FUND) if k == BENCH[0] else k): v for k, v in (nx.get("target") or {}).items()} or None,
         "note_from_the_investor": (nx.get("brief") or "").strip() or None,
         "worked_out_by_folio": facts,
         "headlines": heads,
@@ -2107,8 +2178,8 @@ def num(body, key, positive=True):
     return v
 
 
-def build_tx(body, doc):
-    """A validated ledger entry from a submitted form."""
+def build_tx(body, doc, was=None):
+    """A validated ledger entry from a submitted form. A price given in the ticker's own currency is kept, and turned into dollars at that day's rate."""
     kind = body.get("type")
     date = str(body.get("date") or time.strftime("%Y-%m-%d"))
     try:
@@ -2130,8 +2201,18 @@ def build_tx(body, doc):
             raise Bad("Enter a ticker symbol.")
         tx.update(symbol=sym, qty=num(body, "qty"), price=num(body, "price"),
                   fee=num(body, "fee", positive=False) if body.get("fee") not in (None, "") else 0.0)
-        if kind == "buy":
-            tx["name"] = yahoo(sym, "1d")["name"]  # also rejects unknown tickers
+        cur = str(body.get("currency") or "USD").upper()
+        if kind == "buy" or cur != "USD":
+            q = yahoo(sym, "1d")  # also rejects unknown tickers
+            if kind == "buy":
+                tx["name"] = q["name"]
+            if cur != "USD":
+                if (q.get("native") or {}).get("currency") != cur:
+                    raise Bad(f"{sym} isn't priced in {cur}. Enter the price in dollars.")
+                old = (was or {}).get("native") or {}
+                rate = old["rate"] if old.get("currency") == cur and was.get("date") == date else rate_on(cur, date)  # an edit keeps the rate of the day
+                tx["native"] = {"currency": cur, "price": tx["price"], "fee": tx["fee"], "rate": rate}
+                tx["price"], tx["fee"] = tx["price"] * rate, tx["fee"] * rate
     else:
         raise Bad("Unknown transaction type.")
     return tx
@@ -2162,9 +2243,10 @@ def add_tx(body):
 def edit_tx(tid, body):
     with _lock:
         doc = load()
-    if not any(t["id"] == tid for t in doc["transactions"]):
+    was = next((t for t in doc["transactions"] if t["id"] == tid), None)
+    if not was:
         raise Bad("That entry is already gone.")
-    tx = build_tx(body, doc)
+    tx = build_tx(body, doc, was)
     tx["id"] = tid
     with _lock:
         doc = load()
@@ -2427,7 +2509,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, search(arg("q")))
                 if u.path == "/api/lookup":
                     q = yahoo(arg("symbol").strip().upper(), "1d")
-                    return self.send(200, {k: q[k] for k in ("symbol", "name", "price", "currency")})
+                    return self.send(200, {**{k: q[k] for k in ("symbol", "name", "price", "currency")}, "native": q.get("native")})
                 if u.path == "/api/export.csv":
                     return self.send(200, export_csv(), "text/csv; charset=utf-8", f"folio-{time.strftime('%Y-%m-%d')}.csv")
                 if u.path == "/api/export.json":

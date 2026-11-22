@@ -1439,7 +1439,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     <div id="stockF">
       <div class="row2">
         <div class="f"><label for="fQty">Shares</label><input id="fQty" inputmode="decimal" placeholder="0"></div>
-        <div class="f"><label for="fPrice">Price per share ($)</label><input id="fPrice" inputmode="decimal" placeholder="0.00"></div>
+        <div class="f"><label for="fPrice" id="priceL">Price per share ($)</label><input id="fPrice" inputmode="decimal" placeholder="0.00"></div>
       </div>
       <div class="hint" id="qtyHint" style="margin:-6px 0 10px"></div>
     </div>
@@ -1447,7 +1447,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <div class="f"><label for="fAmt" id="amtLabel">Amount ($)</label><input id="fAmt" inputmode="decimal" placeholder="0.00"></div>
     </div>
     <div class="row2">
-      <div class="f" id="feeF"><label for="fFee">Fee ($, optional)</label><input id="fFee" inputmode="decimal" placeholder="0.00"></div>
+      <div class="f" id="feeF"><label for="fFee" id="feeL">Fee ($, optional)</label><input id="fFee" inputmode="decimal" placeholder="0.00"></div>
       <div class="f"><label for="fDate">Date</label><input id="fDate" type="date"></div>
     </div>
     <div class="f"><label for="fNote">Note (optional)</label><input id="fNote" maxlength="200" autocomplete="off" placeholder="Why, or anything to remember"></div>
@@ -1886,7 +1886,7 @@ function render() {
   const akey = cur + JSON.stringify(S.transactions);
   if ($('acts').dataset.key !== akey) { $('acts').dataset.key = akey; $('acts').innerHTML = S.transactions.map(x => {
     const stock = x.type === 'buy' || x.type === 'sell';
-    const what = stock ? `<b>${x.type === 'buy' ? 'Bought' : 'Sold'} <span class="pv">${qty(x.qty)}</span> ${esc(x.symbol)}</b> at ${usd(x.price)}`
+    const what = stock ? `<b>${x.type === 'buy' ? 'Bought' : 'Sold'} <span class="pv">${qty(x.qty)}</span> ${esc(x.symbol)}</b> at ${x.native ? `<span title="${dollars(x.price)} at that day’s rate">${money(x.native.price, 2, x.native.currency)}</span>` : usd(x.price)}`
       : x.type === 'dividend' ? `<b>Dividend</b> from ${esc(x.symbol)}` : `<b>${x.type === 'deposit' ? 'Deposited' : 'Withdrew'}</b>`;
     const amt = stock ? x.qty * x.price + (x.type === 'buy' ? 1 : -1) * (x.fee || 0) : x.amount;
     const d = new Date(x.date + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -2401,7 +2401,9 @@ function suggest(input, pick) {
 }
 
 // ---- trade dialog ----
-let type = 'buy', editing = null;
+let type = 'buy', editing = null, fCur = null, fKeep = null;  // fCur: the ticker's own currency where it isn't dollars { currency, price, rate }; fKeep: what an entry being edited was recorded in
+const curSign = c => ({ EUR: '€', GBP: '£', USD: '$' })[c] || c;
+const curLabels = () => { const c = isStock(type) && fCur ? curSign(fCur.currency) : '$'; $('priceL').textContent = `Price per share (${c})`; $('feeL').textContent = `Fee (${c}, optional)`; };
 const todayStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const val = id => parseFloat($(id).value.replace(',', '.')) || 0;
 const isStock = t => t === 'buy' || t === 'sell';
@@ -2415,9 +2417,9 @@ function setType(t) {
   updateSum(); symChanged();
 }
 function updateSum() {
-  const total = isStock(type) ? val('fQty') * val('fPrice') + (type === 'buy' ? 1 : -1) * val('fFee') : val('fAmt');
+  const own = isStock(type) ? val('fQty') * val('fPrice') + (type === 'buy' ? 1 : -1) * val('fFee') : val('fAmt'), fc = isStock(type) ? fCur : null, total = own * (fc ? fc.rate : 1);
   $('sumK').textContent = { buy: 'Total cost', sell: 'Proceeds', dividend: 'Added to cash', deposit: 'Added to cash', withdraw: 'Taken from cash' }[type];
-  $('sumV').textContent = dollars(Math.max(0, total));
+  $('sumV').textContent = fc ? `${money(Math.max(0, own), 2, fc.currency)} ≈ ${dollars(Math.max(0, total))}` : dollars(Math.max(0, total));
   const short = type === 'buy' && !editing ? total - (S?.cash || 0) : 0;
   $('fundHint').textContent = short > 0.005 ? `Cash balance covers ${dollars(Math.max(0, S.cash))}; the other ${dollars(short)} will be recorded as a deposit.` : '';
   const p = held($('fSym').value.trim().toUpperCase());
@@ -2428,23 +2430,26 @@ let lookupN = 0;
 async function symChanged() {
   const sym = $('fSym').value.trim().toUpperCase(), my = ++lookupN;
   $('symHint').textContent = '';
-  if (!sym || $('symF').hidden) return;
+  if (!sym || $('symF').hidden) { fCur = null; curLabels(); return; }
   try {
     const q = await api('/api/lookup?symbol=' + encodeURIComponent(sym));
     if (my !== lookupN) return;
-    $('symHint').textContent = `${q.name} · last ${dollars(q.price, dec(q.price))}`;
-    if (isStock(type) && !$('fPrice').value) $('fPrice').value = q.price.toFixed(dec(q.price));
-  } catch { if (my === lookupN) $('symHint').textContent = 'Ticker not found. Type a company name to search for it.'; }
-  updateSum();
+    // an entry being edited stays in what it was recorded in, at the rate of its day
+    fCur = !q.native || fKeep === 'USD' ? null : { ...q.native, ...(fKeep?.currency === q.native.currency ? { rate: fKeep.rate } : {}) };
+    $('symHint').textContent = fCur ? `${q.name} · last ${money(q.native.price, dec(q.native.price), q.native.currency)}, which is ${dollars(q.price, dec(q.price))}. Enter it as your broker shows it; Folio keeps it in dollars at the day’s rate.`
+      : `${q.name} · last ${dollars(q.price, dec(q.price))}`;
+    if (isStock(type) && !$('fPrice').value) $('fPrice').value = (fCur ? fCur.price : q.price).toFixed(dec(q.price));
+  } catch { if (my === lookupN) { fCur = null; $('symHint').textContent = 'Ticker not found. Type a company name to search for it.'; } }
+  curLabels(); updateSum();
 }
 function openTrade(sym, tx, pre) {
   $('form').reset(); $('fDate').value = todayStr(); $('fDate').max = todayStr();
-  editing = tx ? tx.id : null;
+  editing = tx ? tx.id : null; fKeep = tx ? tx.native || 'USD' : null; fCur = tx?.native ? { ...tx.native } : null;
   $('dlgTitle').textContent = tx ? 'Edit entry' : 'Record a trade';
   $('fSym').value = sym || tx?.symbol || '';
   if (tx) {
     $('fDate').value = tx.date; $('fNote').value = tx.note || '';
-    if (isStock(tx.type)) { $('fQty').value = qty(tx.qty); $('fPrice').value = tx.price; $('fFee').value = tx.fee || ''; } else $('fAmt').value = tx.amount;
+    if (isStock(tx.type)) { $('fQty').value = qty(tx.qty); $('fPrice').value = tx.native ? tx.native.price : tx.price; $('fFee').value = (tx.native ? tx.native.fee : tx.fee) || ''; } else $('fAmt').value = tx.amount;
   }
   if (pre) $('fQty').value = pre.qty;
   setType(tx ? tx.type : pre?.type || 'buy');
@@ -2462,7 +2467,7 @@ const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt 
 $('form').onsubmit = async e => {
   e.preventDefault();
   const symbol = $('fSym').value.trim().toUpperCase(), date = $('fDate').value, note = $('fNote').value;
-  const body = isStock(type) ? { type, symbol, qty: val('fQty'), price: val('fPrice'), fee: val('fFee'), date, note, fund: true }
+  const body = isStock(type) ? { type, symbol, qty: val('fQty'), price: val('fPrice'), fee: val('fFee'), date, note, fund: true, ...(fCur ? { currency: fCur.currency } : {}) }
     : type === 'dividend' ? { type, symbol, amount: val('fAmt'), date, note } : { type, amount: val('fAmt'), date, note };
   $('save').disabled = true; $('err').textContent = '';
   try {
@@ -3817,7 +3822,7 @@ async function loadNext(force) {
 function nxCands() {
   const all = NX.cands.map(c => ({ ...c, k: c.symbol, label: c.symbol, price: priceOf(c.symbol) ?? c.price, usd: !c.currency || c.currency === 'USD' }));
   const mine = all.filter(c => c.held).sort((a, b) => (held(b.k)?.value || 0) - (held(a.k)?.value || 0));
-  const out = [...mine, ...(NS.broad && NX.cov.names.includes(BROAD) ? [{ k: BROAD, symbol: BROAD, label: 'S&P 500 fund', name: 'Any fund that tracks the S&P 500', broad: true, usd: true }] : []), ...all.filter(c => !c.held)];
+  const out = [...mine, ...(NS.broad && !all.some(c => c.tracks === BROAD) && NX.cov.names.includes(BROAD) ? [{ k: BROAD, symbol: BROAD, label: 'S&P 500 fund', name: 'Any fund that tracks the S&P 500', broad: true, usd: true }] : []), ...all.filter(c => !c.held)];
   let n = Object.keys(colors).length;  // colour follows the holding; the others take the next ones, in a fixed order
   for (const c of out) c.col = colors[c.k] || (n < 8 ? `var(--s${++n})` : 'var(--neutral)');
   return out;
@@ -3826,6 +3831,7 @@ function nxCands() {
 // the whole picture for the amount on the page: each way of placing it, what the portfolio would look like after, and where it leads
 function nxModel() {
   const C = nxCands(), by = Object.fromEntries(C.map(c => [c.k, c])), names = NX.cov.names;
+  const al = k => k === BROAD && !by[BROAD] ? C.find(c => c.tracks === BROAD)?.k ?? k : k;  // "an S&P 500 fund" means the one you hold or weigh, once there is one
   const cv = (a, b) => { const i = names.indexOf(a), j = names.indexOf(b); return i < 0 || j < 0 ? null : NX.cov.m[i][j]; };
   const vol = k => cv(k, k) == null ? null : Math.sqrt(cv(k, k) * 252) * 100;
   const vals = Object.fromEntries(S.positions.filter(p => by[p.symbol]).map(p => [p.symbol, p.value])), cost0 = Object.fromEntries(S.positions.map(p => [p.symbol, p.cost]));
@@ -3850,7 +3856,7 @@ function nxModel() {
     if (k != null) out[k] = Math.round((out[k] + B - sum(out)) * 100) / 100; return out; };
   // the mix new money steers toward: the target set here, else the one on Plan, else the shares of your money you gave each holding
   const tg = (() => {
-    const own = Object.entries(NS.target || {}).filter(([k, v]) => by[k] && v > 0), osum = own.reduce((a, [, v]) => a + v, 0);
+    const own = Object.entries(NS.target || {}).map(([k, v]) => [al(k), v]).filter(([k, v]) => by[k] && v > 0), osum = own.reduce((a, [, v]) => a + v, 0);
     if (osum > 0) return { kind: 'set', t: Object.fromEntries(own.map(([k, v]) => [k, v / osum])) };
     const ks = Object.keys(vals), pt = S.plan?.targets || {}, psum = ks.reduce((a, k) => a + (pt[k] || 0), 0);
     if (psum > 0 && Math.abs(sum(pt) - 100) < 0.51) return { kind: 'plan', t: Object.fromEntries(ks.map(k => [k, (pt[k] || 0) / psum])) };
@@ -3900,7 +3906,7 @@ function nxModel() {
   { const under = S.positions.filter(p => by[p.symbol] && p.value < p.cost * 0.995).sort((a, b) => a.value / a.cost - b.value / b.cost)[0];
     plans.cost = mk(place.cost, !!under, under ? `${esc(under.symbol)} is ${((1 - under.price / under.avgCost) * 100).toFixed(0)}% below your average price of ${usd(under.avgCost)}, further than anything else you hold.` : 'Nothing you hold is below what you paid for it.'); }
   const read = AI?.read || null;
-  if (read) { const rs = Object.fromEntries(read.split.filter(x => by[x.symbol]).map(x => [x.symbol, x.amount]));
+  if (read) { const rs = Object.fromEntries(read.split.filter(x => by[al(x.symbol)]).map(x => [al(x.symbol), x.amount]));
     plans.claude = mk(fixed(rs), sum(rs) > 0 && B > 0, esc(read.headline) + (Math.abs(B - read.amount) > 0.5 ? ` <span class="flat">Scaled from the ${amt(read.amount)} Claude had in mind.</span>` : ''), true); }
   if (isOwn) plans.own = { ...mk(fixed(Object.fromEntries(ownKeys.map(k => [k, NS.own[k]]))), true, 'Your own split. Change any amount, or add something else to it.', true), parts: Object.fromEntries(ownKeys.map(k => [k, NS.own[k]])) };
 
@@ -3916,7 +3922,7 @@ function nxModel() {
     : plans.habit.ok ? { way: 'habit', why: 'Your mix is close to what you chose, so there is nothing to correct.' }
     : { way: WAYS.map(w => w[0]).find(w => plans[w].ok) || 'mix', why: '' };
   const way = isOwn ? 'own' : NS.way && plans[NS.way]?.ok ? NS.way : start.way;
-  return nxM = { C, by, vals, B, usual, plans, now, start, way, vol, withP, isOwn, sp, tg, goal, read };
+  return nxM = { C, by, vals, B, usual, plans, now, start, way, vol, withP, isOwn, sp, tg, goal, read, al };
 }
 const wayName = (m, w) => w === 'own' ? 'Your own split' : w === 'claude' ? 'Claude’s read' : w === 'mix' && m.tg.kind !== 'paid' ? 'Toward your target' : WAYS.find(x => x[0] === w)[1];
 const wayRule = (m, w) => w === 'mix' && m.tg.kind !== 'paid' ? 'Tops up whatever sits furthest below the share your target gives it.' : WAYS.find(x => x[0] === w)?.[3] || '';
@@ -4100,6 +4106,7 @@ function renderNxCands(m) {
       <td class="num c2">${p && m.now.shares[c.k] != null ? m.now.shares[c.k].toFixed(0) + '%' : '<span class="flat">—</span>'}</td>
       <td>${c.idea ? `<button class="xb" type="button" data-unidea="${esc(c.k)}" aria-label="Stop weighing ${esc(c.label)}" title="Stop weighing it">${ic('x', 14)}</button>` : ''}</td></tr>`; }).join(''));
   if (document.activeElement !== $('nxBroad')) $('nxBroad').checked = NS.broad;
+  const own = m.C.find(c => c.tracks === BROAD); $('nxBroad').disabled = !!own; $('nxBroad').parentElement.title = own ? `${own.label} is one, so it stands for the fund.` : '';
 }
 
 // ---- on the overview: the suggestion in one card ----
@@ -4204,7 +4211,7 @@ function drawNxRoad(m = nxM, plan = m?.plans[m.way]) {
 let tgEdit = null;  // the target while it is being edited
 function renderNxTarget(m = nxM) {
   if (!m) return;
-  const t = Object.entries(NS.target || {}).filter(([k, v]) => m.by[k] && v > 0).sort((a, b) => b[1] - a[1]);
+  const t = Object.entries(NS.target || {}).map(([k, v]) => [m.al(k), v]).filter(([k, v]) => m.by[k] && v > 0).sort((a, b) => b[1] - a[1]);
   put($('nxTgtSay'), t.length ? t.map(([k, v]) => `<span><i class="sw" style="background:${m.by[k].col}"></i>${esc(m.by[k].label)} ${+v.toFixed(1)}%</span>`).join('')
     : m.tg.kind === 'plan' ? 'Using the targets on your Plan page.' : 'Not set, so “Back to your mix” goes by the shares of your money you gave each holding.');
   $('nxTgtEdit').textContent = tgEdit ? 'Close' : t.length ? 'Change' : 'Set a target';
@@ -4219,15 +4226,15 @@ function renderNxTarget(m = nxM) {
   const s = Object.values(tgEdit).reduce((a, x) => a + x, 0), ok = s === 0 || Math.abs(s - 100) < 0.05;
   put($('nxTgtSum'), s === 0 ? 'Save with everything empty to go without a target.' : ok ? 'Adds up to 100%.' : `Adds up to ${+s.toFixed(1)}%: ${s < 100 ? `${+(100 - s).toFixed(1)} to go` : `${+(s - 100).toFixed(1)} too many`}.`);
   $('nxTgtSave').disabled = !ok;
-  $('nxTgtForm').querySelector('[data-fill="claude"]').hidden = !Object.keys(AI?.read?.target || {}).some(k => m.by[k]);
+  $('nxTgtForm').querySelector('[data-fill="claude"]').hidden = !Object.keys(AI?.read?.target || {}).some(k => m.by[m.al(k)]);
 }
-$('nxTgtEdit').onclick = () => { if (!nxM) return; tgEdit = tgEdit ? null : Object.fromEntries(Object.entries(NS.target || {}).filter(([k, v]) => nxM.by[k] && v > 0)); renderNxTarget(); };
+$('nxTgtEdit').onclick = () => { if (!nxM) return; tgEdit = tgEdit ? null : Object.fromEntries(Object.entries(NS.target || {}).map(([k, v]) => [nxM.al(k), v]).filter(([k, v]) => nxM.by[k] && v > 0)); renderNxTarget(); };
 $('nxTgtRows').oninput = e => { const k = e.target.dataset.tp; if (!k || !tgEdit) return; const v = e.target.value.trim() === '' ? 0 : nxNum(e.target);
   if (v > 0 && v <= 100) tgEdit[k] = v; else if (v === 0) delete tgEdit[k]; else return; renderNxTarget(); };
 $('nxTgtForm').onclick = e => { const b = e.target.closest('[data-fill]'); if (!b || !nxM || !tgEdit) return;
   if (b.dataset.fill === 'now') { const ks = Object.keys(nxM.vals), o = Object.fromEntries(ks.map(k => [k, Math.round(nxM.vals[k] / S.invested * 100)])), big = ks.sort((a, c) => o[c] - o[a])[0];
     if (big) o[big] += 100 - Object.values(o).reduce((a, x) => a + x, 0); tgEdit = Object.fromEntries(Object.entries(o).filter(([, v]) => v > 0)); }
-  else if (b.dataset.fill === 'claude') tgEdit = Object.fromEntries(Object.entries(AI.read.target).filter(([k]) => nxM.by[k]));
+  else if (b.dataset.fill === 'claude') tgEdit = Object.fromEntries(Object.entries(AI.read.target).map(([k, v]) => [nxM.al(k), v]).filter(([k]) => nxM.by[k]));
   else tgEdit = {};
   renderNxTarget(); };
 $('nxTgtForm').onsubmit = e => { e.preventDefault(); if (!tgEdit || $('nxTgtSave').disabled) return; NS.target = { ...tgEdit }; tgEdit = null; renderNext(); renderNextCard(); nxSave(); };
@@ -4260,7 +4267,7 @@ function nxFacts(m) {
 }
 function renderNxAi(m = nxM) {
   if (!m) return;
-  const a = AI || { available: false, asks: [] }, r = a.read, lab = k => m.by[k]?.label || (k === BROAD ? 'S&P 500 fund' : k), col = k => m.by[k]?.col || 'var(--neutral)';
+  const a = AI || { available: false, asks: [] }, r = a.read, lab = k => m.by[m.al(k)]?.label || (k === BROAD ? 'S&P 500 fund' : k), col = k => m.by[m.al(k)]?.col || 'var(--neutral)';
   $('nxAiCard').classList.toggle('busy', !!a.busy);
   put($('aiTag'), r ? `${esc(r.model)} · ${aiAgo(r.at)}${r.stale ? ' · <b>written before your latest entry</b>' : ''}` : '');
   let h = a.busy ? `<div class="ai-busy" role="status"><i class="spin"></i><b>${a.kind === 'ask' ? 'Claude is thinking about your question…' : 'Claude is reading your portfolio…'}</b><span class="num" id="aiSecs"></span></div>` : '';
@@ -4268,7 +4275,7 @@ function renderNxAi(m = nxM) {
     : '<p class="ai-lead">Folio’s four rules each look at one thing. Claude weighs them together with what the companies report, what analysts expect and the recent headlines, and says where it would put this buy and why.</p>'
       + (a.available ? `<div><button class="btn" type="button" data-ai="read">${ic('spark', 15)}Ask Claude</button></div>` : '<p class="hint">Folio reaches Claude through Claude Code, which it can’t find on this computer.</p>');
   else {
-    const tot = r.split.reduce((s, x) => s + x.amount, 0) || 1, used = m.way === 'claude', tk = Object.keys(r.target || {}), same = tk.length && tk.every(k => NS.target?.[k] === r.target[k]) && Object.keys(NS.target || {}).length === tk.length;
+    const tot = r.split.reduce((s, x) => s + x.amount, 0) || 1, used = m.way === 'claude', tk = Object.keys(r.target || {}), same = tk.length && tk.every(k => (NS.target?.[m.al(k)] ?? NS.target?.[k]) === r.target[k]) && Object.keys(NS.target || {}).length === tk.length;
     const list = (title, items) => items.length ? `<h3>${title}</h3><ul>${items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
     h += `<div class="ai-read"><div>
         <p class="ai-head">${esc(r.headline)}</p>
@@ -4318,7 +4325,7 @@ $('nxAiCard').onclick = async e => { const b = e.target.closest('[data-ai]'); if
   if (k === 'read') aiStart('read');
   else if (k === 'use' && r) { NS.way = 'claude'; NS.own = {}; renderNext(); renderNextCard(); nxSave(); }
   else if (k === 'amt' && r) nxSetB(r.amount);
-  else if (k === 'target' && r) { NS.target = Object.fromEntries(Object.entries(r.target).filter(([k]) => nxM.by[k])); tgEdit = null; renderNext(); renderNextCard(); nxSave(); toast('Target mix set. “Toward your target” now steers new money there.'); }
+  else if (k === 'target' && r) { NS.target = Object.fromEntries(Object.entries(r.target).map(([k, v]) => [nxM.al(k), v]).filter(([k]) => nxM.by[k])); tgEdit = null; renderNext(); renderNextCard(); nxSave(); toast('Target mix set. “Toward your target” now steers new money there.'); }
   else if (k === 'clear') { try { AI = await api('/api/next/claude', { method: 'DELETE' }); if (NX) NX.claude = AI; if (NS.way === 'claude') { NS.way = null; nxSave(); } renderNext(); renderNextCard(); } catch (err) { $('aiErr').textContent = err.message; } }
 };
 $('aiAsk').onsubmit = e => { e.preventDefault(); const q = $('aiQ').value.trim(); if (q.length < 3) return void ($('aiErr').textContent = 'Type a question first.'); aiStart('ask', q); };

@@ -94,7 +94,8 @@ systemctl --user enable --now folio.service
 ## Notes
 
 - Prices, company details and news come from unofficial Yahoo Finance endpoints, which can change or rate-limit without notice. If the details stop answering, the charts and prices carry on without them.
-- Trades and alerts are entered in US dollars. The euro view converts everything at the current EUR/USD rate, including past amounts.
+- The ledger is kept in US dollars. A stock or fund listed in another currency (`VUAA.DE` in euros, `VUSA.L` in pence) is priced in dollars at the exchange rate of each moment, and the trade form takes its price in its own currency, as your broker shows it; the entry keeps both that price and the day's rate. Alerts, deposits and dividends are entered in dollars. The euro view converts everything at the current EUR/USD rate, including past amounts.
+- A handful of well-known S&P 500 funds (Vanguard VUAA/VUSA/VOO, iShares CSPX/SXR8/IVV, SPDR SPY/SPY5 and a few more) are recognised as trackers: once you hold or weigh one, the Next page uses it wherever it would have said "an S&P 500 fund", and measures its swing by the index, because a European listing closes hours before New York does.
 - The 1W to 5Y portfolio charts show what today's holdings would have been worth, not your actual history. The **All** range is your actual history from your first entry: recorded every 5 minutes since Folio started running, and rebuilt day by day from your entries and closing prices for the time before that. The daily results start when recording did.
 - Total return is the portfolio's value minus what you put in (deposits less withdrawals), so it counts paper gains, sold gains and dividends together.
 - The Analysis page measures today's holdings over the past year of daily prices, or over the days all of them have traded if one is newer. It describes what happened, not what will.
