@@ -12,7 +12,7 @@
 (() => { let t = null; try { t = localStorage.getItem('folio-theme'); } catch {}
   document.documentElement.dataset.theme = t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   let v = null; try { v = localStorage.getItem('folio-view'); } catch {}
-  document.documentElement.dataset.view = ['journey', 'markets', 'analysis', 'plan', 'lab'].includes(v) ? v : 'overview';
+  document.documentElement.dataset.view = ['journey', 'next', 'markets', 'analysis', 'plan', 'lab'].includes(v) ? v : 'overview';
   let a = null; try { a = localStorage.getItem('folio-accent'); } catch {}
   if (['violet', 'rose', 'teal', 'orange'].includes(a)) document.documentElement.dataset.accent = a; })();
 </script>
@@ -888,13 +888,199 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
 .wall-strip b { color: var(--text-3); font-weight: 500; margin-right: 4px; } .wall-strip em { font-style: normal; margin-left: 4px; }
 @media (max-width: 700px) { .wall-clock span, .wall-strip { display: none; } .wall-hold { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-height: 620px) { .wall-strip { display: none; } }
+
+/* ================= 6.0 ================= */
+/* ---- next ---- */
+:root[data-view="next"] #next { display: grid; }
+#next.none > :not(#nxHero) { display: none; }
+#next.none :is(.nx-amt, #nxWay, #nxWhy, #nxBar, #nxParts, #nxAdd, #nxTag) { display: none; }
+.nx-top { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); flex: 1; }
+@media (min-width: 760px) { .nx-top { grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); gap: 40px; } .nx-pick { padding-left: 36px; border-left: 1px solid var(--line); } }
+.nx-amt { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.nx-amt label { font-size: 12px; color: var(--text-3); }
+.nx-big { display: flex; align-items: baseline; gap: 4px; font-size: clamp(40px, 4.6vw, 56px); font-weight: 680; letter-spacing: -.025em; line-height: 1.05; margin-top: -6px; }
+.nx-big > span { color: var(--text-3); font-weight: 500; }
+.nx-big input { font: inherit; letter-spacing: inherit; color: var(--text); background: transparent; border: 0; border-bottom: 2px solid var(--line-2); border-radius: 0; padding: 0 0 2px; width: 100%; min-width: 0; outline: 0; }
+.nx-big input:focus { border-color: var(--accent); }
+.nx-amt .hint { margin: 2px 0 0; line-height: 1.5; }
+.slide { width: 100%; min-width: 0; height: 24px; margin: 0; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+.slide::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p, 0%), var(--surface-2) var(--p, 0%)); }
+.slide::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); }
+.slide::-moz-range-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
+.slide::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
+.slide::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); }
+.nx-pick { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.nx-way { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 24px; }
+.nx-say { font-size: clamp(20px, 2.1vw, 27px); font-weight: 560; letter-spacing: -.012em; line-height: 1.25; color: var(--text-2); }
+.nx-say b { color: var(--text); font-weight: 680; white-space: nowrap; }
+.nx-why { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); max-width: 74ch; }
+.nx-why:empty { display: none; }
+.nx-pick .alloc { margin: 4px 0 2px; }
+.nx-parts { display: grid; }
+.nx-parts .r { display: grid; grid-template-columns: minmax(0, 1fr) 124px auto 26px; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.nx-parts .sub { white-space: nowrap; }
+.nx-parts .sym b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-parts .in { display: flex; align-items: center; gap: 5px; color: var(--text-3); }
+.nx-parts .in .tin { width: 100%; min-width: 0; font-size: 15px; font-weight: 600; }
+.nx-parts:not(.own) .xb { visibility: hidden; }
+#nxAdd { font: inherit; font-size: 13px; color: var(--text-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; align-self: flex-start; max-width: 100%; }
+.nx-pick .err { margin: 0; min-height: 0; }
+.to { font-style: normal; color: var(--text-3); margin: 0 5px; font-weight: 400; }
+#nxHabit { min-height: 200px; }
+.ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); gap: 12px; }
+.way { text-align: left; background: var(--surface-2); border: 1px solid transparent; border-radius: 14px; padding: 14px 15px; display: flex; flex-direction: column; gap: 9px; min-width: 0; transition: border-color .15s, background .15s; }
+.way:hover:not(:disabled) { border-color: var(--line-2); }
+.way[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface-2)); }
+.way:disabled { cursor: default; opacity: .6; }
+.way .hd { display: flex; align-items: center; gap: 9px; min-height: 28px; }
+.way .hd b { font-weight: 640; font-size: 15px; flex: 1; min-width: 0; }
+.way .ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--surface); color: var(--text-2); }
+.way[aria-pressed="true"] .ico { background: var(--accent); color: #fff; }
+.way .rule { font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.way .alloc { margin-top: auto; padding-top: 4px; height: 12px; }
+.way .say { font-size: 13px; color: var(--text-2); line-height: 1.45; }
+.way .say b { color: var(--text); font-weight: 620; white-space: nowrap; }
+.way .eff { display: grid; gap: 2px; font-size: 12px; color: var(--text-3); padding-top: 8px; border-top: 1px solid var(--line); }
+.way .eff b { color: var(--text-2); font-weight: 600; }
+#nxStart b { color: var(--text-2); font-weight: 600; }
+#nxFlow { min-height: 140px; margin-bottom: 14px; }
+#nxFlow svg { display: block; overflow: visible; width: 100%; height: 140px; }
+#nxFlow .axis { fill: var(--text-3); font-size: 11px; }
+#nxFlow .lbl { fill: var(--text-2); font-size: 12px; } #nxFlow .lbl.me { fill: var(--text); font-weight: 600; }
+.key.hatch { background: repeating-linear-gradient(45deg, var(--text-3) 0 2px, transparent 2px 5px); border: 1px solid var(--text-3); height: 10px; }
+#nxEffStats { padding-bottom: 14px; }
+#nxEffStats .v b, #nxEff b { font-weight: inherit; }
+#nxEffStats .v { white-space: normal; }
+#nxEff td, #nxCandT td { padding: 9px 8px; font-size: 14px; }
+#nxEff td:first-child, #nxCandT td:first-child { padding-left: 0; } #nxEff td:last-child, #nxCandT td:last-child { padding-right: 0; }
+#nxEff tbody tr { cursor: default; } #nxEff tbody tr:hover td { background: transparent; }
+#nxEff td .flat .to, #nxEff td .flat b { color: inherit; font-weight: 400; }
+#nxEff td b { font-weight: 620; }
+#nxCandT td:last-child { width: 26px; }
+#nxCandT .rng { justify-content: flex-end; } #nxCandT .rng .track { width: 84px; }
+#nxCandT tr:not([data-sym]) { cursor: default; }
+#nxCandCard .chk { margin: 0; font-size: 12px; color: var(--text-3); }
+#nxCandCard .inl { margin-top: 12px; } #nxCandCard .err { margin: 6px 0 0; min-height: 0; }
+#nxCandCard .inl .sg { max-width: 420px; }
+/* the comparison keeps the columns its card has room for */
+#nxCandCard { container-type: inline-size; }
+#nxCandT :is(.c1, .c2, .c3, .c4) { display: none; }
+#nxCandT th, #nxEff th { white-space: normal; line-height: 1.3; vertical-align: bottom; }
+#nxCandT .sub { max-width: 170px; white-space: nowrap; }
+@container (min-width: 400px) { #nxCandT .c1 { display: table-cell; } }
+@container (min-width: 600px) { #nxCandT .c2 { display: table-cell; } }
+@container (min-width: 780px) { #nxCandT .c3 { display: table-cell; } }
+@container (min-width: 960px) { #nxCandT .c4 { display: table-cell; } }
+@media (max-width: 560px) {
+  .nx-parts .r { grid-template-columns: minmax(0, 1fr) 96px auto 22px; gap: 8px; }
+  .nx-parts .sym .sub { display: block; }
+  .ch:has(.chk) { flex-wrap: wrap; }
+}
+@media (min-width: 1100px) {
+  #nxHero { grid-column: span 7; } #nxHabitCard { grid-column: span 5; }
+  #nxEffCard { grid-column: span 12; } #nxCandCard { grid-column: span 12; }
+  #nxHabit { min-height: 240px; }
+}
+@media (min-width: 1500px) { #nxEffCard { grid-column: span 5; } #nxCandCard { grid-column: span 7; } }
+@media (min-width: 1900px) {
+  #nxHero { grid-column: span 5; } #nxHabitCard { grid-column: span 3; } #nxWaysCard { grid-column: span 4; }
+  #nxWaysCard .ways { grid-template-columns: repeat(2, minmax(0, 1fr)); flex: 1; }
+}
+/* ---- the next buy, on the overview ---- */
+#nextCard { cursor: pointer; }
+#nextCard:hover { border-color: var(--line-2); }
+#nextBody .top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+#nextBody .top b { font-size: 26px; font-weight: 660; letter-spacing: -.02em; line-height: 1.1; }
+#nextBody .top span { font-size: 12px; color: var(--text-3); }
+#nextBody .legend { margin-top: 12px; }
+#nextBody .note { margin: 10px 0 0; }
+.since { font-size: 13px; color: var(--text-3); }
+.since:empty { display: none; }
+.since .mv { margin-left: 10px; white-space: nowrap; }
+.since .mv::before { content: "· "; }
+@media (max-width: 700px) { .since .mv { display: none; } }
+.inbox .acts li[data-go] { cursor: pointer; } .inbox .acts li[data-go]:hover b { color: var(--accent); }
+/* seven pages: the header stays on one row */
+@media (min-width: 1501px) and (max-width: 1660px) { #market .more { display: none; } .search { flex-basis: 210px; } }
+@media (min-width: 861px) and (max-width: 1500px) { .views button { padding: 5px 9px; } }
+@media (min-width: 861px) and (max-width: 1180px) { #market > span { display: none; } #market { padding: 8px 9px; } .views button { padding: 5px 7px; } header { gap: 7px; } }
+@media (min-width: 861px) and (max-width: 1010px) { header h1 { font-size: 0; gap: 0; } .views { margin-left: 0; } .views button { padding: 5px 6px; font-size: 12.5px; } }
+/* ================= 6.1 ================= */
+/* ---- Claude's read ---- */
+#nxAiCard { container-type: inline-size; }
+.ai-lead { margin: 0 0 14px; font-size: 15px; line-height: 1.55; color: var(--text-2); max-width: 74ch; }
+.ai-busy { display: flex; align-items: center; gap: 10px; font-size: 15px; margin-bottom: 12px; }
+.ai-busy span { color: var(--text-3); font-size: 13px; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-read { display: grid; gap: 22px 40px; grid-template-columns: minmax(0, 1fr); transition: opacity .2s; }
+@container (min-width: 720px) { .ai-read { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ai-read > :first-child { grid-row: span 2; } }
+@container (min-width: 1080px) { .ai-read { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); } .ai-read > :first-child { grid-row: auto; } }
+#nxAiCard.busy .ai-read { opacity: .5; }
+.ai-head { margin: 0 0 14px; font-size: clamp(19px, 1.7vw, 23px); font-weight: 620; letter-spacing: -.012em; line-height: 1.3; color: var(--text); }
+.ai-read h3 { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); margin: 0 0 9px; }
+.ai-read h3:not(:first-child) { margin-top: 20px; }
+.ai-read p, .ai-read li { font-size: 14px; line-height: 1.55; color: var(--text-2); margin: 0; }
+.ai-read ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.ai-read li { padding-left: 14px; position: relative; }
+.ai-read li::before { content: ""; position: absolute; left: 0; top: .62em; width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
+.ai-read p.ai-head { font-size: clamp(19px, 1.7vw, 23px); line-height: 1.3; color: var(--text); margin-bottom: 14px; }
+.ai-split { display: grid; margin-top: 12px; }
+.ai-split .r { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 3px 9px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.ai-split .r b, .ai-split .r > span { font-weight: 640; color: var(--text); }
+.ai-split .r p { grid-column: 2 / -1; font-size: 13px; }
+.ai-read p.ai-amt { padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; } .ai-amt b { color: var(--text); font-weight: 640; }
+.ai-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 10px; }
+.ai-acts .btn:disabled, #nxAiCard .mini:disabled, #nxTgtSave:disabled, #aiSend:disabled { opacity: .5; cursor: default; }
+.ai-read p.ai-mix { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 9px 0 10px; font-size: 13px; } .ai-mix span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ai-qa { display: grid; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); } .ai-qa:empty { display: none; }
+.ai-qa > div { max-width: 88ch; } .ai-qa .q { margin: 0 0 4px; font-weight: 600; font-size: 14px; } .ai-qa .a { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.ai-ask { display: flex; gap: 8px; margin-top: 16px; max-width: 88ch; }
+.ai-ask input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.ai-ask input:focus, .ai-more textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.ai-ask .mini { padding: 4px 16px; font-size: 13px; }
+.ai-more { margin-top: 12px; max-width: 88ch; font-size: 13px; color: var(--text-2); }
+.ai-more summary { cursor: pointer; color: var(--text-3); width: fit-content; } .ai-more summary:hover { color: var(--text); }
+.ai-more textarea { display: block; width: 100%; margin-top: 8px; font: inherit; font-size: 14px; line-height: 1.45; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; resize: vertical; min-height: 60px; }
+#nxAiCard .err { margin: 8px 0 0; min-height: 0; }
+/* ---- where it leads ---- */
+#nxRoad { min-height: 240px; }
+#nxRoad .col .cross, #nxRoad .col circle { opacity: 0; } #nxRoad .col:hover .cross, #nxRoad .col:hover circle { opacity: 1; }
+.ai-read .tag { margin: 0; font-size: 12px; color: var(--text-3); }
+#nxRoadStats { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+#nxRoadStats .v { white-space: normal; } #nxRoadStats .v b { font-weight: inherit; }
+.tip .pl .sw { width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; }
+/* ---- a target mix ---- */
+.tgt { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.tgt-hd { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; font-size: 13px; }
+.tgt-hd > b { font-weight: 600; }
+#nxTgtSay { flex: 1; min-width: 200px; display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-2); } #nxTgtSay span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+#nxTgtForm { margin-top: 12px; max-width: 560px; }
+.tgt-rows .r { display: grid; grid-template-columns: minmax(0, 1fr) auto 92px; gap: 12px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; cursor: default; }
+.tgt-rows .now { font-size: 12px; color: var(--text-3); white-space: nowrap; } .tgt-rows .in { display: flex; align-items: center; gap: 5px; color: var(--text-3); } .tgt-rows .tin { width: 100%; }
+.tgt-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; } #nxTgtSum { flex: 1 1 100%; font-size: 13px; color: var(--text-2); }
+/* ---- rows that keep inside their cards ---- */
+.nx-parts { grid-template-columns: minmax(0, 1fr); }
+.nx-parts .sub { overflow: hidden; text-overflow: ellipsis; }
+#nxHero { container-type: inline-size; }
+@container (max-width: 680px) { .nx-top { grid-template-columns: minmax(0, 1fr); gap: 24px; } .nx-pick { padding-left: 0; border-left: 0; } }
+#nxEffCard { container-type: inline-size; }
+@container (max-width: 640px) { #nxEff .hide-s { display: none; } }
+@container (max-width: 420px) { #nxEff td, #nxEff th { padding-left: 4px; padding-right: 4px; font-size: 13px; } #nxEff .to { margin: 0 2px; } #nxEff .sub { font-size: 11px; } #nxEff .sym { min-width: 0; } #nxEff .sym b { white-space: normal; overflow-wrap: anywhere; } }
+/* ---- the page's order ---- */
+@media (min-width: 1100px) {
+  #next > .card { order: 6; } #next > #nxHero { order: 1; } #next > #nxHabitCard { order: 2; } #next > #nxAiCard { order: 4; } #next > #nxWaysCard { order: 5; } #next > #nxCandCard { order: 7; }
+  #nxAiCard, #nxRoadCard { grid-column: span 12; }
+}
+@media (min-width: 1500px) { #nxEffCard { grid-column: span 7; } #nxRoadCard { grid-column: span 5; } #nxCandCard { grid-column: span 12; } }
+@media (min-width: 1900px) { #next > #nxWaysCard { order: 3; } }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1><img src="/icon.svg" alt="">Folio</h1>
-    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="journey" title="Your investment from the first day (J)">Journey</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button></nav>
+    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="journey" title="Your investment from the first day (J)">Journey</button><button data-view="next" title="What to buy next, and how much (X)">Next</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button></nav>
     <button class="search" id="searchBox" title="Search for any stock, or jump to anything"><span>Search or jump to…</span><kbd id="palKey">Ctrl K</kbd></button>
     <span class="grow"></span>
     <span class="pill" id="market"><i class="dot"></i><span>Loading</span></span>
@@ -913,6 +1099,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <div class="label">Portfolio value</div>
       <div class="total pv" id="total">—</div>
       <div class="day num" id="day"></div>
+      <div class="since num" id="since"></div>
     </section>
     <section class="tiles" id="tiles"></section>
   </div>
@@ -961,6 +1148,10 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
   </div>
 
   <div class="rail">
+    <section class="card" id="nextCard" title="See how this was worked out, and other ways to place it (X)" hidden>
+      <div class="ch"><h2>Next buy</h2><a href="#" id="nextMore">See why</a></div>
+      <div class="num" id="nextBody"></div>
+    </section>
     <section class="card">
       <h2>Allocation</h2>
       <div class="alloc" id="alloc"></div>
@@ -1159,6 +1350,78 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <p class="note">One square per trading day, coloured by that day’s gain or loss. A dot marks the days you traded. Click a square to see that day.</p>
     </section>
   </div>
+
+  <div class="page" id="next">
+    <section class="card" id="nxHero">
+      <div class="ch"><h2>Your next buy</h2><span class="tag" id="nxTag"></span></div>
+      <div class="nx-top">
+        <div class="nx-amt">
+          <label for="nxBudget">How much ($)</label>
+          <div class="nx-big"><span>$</span><input class="pv num" id="nxBudget" inputmode="decimal" autocomplete="off" aria-describedby="nxWhen"></div>
+          <input type="range" class="slide" id="nxSlide" min="0" max="500" step="5" aria-label="How much to put in">
+          <div class="chips" id="nxChips"></div>
+          <p class="hint num" id="nxWhen"></p>
+        </div>
+        <div class="nx-pick">
+          <div class="nx-way" id="nxWay"></div>
+          <div class="nx-say num" id="nxSay">Reading your purchases…</div>
+          <p class="nx-why num" id="nxWhy"></p>
+          <div class="alloc" id="nxBar"></div>
+          <div class="nx-parts num" id="nxParts"></div>
+          <select id="nxAdd" aria-label="Add something else to the split" hidden></select>
+          <div class="err" id="nxErr" role="alert"></div>
+        </div>
+      </div>
+    </section>
+    <section class="card" id="nxAiCard">
+      <div class="ch"><h2>Claude’s read</h2><span class="tag num" id="aiTag"></span></div>
+      <div id="aiBody"></div>
+      <div class="ai-qa" id="aiQa"></div>
+      <form class="ai-ask" id="aiAsk" hidden><input id="aiQ" maxlength="500" placeholder="Ask Claude about your next buy, e.g. “why not more NVDA?”" autocomplete="off" aria-label="A question for Claude"><button class="mini" id="aiSend" type="submit">Ask</button></form>
+      <details class="ai-more" id="aiMore" hidden><summary>What Claude should know about you</summary>
+        <textarea id="aiBrief" rows="2" maxlength="600" placeholder="e.g. I’m investing for ten years or more. I can’t buy US-listed funds. I have other savings in the bank." aria-label="What Claude should know about you"></textarea>
+      </details>
+      <div class="err" id="aiErr" role="alert"></div>
+      <p class="note">Claude is an AI model. It reads the figures on this page and recent headlines, it can be wrong, and it doesn’t know your wider finances; this is not professional advice. Asking sends your holdings, purchases and these figures to Anthropic through the Claude Code sign-in on this computer.</p>
+    </section>
+    <section class="card" id="nxHabitCard">
+      <div class="ch"><h2>How you have been buying</h2><div class="cmpl num" id="nxHabitKey"></div></div>
+      <div class="plot" id="nxHabit"></div>
+      <div class="kv" id="nxHabitStats"></div>
+    </section>
+    <section class="card" id="nxWaysCard">
+      <div class="ch"><h2>Folio’s four rules</h2></div>
+      <div class="ways" id="nxWays" role="group" aria-label="How to place the money"></div>
+      <p class="note" id="nxStart"></p>
+      <div class="tgt">
+        <div class="tgt-hd"><b>Your target mix</b><span class="num" id="nxTgtSay"></span><button class="mini" type="button" id="nxTgtEdit">Set a target</button></div>
+        <form id="nxTgtForm" novalidate hidden>
+          <div class="tgt-rows num" id="nxTgtRows"></div>
+          <div class="tgt-acts"><span class="num" id="nxTgtSum" role="status"></span><button class="mini" type="button" data-fill="now">Start from today’s mix</button><button class="mini" type="button" data-fill="claude" hidden>Start from Claude’s</button><button class="mini" type="button" data-fill="clear">Empty it</button><button class="mini" type="submit" id="nxTgtSave">Save</button></div>
+        </form>
+      </div>
+    </section>
+    <section class="card" id="nxEffCard">
+      <div class="ch"><h2>What it would change</h2><div class="cmpl num" id="nxFlowKey"></div></div>
+      <div class="tipbox" id="nxFlow"></div>
+      <div class="pstats" id="nxEffStats"></div>
+      <table id="nxEff"><thead><tr><th>Holding</th><th>You buy</th><th>Share of portfolio</th><th class="hide-s">Average price</th><th class="hide-s" title="The rise needed from today’s price to reach your average price">To get back</th></tr></thead><tbody id="nxEffRows"></tbody></table>
+      <p class="note">“To get back” is the rise a holding needs from today’s price to reach the average you paid. Fees are not counted, and shares are worked out at the latest price.</p>
+    </section>
+    <section class="card" id="nxRoadCard">
+      <div class="ch"><h2>Where it leads</h2><div class="cmpl num" id="nxRoadKey"></div></div>
+      <div class="plot tipbox" id="nxRoad"></div>
+      <div class="pstats" id="nxRoadStats"></div>
+      <p class="note num" id="nxRoadNote"></p>
+    </section>
+    <section class="card" id="nxCandCard">
+      <div class="ch"><h2>What it could go to</h2><label class="chk"><input type="checkbox" id="nxBroad">Weigh an S&amp;P 500 fund too</label></div>
+      <table id="nxCandT"><thead><tr><th>Name</th><th class="c1">Price</th><th title="How far the latest price is from the average you paid">Since you bought</th><th class="c4" title="Where the latest price sits between the lowest and highest of the past year">52-week range</th><th class="c3" title="The average of analysts’ price targets, and how far that is from the latest price. An opinion, not a forecast.">Analysts’ target</th><th title="How much its price has swung in a year, going by the daily moves of the past year">Yearly swing</th><th class="c2" title="How closely its daily moves have matched your holdings taken together: 1 means in step, 0 means unrelated">Moves with yours</th><th class="c2">Your share</th><th class="c2" title="How much of your portfolio’s swing this holding causes. More than its share of the money means it adds more than its weight.">Share of the swing</th><th></th></tr></thead><tbody id="nxCandRows"></tbody></table>
+      <div class="inl"><div class="sg"><input id="nxIdea" placeholder="Weigh something else: a ticker or a company name" autocomplete="off" spellcheck="false" aria-label="Ticker to weigh"></div></div>
+      <div class="err" id="nxIdeaErr" role="alert"></div>
+      <p class="note">Your holdings, your watchlist, and anything you add here. Adding an idea only puts it in the comparison. Click a row to chart it.</p>
+    </section>
+  </div>
 </main>
 
 <dialog id="dlg">
@@ -1216,8 +1479,8 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
   <form method="dialog">
     <h3>Keyboard shortcuts</h3>
     <dl class="keys">
-      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”</dd>
-      <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Journey, Markets, Analysis, Plan, Lab</dd>
+      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”, or “next 200” to see where $200 could go</dd>
+      <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>X</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Journey, Next, Markets, Analysis, Plan, Lab</dd>
       <dt><kbd>F</kbd></dt><dd>Wall display: the portfolio full screen, for a screen across the room</dd>
       <dt><kbd>N</kbd></dt><dd>What Folio noticed for you</dd>
       <dt><kbd>T</kbd></dt><dd>Record a trade</dd>
@@ -1245,6 +1508,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     <label><input type="checkbox" data-n="earnings">Earnings are due within a day, for what you hold and watch</label>
     <label><input type="checkbox" data-n="summary">A line on how each trading day closed</label>
     <label><input type="checkbox" data-n="milestones">Your portfolio passes a round amount or closes at its highest so far</label>
+    <label><input type="checkbox" data-n="rhythm">Your usual wait between buys has passed</label>
     <label><input type="checkbox" data-n="desktop">Also show these as desktop notifications</label>
   </form>
 </div>
@@ -1307,6 +1571,8 @@ const IC = {
   screen: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/>',
   route: '<circle cx="6" cy="18" r="2.500"/><circle cx="18" cy="6" r="2.500"/><path d="M8.500 18H14a3.500 3.500 0 0 0 0-7h-4a3.500 3.500 0 0 1 0-7h5.500"/>',
   drop: '<path d="M12 3s6 6.200 6 10.500a6 6 0 0 1-12 0C6 9.200 12 3 12 3Z"/>',
+  spark: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3Z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.500"/><path d="M12 12h.01"/>',
 };
 const ic = (n, s = 16) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 document.querySelectorAll('[data-ic]').forEach(e => e.insertAdjacentHTML('afterbegin', ic(e.dataset.ic, e.tagName === 'A' ? 13 : 16)));
@@ -1437,7 +1703,7 @@ function setState(s) {
   if (evTop) for (const e of evs.filter(e => !evTop.has(e.id)).reverse()) toast(e.title + (e.body ? ' · ' + e.body : ''));
   evTop = new Set(evs.map(e => e.id));
   $('ver').textContent = 'Folio ' + (S.version || '');
-  recalc(); render(); renderInbox(); renderPages(); connect(); loadNews();
+  recalc(); if (sincePending) sinceCheck(); render(); renderInbox(); renderPages(); connect(); loadNews();
 }
 function paint() {
   renderQ = false; renderAt = performance.now(); render(); renderStrip(); renderPop(); renderPages(true);
@@ -1626,6 +1892,7 @@ function render() {
     const d = new Date(x.date + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     return `<li><div class="w">${what}<span class="sub">${d}${x.note ? ' · ' + esc(x.note) : ''}</span></div><span class="pv">${usd(amt)}</span><button class="x" data-edit="${esc(x.id)}" aria-label="Edit entry" title="Edit entry">${ic('pencil', 14)}</button><button class="x del" data-del="${esc(x.id)}" aria-label="Remove entry" title="Remove entry">${ic('x', 14)}</button></li>`;
   }).join('') || '<li class="flat">Nothing recorded yet.</li>'; }
+  renderSince(); if (view === 'overview') renderNextCard();
   fitTable(); railMore();
 }
 
@@ -2058,7 +2325,7 @@ function reloadChart() { hovering = false; if (H) $('chart').classList.add('busy
 let beat = 0;
 async function refresh() {
   try { const n = beat++;
-    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); if (view === 'journey') loadJourney(); }
+    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); if (view === 'journey') loadJourney(); if (view === 'next' || view === 'overview') loadNext(); }
     if (n % 6 === 0 && view === 'markets') loadWorld();
     if (n % 120 === 0) loadCalendar();
     if (live && n % 3) return;  // the stream carries prices; this just resyncs
@@ -2190,7 +2457,7 @@ $('cancel').onclick = () => $('dlg').close();
 $('seg').onclick = e => e.target.dataset.t && !e.target.disabled && setType(e.target.dataset.t);
 $('fSym').onchange = symChanged;
 ['fQty', 'fPrice', 'fFee', 'fAmt'].forEach(id => $(id).oninput = updateSum);
-const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; jLoadAt = 0; if (view === 'journey') loadJourney(true); if (view === 'markets') loadWorld(); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); };
+const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; jLoadAt = 0; loadNext(true); if (view === 'journey') loadJourney(true); if (view === 'markets') loadWorld(); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); };
 
 $('form').onsubmit = async e => {
   e.preventDefault();
@@ -2268,6 +2535,7 @@ document.addEventListener('keydown', e => {
   else if (k === '?') $('help').showModal();
   else if (k === 'o') go('overview');
   else if (k === 'j') go('journey');
+  else if (k === 'x') go('next');
   else if (k === 'a') go('analysis');
   else if (k === 'p') go('plan');
   else if (k === 'w') go('markets');
@@ -2304,9 +2572,10 @@ function setView(v) {
   if (v === view) return;
   view = v; document.documentElement.dataset.view = v; store.set('view', v);
   syncViews(); window.scrollTo(0, 0);
-  if (v === 'overview') { fitTable(true); drawChart(); renderPerf(); railMore(); }
+  if (v === 'overview') { fitTable(true); drawChart(); renderPerf(); loadNext(); railMore(); }
   else if (v === 'markets') loadWorld();
   else if (v === 'journey') loadJourney();
+  else if (v === 'next') { nxDrawAt = 0; loadNext(); }
   else { loadAnalysis(); if (v === 'lab') labLoad(); }
   if (v !== 'journey' && jTimer) jPlay(false);
   connect();
@@ -2350,6 +2619,7 @@ function renderPages(light) {
   if (!S) return;
   if (wallOn) renderWall(light);
   if (view === 'journey') renderJourney(light);
+  else if (view === 'next') renderNext(light);
   else if (view === 'analysis') renderAnalysis();
   else if (view === 'plan') renderPlan(light);
   else if (view === 'markets') renderMarkets(light);
@@ -2753,13 +3023,16 @@ $('sideTabs').onclick = e => { const k = e.target.dataset.side; if (k) { sideTab
 $('deep').onclick = e => { const ed = e.target.closest('[data-edit]'), tx = ed && S.transactions.find(t => t.id === ed.dataset.edit); if (tx) openTrade(null, tx); };
 
 // ================= search and commands (/ or Ctrl K) =================
-let palItems = [], palAt = 0, palN = 0, palTimer;
+let palItems = [], palAt = 0, palN = 0, palTimer, nxWant = null;
+const nextAmt = q => { const m = /^next\s+\$?\s*(\d[\d,]*(?:\.\d+)?)\s*\$?$/.exec(q.trim().toLowerCase()), v = m ? parseFloat(m[1].replace(/,/g, '')) : 0; return v >= 1 && v <= 1e9 ? v : null; };
 function palLocal(q) {
   const run = fn => () => { if (view !== 'overview') setView('overview'); fn(); };
   const acts = [
     ['Record a trade', 'T', () => openTrade(sel && held(sel) ? sel : undefined), 'plus', 'buy sell deposit withdraw dividend add'],
     ['Overview', 'O', () => setView('overview'), 'home', 'dashboard portfolio holdings page'],
     ['Journey', 'J', () => setView('journey'), 'route', 'story history timeline day by day replay time machine every purchase scored months calendar moments milestones page'],
+    ['Next buy', 'X', () => setView('next'), 'target', 'what to buy next how much suggestion suggestions amount budget habit rebalance average down spread calm page'],
+    ['Ask Claude about your next buy', '', () => { setView('next'); setTimeout(() => { $('nxAiCard').scrollIntoView({ block: 'center' }); ($('aiAsk').hidden ? $('nxAiCard').querySelector('[data-ai="read"]') : $('aiQ'))?.focus(); }, 80); }, 'spark', 'claude ai opinion read advice smarter why question where what buy'],
     ['Analysis', 'A', () => setView('analysis'), 'pulse', 'risk volatility beta correlation sectors drawdown page'],
     ['Markets', 'W', () => setView('markets'), 'wave', 'world indices europe asia rates commodities currencies crypto movers gainers losers trending open closed page'],
     ['Plan', 'P', () => setView('plan'), 'flag', 'goal projection target mix rebalance future page'],
@@ -2785,9 +3058,11 @@ function palLocal(q) {
   for (const p of S?.positions || []) sym(p.symbol, p.name, 'You hold it');
   for (const w of S?.watch || []) sym(w.symbol, w.name, 'Watchlist');
   for (const m of M) sym(m.symbol, m.name, m.group === 'index' ? 'Market' : 'Most traded');
+  const nb = nextAmt(q);
+  if (nb) return [{ hd: 'Next buy' }, { name: `See where ${dollars(nb, nb % 1 ? 2 : 0)} could go`, key: 'Enter', fn: () => { nxWant = nb; nxDrawAt = 0; if (view === 'next') renderNext(); else setView('next'); }, icon: 'target', words: '' }];
   const en = parseEntry(q);
   if (en) return [{ hd: 'Record' }, { name: entryText(en), key: 'Enter', fn: () => quickEntry(en), icon: 'plus', words: '' }];
-  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 16)];
+  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 18)];
   const hit = s => s.toLowerCase().includes(q);
   const a = acts.filter(x => hit(x.name) || hit(x.words)), s = syms.filter(x => hit(x.sym) || hit(x.name) || hit(x.full));
   return [...(s.length ? [{ hd: 'On this page' }, ...s] : []), ...(a.length ? [{ hd: 'Do' }, ...a] : [])];
@@ -2818,7 +3093,7 @@ function openPal() {
 $('palQ').oninput = () => {
   const q = $('palQ').value.trim().toLowerCase(), my = ++palN;
   palItems = palLocal(q); palAt = 0; palDraw(); clearTimeout(palTimer);
-  if (!q || parseEntry(q)) return;
+  if (!q || parseEntry(q) || nextAmt(q)) return;
   palTimer = setTimeout(async () => { try {
     const r = await api('/api/search?q=' + encodeURIComponent(q)); if (my !== palN || !$('pal').open) return;
     const have = new Set(palItems.filter(x => x.sym).map(x => x.sym)), more = r.filter(x => !have.has(x.symbol)).map(x => ({ sym: x.symbol, name: x.symbol, full: x.name, kind: [x.type, x.exchange].filter(Boolean).join(' · ') }));
@@ -3156,13 +3431,13 @@ $('mixTest').onclick = () => { if (!S) return; labInit(); const t = targetMix();
 
 // ================= inbox: what Folio noticed =================
 let evTop = null, inSeen = 0;
-const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell', milestone: 'star' };
+const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell', milestone: 'star', rhythm: 'target' };
 function renderInbox() {
   const box = S.inbox || { events: [], seen: 0, settings: {} }, n = box.events.filter(e => e.t > box.seen).length;
   $('bellBtn').classList.toggle('has', n > 0); $('bellN').textContent = n > 9 ? '9+' : n || '';
   $('bellBtn').setAttribute('aria-label', n ? `Noticed for you: ${n} new` : 'Noticed for you');
   if ($('inbox').hidden) return;
-  put($('inList'), box.events.map(e => `<li class="${e.t > inSeen ? 'new' : ''}"${e.symbol ? ` data-sym="${esc(e.symbol)}" title="Show ${esc(e.symbol)} on the chart"` : ''}><span class="ico" style="--tone:var(--${e.tone === 'up' || e.tone === 'down' ? e.tone : 'accent'})">${ic(EVI[e.kind] || 'bell', 14)}</span><div class="w"><b>${esc(e.title)}</b><span class="sub">${e.body ? esc(e.body) + ' · ' : ''}${ago(e.t)}</span></div></li>`).join('')
+  put($('inList'), box.events.map(e => `<li class="${e.t > inSeen ? 'new' : ''}"${e.symbol ? ` data-sym="${esc(e.symbol)}" title="Show ${esc(e.symbol)} on the chart"` : e.go === 'next' ? ' data-go="next" title="Open Next"' : ''}><span class="ico" style="--tone:var(--${e.tone === 'up' || e.tone === 'down' ? e.tone : 'accent'})">${ic(EVI[e.kind] || 'bell', 14)}</span><div class="w"><b>${esc(e.title)}</b><span class="sub">${e.body ? esc(e.body) + ' · ' : ''}${ago(e.t)}</span></div></li>`).join('')
     || '<li class="flat">Nothing yet. Folio keeps an eye on your holdings while markets trade and leaves a line here when something happens.</li>');
   if (!$('inForm').contains(document.activeElement)) for (const el of $('inForm').querySelectorAll('[data-n]')) el.type === 'checkbox' ? el.checked = !!box.settings[el.dataset.n] : el.value = box.settings[el.dataset.n] ?? '';
 }
@@ -3176,7 +3451,7 @@ async function toggleInbox(on = $('inbox').hidden) {
 $('bellBtn').onclick = e => { e.stopPropagation(); toggleInbox(); };
 document.addEventListener('pointerdown', e => { if (!$('inbox').hidden && !e.target.closest('#inbox, #bellBtn')) toggleInbox(false); });
 addEventListener('resize', () => { if (!$('inbox').hidden) placeInbox(); });
-$('inList').onclick = e => { const li = e.target.closest('[data-sym]'); if (li) { toggleInbox(false); show(li.dataset.sym); } };
+$('inList').onclick = e => { const li = e.target.closest('[data-sym], [data-go]'); if (li) { toggleInbox(false); li.dataset.go ? go(li.dataset.go) : show(li.dataset.sym); } };
 $('inSet').onclick = () => { $('inForm').hidden = !$('inForm').hidden; $('inSet').setAttribute('aria-pressed', !$('inForm').hidden); };
 $('inClear').onclick = async () => { try { const s = await post('/api/inbox', { clear: true, seen: true }); S.inbox = s.inbox; renderInbox(); } catch (err) { toast(err.message, true); } };
 $('inForm').onsubmit = e => e.preventDefault();
@@ -3501,6 +3776,576 @@ for (const id of ['jMiles', 'jLotRows', 'jMonthRows', 'jCal']) $(id).addEventLis
 $('jLots').querySelector('thead').onclick = e => { const th = e.target.closest('th[data-ls]'); if (!th) return;
   jSort = [th.dataset.ls, th.dataset.ls === jSort[0] ? -jSort[1] : th.dataset.ls === 'date' ? 1 : -1]; store.set('jsort', jSort.join(':')); renderJLots(jLots()); };
 new ResizeObserver(() => { if (view === 'journey' && JN?.days.length) { drawJourney(); renderJCal(); } }).observe($('jPlot'));
+
+// ================= next: where a new buy could go, and how much =================
+// NX: how you have been buying, what a buy could go to, and how those have moved together. NS: this page's settings.
+let NX = null, NS = null, nxBusy = false, nxAt = 0, nxSaveT = null, nxM = null, nxDrawAt = 0, AI = null;
+const BROAD = '^GSPC', ROAD = 12;
+const WAYS = [
+  ['mix', 'Back to your mix', 'pie', 'Tops up whatever has slipped furthest below the share you gave it.'],
+  ['calm', 'Calm the swings', 'wave', 'Goes where it steadies the whole portfolio the most, judged by how everything moved over the past year.'],
+  ['habit', 'Carry on as before', 'redo', 'Splits it the way your last few buys went.'],
+  ['cost', 'Lower what you paid', 'fall', 'Goes to the holding furthest below your average price.'],
+];
+const neat = x => x < 500 ? Math.max(5, Math.round(x / 5) * 5) : Math.round(x / 25) * 25;
+const waitWords = d => d < 12 ? many(d, 'day') : d < 50 ? many(Math.round(d / 7), 'week') : many(Math.round(d / 30.4), 'month');
+const isoDay = (s, o = { month: 'short', day: 'numeric' }) => new Date(s + 'T12:00').toLocaleDateString([], o);
+const arrowTo = (a, b) => `${a}<i class="to">→</i><b>${b}</b>`;
+const amt = n => usd(n, Math.abs(n) >= 1000 || Math.abs(n - Math.round(n)) < 0.005 ? 0 : 2);
+
+function nxInit() {
+  if (NS && (view === 'next' || nxSaveT)) return;  // while you are on the page, what is on it wins
+  const s = S.next || {};
+  NS = { budget: s.budget ?? null, way: s.way || null, broad: s.broad !== false, ideas: [...(s.ideas || [])], own: { ...(s.own || {}) }, target: { ...(s.target || {}) }, brief: s.brief || '' };
+}
+function nxSave() {
+  clearTimeout(nxSaveT);
+  nxSaveT = setTimeout(async () => { nxSaveT = null;
+    try { const s = await post('/api/next', NS, 'PUT'); if (S) S.next = s.next; $('nxErr').textContent = ''; }
+    catch (err) { $('nxErr').textContent = err.message; } }, 700);
+}
+async function loadNext(force) {
+  if (nxBusy) return;
+  if (!force && NX && Date.now() - nxAt < 60000) return renderNext();
+  nxBusy = true;
+  try { NX = await api('/api/next'); nxAt = Date.now(); AI = NX.claude || AI; if (AI?.busy) aiWatch(); }
+  catch (e) { if (!NX) NX = { error: e.message, habit: { buys: [] }, cands: [], cov: { names: [], m: [], days: {} } }; }
+  nxBusy = false; renderNext(); renderNextCard();
+}
+
+// everything a buy could go to: what you hold, a broad fund, your watchlist and your ideas
+function nxCands() {
+  const all = NX.cands.map(c => ({ ...c, k: c.symbol, label: c.symbol, price: priceOf(c.symbol) ?? c.price, usd: !c.currency || c.currency === 'USD' }));
+  const mine = all.filter(c => c.held).sort((a, b) => (held(b.k)?.value || 0) - (held(a.k)?.value || 0));
+  const out = [...mine, ...(NS.broad && NX.cov.names.includes(BROAD) ? [{ k: BROAD, symbol: BROAD, label: 'S&P 500 fund', name: 'Any fund that tracks the S&P 500', broad: true, usd: true }] : []), ...all.filter(c => !c.held)];
+  let n = Object.keys(colors).length;  // colour follows the holding; the others take the next ones, in a fixed order
+  for (const c of out) c.col = colors[c.k] || (n < 8 ? `var(--s${++n})` : 'var(--neutral)');
+  return out;
+}
+
+// the whole picture for the amount on the page: each way of placing it, what the portfolio would look like after, and where it leads
+function nxModel() {
+  const C = nxCands(), by = Object.fromEntries(C.map(c => [c.k, c])), names = NX.cov.names;
+  const cv = (a, b) => { const i = names.indexOf(a), j = names.indexOf(b); return i < 0 || j < 0 ? null : NX.cov.m[i][j]; };
+  const vol = k => cv(k, k) == null ? null : Math.sqrt(cv(k, k) * 252) * 100;
+  const vals = Object.fromEntries(S.positions.filter(p => by[p.symbol]).map(p => [p.symbol, p.value])), cost0 = Object.fromEntries(S.positions.map(p => [p.symbol, p.cost]));
+  const variance = v => { let s = 0; for (const a in v) for (const b in v) { const c = cv(a, b); if (c != null) s += v[a] * v[b] * c; } return Math.max(0, s); };
+  const swing = (v, total) => total > 0 ? Math.sqrt(variance(v) * 252) / total * 100 : 0;
+  const withP = k => { let s = 0; for (const a in vals) { const c = cv(k, a); if (c != null) s += vals[a] * c; } const d = Math.sqrt((cv(k, k) || 0) * variance(vals)); return d > 0 ? s / d : null; };  // how closely k moves with what you hold
+  const shares = v => { const tot = variance(v), o = {}; if (!(tot > 0)) return o;  // how much of the swing each holding causes
+    for (const a in v) { let s = 0; for (const b in v) { const c = cv(a, b); if (c != null) s += v[b] * c; } o[a] = v[a] * s / tot * 100; } return o; };
+  const sum = o => Object.values(o).reduce((a, x) => a + x, 0), top = m => { let k = null; for (const x in m) if (k == null || m[x] > m[k]) k = x; return k; };
+  const ownKeys = Object.keys(NS.own).filter(k => by[k]), ownSum = ownKeys.reduce((a, k) => a + NS.own[k], 0);
+  const isOwn = NS.way === 'own' && ownKeys.length > 0;
+  const usual = neat(NX.habit.typical || S.plan?.monthly || 100), B = isOwn ? ownSum : NS.budget ?? usual, inv = S.invested;
+
+  const tidy = parts => {  // slices too small to be worth an order go to the largest; cents are made to add up
+    const ks = Object.keys(parts).filter(k => parts[k] > 0.004).sort((a, b) => parts[b] - parts[a]), out = {};
+    if (!ks.length) return out;
+    let rest = B;
+    for (const k of ks.slice(1)) if (parts[k] >= Math.max(1, B * 0.08)) { out[k] = Math.round(parts[k] * 100) / 100; rest -= out[k]; }
+    return { [ks[0]]: Math.round(rest * 100) / 100, ...out };
+  };
+  const cents = parts => { const out = Object.fromEntries(Object.entries(parts).map(([k, a]) => [k, Math.round(a * 100) / 100])), k = top(out);
+    if (k != null) out[k] = Math.round((out[k] + B - sum(out)) * 100) / 100; return out; };
+  // the mix new money steers toward: the target set here, else the one on Plan, else the shares of your money you gave each holding
+  const tg = (() => {
+    const own = Object.entries(NS.target || {}).filter(([k, v]) => by[k] && v > 0), osum = own.reduce((a, [, v]) => a + v, 0);
+    if (osum > 0) return { kind: 'set', t: Object.fromEntries(own.map(([k, v]) => [k, v / osum])) };
+    const ks = Object.keys(vals), pt = S.plan?.targets || {}, psum = ks.reduce((a, k) => a + (pt[k] || 0), 0);
+    if (psum > 0 && Math.abs(sum(pt) - 100) < 0.51) return { kind: 'plan', t: Object.fromEntries(ks.map(k => [k, (pt[k] || 0) / psum])) };
+    const csum = ks.reduce((a, k) => a + cost0[k], 0);
+    return { kind: 'paid', t: Object.fromEntries(ks.map(k => [k, csum > 0 ? cost0[k] / csum : 0])) };
+  })();
+  // each rule, as a way of placing b dollars into a portfolio that stands at st
+  const place = {
+    mix: (st, b) => { const ks = Object.keys(tg.t), now = sum(st.vals), gap = Object.fromEntries(ks.map(k => [k, Math.max(0, tg.t[k] * (now + b) - (st.vals[k] || 0))])), g = sum(gap);
+      return Object.fromEntries(ks.map(k => [k, g > 0 ? gap[k] / g * b : tg.t[k] * b])); },
+    calm: (st, b) => { const pool = C.filter(c => cv(c.k, c.k) != null), cur = { ...st.vals }, parts = {}, step = b / 20;  // twenty equal steps, each to wherever it leaves the least swing
+      for (let i = 0; i < 20 && pool.length; i++) {
+        let best = null, bv = Infinity;
+        for (const c of pool) { let d = step * step * cv(c.k, c.k); for (const k in cur) { const x = cv(c.k, k); if (x != null) d += 2 * step * cur[k] * x; } if (d < bv) { bv = d; best = c.k; } }
+        cur[best] = (cur[best] || 0) + step; parts[best] = (parts[best] || 0) + step;
+      }
+      return parts; },
+    habit: (st, b) => { const r = Object.fromEntries(Object.entries(NX.habit.recent || {}).filter(([k]) => by[k])), s = sum(r);
+      return s > 0 ? Object.fromEntries(Object.keys(r).map(k => [k, r[k] / s * b])) : null; },
+    cost: (st, b) => { const k = Object.keys(vals).filter(k => st.vals[k] < st.cost[k] * 0.995).sort((x, y) => st.vals[x] / st.cost[x] - st.vals[y] / st.cost[y])[0]; return k ? { [k]: b } : null; },
+  };
+  const fixed = parts => { const s = sum(parts); return (st, b) => s > 0 ? Object.fromEntries(Object.entries(parts).map(([k, a]) => [k, a / s * b])) : {}; };
+  // where a run of buys leads: the same amount each time, placed as things stand at that moment, prices held where they are today
+  const road = (fn, raw) => { const st = { vals: { ...vals }, cost: { ...cost0 } }, out = []; let total = S.total, cash = S.cash;
+    const snap = parts => { const t = top(st.vals); return { vals: { ...st.vals }, total, cash, parts, top: t ? { k: t, pct: total ? st.vals[t] / total * 100 : 0 } : null, swing: swing(st.vals, total) }; };
+    out.push(snap({}));
+    for (let i = 0; i < ROAD; i++) {
+      const got = fn(st, B) || (i ? place.mix(st, B) : {}), parts = raw ? cents(got) : tidy(got);
+      for (const k in parts) { st.vals[k] = (st.vals[k] || 0) + parts[k]; st.cost[k] = (st.cost[k] || 0) + parts[k]; }
+      const use = Math.min(Math.max(0, cash), B); total += B - use; cash -= use;
+      out.push(snap(parts));
+    }
+    return out; };
+  const mk = (fn, ok, why, raw) => { const r = road(fn, raw); return { ok: !!ok && (raw || sum(r[1].parts) > 0), parts: r[1].parts, after: r[1], road: r, end: r.at(-1), why }; };
+
+  const plans = {};
+  { const ks = Object.keys(tg.t), off = ks.map(k => [k, inv > 0 ? ((vals[k] || 0) / inv - tg.t[k]) * 100 : 0]).sort((a, b) => a[1] - b[1])[0], what = tg.kind === 'paid' ? 'the shares of your money you gave them' : 'your target mix';
+    plans.mix = { ...mk(place.mix, ks.length > 1, ks.length < 2 ? 'This needs at least two holdings, or a target mix.' : !off || off[1] > -0.5 ? `Your holdings sit close to ${what}, so this spreads it the same way.`
+      : `${esc(by[off[0]].label)} ${vals[off[0]] ? 'has slipped' : 'is'} ${(-off[1]).toFixed(1)} points below ${tg.kind === 'paid' ? `the ${(tg.t[off[0]] * 100).toFixed(0)}% of your money you put into it` : `its target share of ${(tg.t[off[0]] * 100).toFixed(0)}%`}.`), drift: off ? -off[1] : 0 }; }
+  { const p = mk(place.calm, true), k = top(p.parts), c = by[k], mine = swing(vals, inv);
+    plans.calm = { ...p, ok: !!k, why: !k ? 'There is not enough price history to judge this yet.'
+      : c.held ? `Of what you hold, ${esc(c.label)} is the steadiest place for it: it has swung about ${vol(k).toFixed(0)}% a year, against ${mine.toFixed(0)}% for your holdings together.`
+      : `${c.broad ? 'A fund that tracks the S&amp;P 500' : esc(c.label)} has swung about ${vol(k).toFixed(0)}% a year, against ${mine.toFixed(0)}% for ${S.positions.length > 1 ? 'your holdings together' : esc(S.positions[0].symbol)}, and only partly moves with ${S.positions.length > 1 ? 'them' : 'it'}.` }; }
+  { const r = Object.fromEntries(Object.entries(NX.habit.recent || {}).filter(([k]) => by[k])), ks = Object.keys(r).sort((a, b) => r[b] - r[a]), s = sum(r);
+    plans.habit = mk(place.habit, s > 0, !(s > 0) ? 'There are no purchases to go on yet.' : ks.length < 2 ? (NX.habit.recentDays < 2 ? `Your one buy so far was ${esc(ks[0])}.` : `Your last ${many(NX.habit.recentDays, 'buy')} all went to ${esc(ks[0])}.`)
+      : `Of the money in your last ${many(NX.habit.recentDays, 'buy')}, ${words(ks.map(k => `${(r[k] / s * 100).toFixed(0)}% went to ${esc(k)}`))}.`); }
+  { const under = S.positions.filter(p => by[p.symbol] && p.value < p.cost * 0.995).sort((a, b) => a.value / a.cost - b.value / b.cost)[0];
+    plans.cost = mk(place.cost, !!under, under ? `${esc(under.symbol)} is ${((1 - under.price / under.avgCost) * 100).toFixed(0)}% below your average price of ${usd(under.avgCost)}, further than anything else you hold.` : 'Nothing you hold is below what you paid for it.'); }
+  const read = AI?.read || null;
+  if (read) { const rs = Object.fromEntries(read.split.filter(x => by[x.symbol]).map(x => [x.symbol, x.amount]));
+    plans.claude = mk(fixed(rs), sum(rs) > 0 && B > 0, esc(read.headline) + (Math.abs(B - read.amount) > 0.5 ? ` <span class="flat">Scaled from the ${amt(read.amount)} Claude had in mind.</span>` : ''), true); }
+  if (isOwn) plans.own = { ...mk(fixed(Object.fromEntries(ownKeys.map(k => [k, NS.own[k]]))), true, 'Your own split. Change any amount, or add something else to it.', true), parts: Object.fromEntries(ownKeys.map(k => [k, NS.own[k]])) };
+
+  const t0 = top(vals), now = { top: t0 ? { k: t0, pct: S.total ? vals[t0] / S.total * 100 : 0 } : null, swing: swing(vals, S.total), held: swing(vals, inv), shares: shares(vals),
+    need: inv > 0 ? (S.cost / inv - 1) * 100 : 0, needAfter: inv + B > 0 ? ((S.cost + B) / (inv + B) - 1) * 100 : 0 };
+  const goal = !now.top ? null : now.top.pct > 36 ? { k: t0, pct: 100 / 3, word: 'a third' } : now.top.pct > 27.5 ? { k: t0, pct: 25, word: 'a quarter' } : null;  // a mark to watch the largest holding against
+  for (const p of Object.values(plans)) { p.after.shares = shares(p.after.vals); p.reach = goal ? p.road.findIndex(s => (s.vals[goal.k] || 0) / s.total * 100 <= goal.pct) : -1; }
+  // where Folio's rules would start, and why
+  const sp = vol(BROAD), n = S.positions.length, outside = C.some(c => !c.held && plans.calm.parts[c.k] > 0);
+  const start = plans.calm.ok && outside && n && (now.top.pct >= 40 || n <= 3 || (sp && now.held > 2 * sp))
+    ? { way: 'calm', why: `Your ${n === 1 ? 'one holding has' : `${n} holdings have`} swung about ${now.held.toFixed(0)}% a year${n > 1 ? ' together' : ''}${sp ? `, ${(now.held / sp).toFixed(1)} times the S&amp;P 500` : ''}, and ${esc(now.top.k)} alone is ${now.top.pct.toFixed(0)}% of the portfolio.` }
+    : plans.mix.ok && plans.mix.drift >= 5 ? { way: 'mix', why: plans.mix.why }
+    : plans.habit.ok ? { way: 'habit', why: 'Your mix is close to what you chose, so there is nothing to correct.' }
+    : { way: WAYS.map(w => w[0]).find(w => plans[w].ok) || 'mix', why: '' };
+  const way = isOwn ? 'own' : NS.way && plans[NS.way]?.ok ? NS.way : start.way;
+  return nxM = { C, by, vals, B, usual, plans, now, start, way, vol, withP, isOwn, sp, tg, goal, read };
+}
+const wayName = (m, w) => w === 'own' ? 'Your own split' : w === 'claude' ? 'Claude’s read' : w === 'mix' && m.tg.kind !== 'paid' ? 'Toward your target' : WAYS.find(x => x[0] === w)[1];
+const wayRule = (m, w) => w === 'mix' && m.tg.kind !== 'paid' ? 'Tops up whatever sits furthest below the share your target gives it.' : WAYS.find(x => x[0] === w)?.[3] || '';
+// about when the i-th buy from now would fall, at your usual pace
+const nxWhenBuy = i => { const h = NX.habit; if (!h.gap) return null; const d = new Date((h.due && h.since < h.gap ? h.due : h.today) + 'T12:00'); d.setDate(d.getDate() + (i - 1) * h.gap); return d; };
+const nxDay = d => d.toLocaleDateString([], { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) });
+
+const nxList = p => Object.entries(p.parts).sort((a, b) => b[1] - a[1]);
+const nxBarH = (m, p) => { const ps = nxList(p).filter(([, a]) => a > 0), sum = ps.reduce((a, [, x]) => a + x, 0) || 1;
+  return ps.map(([k, a]) => `<i style="flex:${a / sum};background:${m.by[k].col}" title="${esc(m.by[k].label)} ${(a / sum * 100).toFixed(0)}%"></i>`).join(''); };
+const nxSayH = (m, p) => words(nxList(p).filter(([, a]) => a > 0).map(([k, a]) => `<b class="pv">${amt(a)}</b> into ${m.by[k].broad ? 'an ' : ''}<b>${esc(m.by[k].label)}</b>`));
+
+function renderNext(light) {
+  if (!S || !NX) return;
+  if (light && performance.now() - nxDrawAt < 2000) return;
+  nxDrawAt = performance.now(); nxInit();
+  if (nxWant != null) { NS.budget = nxWant; if (NS.way === 'own') NS.way = null; nxWant = null; nxSave(); }  // an amount typed into the search box
+  const none = !S.positions.length || NX.error;
+  $('next').classList.toggle('none', !!none);
+  if (none) return put($('nxSay'), NX.error ? esc(NX.error) : 'Record your first buy with <b>+ Trade</b>. From then on this page works out how much you usually put in, and where a new buy could go.');
+  const m = nxModel(), h = NX.habit, plan = m.plans[m.way], title = wayName(m, m.way);
+
+  // the amount
+  const inp = $('nxBudget'), sl = $('nxSlide'), top = neat(Math.max(m.usual * 4, 500, m.B));
+  if (document.activeElement !== inp) inp.value = +m.B.toFixed(2);
+  sl.max = top; sl.step = top > 2000 ? 25 : 5; if (document.activeElement !== sl) sl.value = m.B;
+  sl.style.setProperty('--p', clamp(m.B / top * 100, 0, 100).toFixed(1) + '%');
+  const chip = (v, l) => `<button type="button" data-b="${v}" aria-pressed="${Math.abs(m.B - v) < 0.005}">${l}</button>`;
+  put($('nxChips'), [chip(m.usual, `Your usual <span class="pv">${amt(m.usual)}</span>`), S.cash >= 5 && Math.abs(S.cash - m.usual) > 1 ? chip(+S.cash.toFixed(2), `Cash <span class="pv">${amt(S.cash)}</span>`) : '',
+    ...[2, 4].map(x => chip(neat(m.usual * x), `<span class="pv">${amt(neat(m.usual * x))}</span>`))].join(''));
+  const due = h.due && h.since >= h.gap;
+  put($('nxTag'), !h.gap ? '' : due ? 'About due, at your usual pace' : `Usual next buy around ${isoDay(h.due)}`);
+  put($('nxWhen'), !h.typical ? 'Once you have bought a few times, Folio starts from the size and pace of your own purchases.'
+    : (h.of < 2 ? `<span class="pv">${amt(m.usual)}</span> is about the size of your one buy so far.` : `<span class="pv">${amt(m.usual)}</span> is about the middle of your last ${many(h.of, 'buy')}${h.hi - h.lo > 1 ? ` (<span class="pv">${amt(h.lo)}</span> to <span class="pv">${amt(h.hi)}</span>)` : ''}.`)
+      + (h.gap ? ` You have bought about every ${waitWords(h.gap)}; the last time was ${many(h.since, 'day')} ago.` : ''));
+
+  // the suggestion
+  put($('nxWay'), `<span class="badge on">${esc(title)}</span>${m.isOwn ? '<button class="mini" type="button" data-back>Back to the suggestions</button>' : m.way === 'claude' ? '<button class="mini" type="button" data-back>Back to Folio’s rules</button>' : m.way === m.start.way ? '<span class="tag">where Folio’s rules would start</span>' : ''}`);
+  put($('nxSay'), plan.ok && m.B > 0 ? nxSayH(m, plan) || 'Give an amount to something below.' : plan.why);
+  put($('nxWhy'), plan.ok ? plan.why : '');
+  put($('nxBar'), nxBarH(m, plan));
+  const rows = m.isOwn ? Object.keys(plan.parts) : nxList(plan).map(([k]) => k), box = $('nxParts'), key = rows.join();
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.innerHTML = rows.map(k => { const c = m.by[k];
+      return `<div class="r" data-k="${esc(k)}"><div class="sym"><i class="sw" style="background:${c.col}"></i><div style="min-width:0" title="${esc(c.name)}"><b>${esc(c.label)}</b><span class="sub sh"></span></div></div><label class="in"><span>$</span><input class="tin num pv" data-own="${esc(k)}" inputmode="decimal" autocomplete="off" aria-label="Amount for ${esc(c.label)}, in dollars"></label><button class="mini" type="button" data-rec="${esc(k)}" title="Open this as a buy to record, once you have made it">Record</button><button class="xb" type="button" data-drop="${esc(k)}" aria-label="Take ${esc(c.label)} out of the split" title="Take it out">${ic('x', 14)}</button></div>`; }).join('');
+  }
+  box.classList.toggle('own', m.isOwn);
+  rows.forEach((k, i) => { const c = m.by[k], a = plan.parts[k] || 0, r = box.children[i], f = r.querySelector('input');
+    if (document.activeElement !== f) f.value = a.toFixed(2);
+    put(r.querySelector('.sh'), c.broad ? 'in whichever fund you use' : c.usd && c.price > 0 ? `<span title="At the latest price, ${usd(c.price, dec(c.price))}">≈ <span class="pv">${(a / c.price).toFixed(4)}</span> shares</span>` : `priced in ${esc(c.currency || 'another currency')}`); });
+  const more = m.C.filter(c => !(c.k in plan.parts) || (!m.isOwn && !(plan.parts[c.k] > 0)));
+  put($('nxAdd'), more.length ? `<option value="">Add something else to the split…</option>` + more.map(c => `<option value="${esc(c.k)}">${esc(c.label)}${c.held ? '' : ' · ' + esc(c.name)}</option>`).join('') : '');
+  $('nxAdd').hidden = !more.length;
+
+  // four ways
+  const eff = p => { const a = p.after, k = nxList(p)[0][0], sh = (v, t) => (t ? v / t * 100 : 0).toFixed(1) + '%';
+    return `<span title="Its share of the whole portfolio, now and after">${esc(m.by[k].label)} ${arrowTo(sh(m.vals[k] || 0, S.total), sh(a.vals[k], a.total))}</span><span title="How much the portfolio has swung in a year, going by the past year’s daily moves">Yearly swing ${arrowTo(m.now.swing.toFixed(1) + '%', a.swing.toFixed(1) + '%')}</span><span title="${ROAD} buys of this amount, placed by this rule each time, with prices held where they are today">After ${ROAD} buys: ${esc(m.by[p.end.top.k].label)} <b>${p.end.top.pct.toFixed(0)}%</b>, swing <b>${p.end.swing.toFixed(0)}%</b></span>`; };
+  put($('nxWays'), WAYS.map(([w, , icon]) => { const p = m.plans[w];
+    return `<button type="button" class="way" data-way="${w}" aria-pressed="${m.way === w}"${p.ok ? '' : ' disabled'}><span class="hd"><span class="ico">${ic(icon, 15)}</span><b>${wayName(m, w)}</b>${w === m.start.way ? '<span class="badge on">Start here</span>' : ''}</span><span class="rule">${wayRule(m, w)}</span>`
+      + (p.ok ? `<span class="alloc">${nxBarH(m, p)}</span><span class="say num">${nxSayH(m, p)}</span><span class="eff num">${eff(p)}</span>` : `<span class="say">${p.why}</span>`) + '</button>'; }).join(''));
+  put($('nxStart'), m.start.why ? `<b>Where the rules would start: ${wayName(m, m.start.way).toLowerCase()}.</b> ${m.start.why} Each rule looks at one thing in your own entries and in past prices. None of them says where any price is heading.` : 'Each rule looks at one thing in your own entries and in past prices. None of them says where any price is heading.');
+
+  renderNxEffect(m, plan);
+  renderNxRoad(m, plan);
+  renderNxAi(m);
+  renderNxTarget(m);
+  renderNxCands(m);
+  drawNxHabit(); renderNxHabit(m);
+}
+
+// ---- what the chosen split would change ----
+function renderNxEffect(m, plan) {
+  const a = plan.after, st = (k, v, s, t) => `<div class="st"${t ? ` title="${t}"` : ''}><div class="k">${k}</div><div class="v num">${v}</div><div class="s num">${s}</div></div>`;
+  const need = x => x > 0.05 ? pct(x, 1) : 'Nothing';
+  put($('nxEffStats'), st('Largest holding', arrowTo(`${esc(m.now.top.k)} ${m.now.top.pct.toFixed(1)}%`, `${a.top.k === m.now.top.k ? '' : esc(m.by[a.top.k].label) + ' '}${a.top.pct.toFixed(1)}%`), 'of the whole portfolio', '')
+    + st('Yearly swing', arrowTo(m.now.swing.toFixed(1) + '%', a.swing.toFixed(1) + '%'), m.sp ? `the S&amp;P 500: ${m.sp.toFixed(0)}%` : '', 'How much the portfolio’s value has swung in a year, going by the daily moves of the past year. Cash counts as still.')
+    + (S.cost > S.invested + 0.5 ? st('To get back to what you paid', arrowTo(need(m.now.need), need(m.now.needAfter)), 'the same whichever way you choose', 'The rise your holdings need, taken together, to be worth what you paid for them. New money bought at today’s prices lowers it by the same amount wherever it goes.')
+      : st('Gain on what you paid', arrowTo(pct(-m.now.need, 1), pct(-m.now.needAfter, 1)), 'the same whichever way you choose', 'New money starts with no gain, so it thins the percentage without changing the amount.'))
+    + (() => { const k = Object.keys(m.now.shares).sort((x, y) => m.now.shares[y] - m.now.shares[x])[0]; return k ? st(`Swing that comes from ${esc(k)}`, arrowTo(m.now.shares[k].toFixed(0) + '%', (a.shares[k] ?? 0).toFixed(0) + '%'), `it is ${(m.vals[k] / S.total * 100).toFixed(0)}% of the money`, 'How much of the portfolio’s swing this one holding causes, going by the past year’s daily moves.') : ''; })()
+    + st('Worth after', `<span class="pv">${usd(a.total)}</span>`, a.cash < S.cash - 0.005 ? `<span class="pv">${usd(S.cash - a.cash)}</span> of it from your cash` : 'with the new money', ''));
+  const ks = [...m.C.filter(c => c.held || plan.parts[c.k] > 0).map(c => c.k)];
+  put($('nxEffRows'), ks.map(k => { const c = m.by[k], p = held(k), add = plan.parts[k] || 0, was = m.vals[k] || 0, sh = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '0.0%';
+    const q = c.price > 0 && c.usd ? add / c.price : 0, avg = p && add > 0 && q > 0 ? (p.cost + add) / (p.qty + q) : p ? p.avgCost : c.price, back = (av, px) => av > px * 1.0005 ? pct((av / px - 1) * 100, 1) : '—';
+    return `<tr><td><div class="sym"><i class="sw" style="background:${c.col}"></i><b>${esc(c.label)}</b></div></td>
+      <td class="num">${add > 0 ? `<span class="pv">${amt(add)}</span>${q > 0 ? `<span class="sub pv">${q.toFixed(4)} shares</span>` : ''}` : '<span class="flat">—</span>'}</td>
+      <td class="num">${add > 0 ? arrowTo(sh(was, S.total), sh(was + add, a.total)) : `<span class="flat">${arrowTo(sh(was, S.total), sh(was, a.total))}</span>`}</td>
+      <td class="num hide-s">${c.broad ? '<span class="flat">—</span>' : p ? (add > 0 && q > 0 ? arrowTo(usd(p.avgCost), usd(avg)) : `<span class="flat">${usd(p.avgCost)}</span>`) : add > 0 && c.price ? `<span class="flat">new at</span> ${usd(c.price, dec(c.price))}` : '<span class="flat">—</span>'}</td>
+      <td class="num hide-s">${p ? (add > 0 && q > 0 && back(p.avgCost, p.price) !== '—' ? arrowTo(back(p.avgCost, p.price), back(avg, p.price)) : `<span class="flat">${back(p.avgCost, p.price)}</span>`) : '<span class="flat">—</span>'}</td></tr>`; }).join(''));
+  put($('nxFlowKey'), `<span><i class="key band hatch"></i>New money</span>`);
+  drawNxFlow(m, plan);
+}
+
+// the mix now and after, one bar above the other, with the new money marked
+function drawNxFlow(m = nxM, plan = m?.plans[m.way]) {
+  const box = $('nxFlow'), W = box.clientWidth; if (!m || W < 220) return;
+  const a = plan.after, gut = W < 480 ? 40 : 52, gap = 2, bh = 26, y1 = 22, y2 = 92, Hh = 140, f = z => z.toFixed(1);
+  const ks = [...m.C.filter(c => c.held || plan.parts[c.k] > 0).map(c => c.k), 'CASH'];
+  const col = k => k === 'CASH' ? 'var(--neutral)' : m.by[k].col, name = k => k === 'CASH' ? 'Cash' : m.by[k].label;
+  const now = k => Math.max(0, k === 'CASH' ? S.cash : m.vals[k] || 0), aft = k => Math.max(0, k === 'CASH' ? a.cash : a.vals[k] || 0);
+  const lay = fn => { const live = ks.filter(k => fn(k) > 0.005), sum = live.reduce((s, k) => s + fn(k), 0) || 1, w = W - gut - gap * (live.length - 1), o = {}; let x = gut;
+    for (const k of live) { const ww = fn(k) / sum * w; o[k] = { x, w: ww, pct: fn(k) / sum * 100 }; x += ww + gap; } return o; };
+  const A = lay(now), Z = lay(aft), mid = (y1 + bh + y2) / 2;
+  let g = `<defs><pattern id="nxHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--surface)" opacity=".1"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--surface)" stroke-width="3" opacity=".55"/></pattern></defs>
+    <text class="axis" x="0" y="${y1 + bh / 2 + 4}">Now</text><text class="axis" x="0" y="${y2 + bh / 2 + 4}">After</text>`;
+  const tip = k => `<span>${esc(name(k))}</span><div class="pl"><i>Now</i><em>${A[k] ? A[k].pct.toFixed(1) + '%' : '—'}</em><i>After</i><em>${Z[k] ? Z[k].pct.toFixed(1) + '%' : '—'}</em>${plan.parts[k] > 0 ? `<i>New money</i><em class="pv">${usd(plan.parts[k])}</em>` : ''}</div>`;
+  const lab = [];  // labels that fit: the bought ones first, then the rest
+  for (const k of ks) {
+    const p = A[k], q = Z[k];
+    if (p && q) g += `<path d="M${f(p.x)} ${y1 + bh}H${f(p.x + p.w)}C${f(p.x + p.w)} ${mid} ${f(q.x + q.w)} ${mid} ${f(q.x + q.w)} ${y2}H${f(q.x)}C${f(q.x)} ${mid} ${f(p.x)} ${mid} ${f(p.x)} ${y1 + bh}Z" fill="${col(k)}" opacity=".14"/>`;
+    if (p) g += `<rect x="${f(p.x)}" y="${y1}" width="${f(Math.max(1, p.w))}" height="${bh}" rx="4" fill="${col(k)}" data-tip="${esc(tip(k))}"/>`;
+    if (q) { g += `<rect x="${f(q.x)}" y="${y2}" width="${f(Math.max(1, q.w))}" height="${bh}" rx="4" fill="${col(k)}" data-tip="${esc(tip(k))}"/>`;
+      const add = plan.parts[k] || 0, nw = add > 0 ? Math.min(q.w, add / aft(k) * q.w) : 0;
+      if (nw > 0.5) g += `<rect x="${f(q.x + q.w - nw)}" y="${y2}" width="${f(nw)}" height="${bh}" rx="4" fill="url(#nxHatch)" pointer-events="none"/>`; }
+    if (p) lab.push({ y: y1 - 7, x: p.x, w: p.w, s: `${name(k)} ${p.pct.toFixed(1)}%`, pri: 0 });
+    if (q) lab.push({ y: y2 + bh + 16, x: q.x, w: q.w, s: plan.parts[k] > 0 ? `${A[k] ? '' : name(k) + ' '}${q.pct.toFixed(1)}% · +${amt(plan.parts[k])}` : `${q.pct.toFixed(1)}%`, pri: plan.parts[k] > 0 ? 1 : 0, pv: plan.parts[k] > 0 });
+  }
+  const taken = [];
+  for (const l of lab.sort((p, q) => q.pri - p.pri)) {
+    const tw = l.s.length * (l.pri ? 7 : 6.4) + 4, end = !l.pri ? false : l.x + tw > W, x0 = end ? l.x + l.w - tw : l.x;
+    if ((!l.pri && tw > l.w) || x0 < gut - 2 || taken.some(t => t.y === l.y && x0 < t.x1 + 6 && x0 + tw > t.x0 - 6)) continue;
+    taken.push({ y: l.y, x0, x1: x0 + tw });
+    g += `<text class="${l.pri ? 'lbl me' : 'axis'}${l.pv ? ' pv' : ''}" x="${f(end ? l.x + l.w : l.x)}" y="${l.y}"${end ? ' text-anchor="end"' : ''}>${esc(l.s)}</text>`;
+  }
+  const h = `<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" role="img" aria-label="The portfolio’s mix now and after this buy">${g}</svg>`;
+  if (box._h !== h) { box._h = h; box.querySelector('svg')?.remove(); box.insertAdjacentHTML('afterbegin', h); tips(box); }
+}
+
+// ---- how you have been buying ----
+function renderNxHabit(m) {
+  const h = NX.habit, st = (k, v, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${v}</div><div class="s num">${s}</div></div>`;
+  put($('nxHabitStats'), !h.buys.length ? '' : st('Usual size', `<span class="pv">${usd(h.typical)}</span>`, h.of < 2 ? 'your one buy so far' : `the middle of your last ${many(h.of, 'buy')}`)
+    + st('Usual wait', h.gap ? waitWords(h.gap) : '—', h.gap ? (h.gapLo === h.gapHi ? 'every time so far' : `from ${h.gapLo} to ${many(h.gapHi, 'day')}`) : 'after your second buy')
+    + st('Last buy', isoDay(h.last), h.since ? `${many(h.since, 'day')} ago` : 'today')
+    + st('A month, lately', `<span class="pv">${usd(h.monthly)}</span>`, 'bought over the last 90 days'));
+  const used = [...new Set(h.buys.flatMap(b => Object.keys(b.parts)))].sort((a, b) => Object.keys(colors).indexOf(a) - Object.keys(colors).indexOf(b));
+  put($('nxHabitKey'), used.map(s => `<span><i class="sw" style="background:${colors[s] || 'var(--neutral)'}"></i>${esc(s)}</span>`).join('') + (h.typical ? `<span><i class="key dashed" style="border-color:var(--text-3)"></i>Usual size</span>` : ''));
+}
+function drawNxHabit() {
+  const box = $('nxHabit'), W = box.clientWidth, Hh = box.clientHeight, h = NX?.habit;
+  if (!h?.buys.length || W < 180 || Hh < 120) return;
+  const pl = 6, pr = 58, pt = 22, pb = 24, T = s => new Date(s + 'T12:00').getTime(), f = z => z.toFixed(1), u = cur === 'EUR' && fx() ? 1 / fx() : 1;
+  const t0 = T(h.buys[0].date), today = T(h.today), next = h.due && h.due > h.today ? T(h.due) : null, t1 = Math.max(today, next || 0, t0 + 30 * 864e5);
+  const bw = clamp(Math.round((W - pl - pr) / 46), 6, 14), x = t => pl + bw / 2 + 2 + (t - t0) / (t1 - t0) * (W - pl - pr - bw - 16);
+  const tk = niceTicks(0, Math.max(...h.buys.map(b => b.amount)) * u * 1.08, Hh < 220 ? 2 : 3), hi = tk.ticks.at(-1) / u || 1, y = v => pt + (1 - v / hi) * (Hh - pt - pb);
+  let g = '';
+  for (const t of tk.ticks) g += `<line class="${t === 0 ? 'zero' : 'grid'}" x1="${pl}" x2="${W - pr}" y1="${f(y(t / u))}" y2="${f(y(t / u))}"/><text class="axis num pv" x="${W - pr + 8}" y="${f(y(t / u) + 4)}">${usd(t / u, 0)}</text>`;
+  const d = new Date(t0); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  for (let lastX = -99; d.getTime() <= t1; d.setMonth(d.getMonth() + 1)) { const xx = x(d.getTime()); if (xx - lastX < 44 || xx > W - pr - 14) continue; lastX = xx;
+    g += `<text class="axis" x="${f(xx)}" y="${Hh - 6}" text-anchor="middle">${d.toLocaleDateString([], { month: 'short' })}</text>`; }
+  if (h.typical) g += `<line class="dash" x1="${pl}" x2="${W - pr}" y1="${f(y(h.typical))}" y2="${f(y(h.typical))}" stroke="var(--text-3)"/>`;
+  const mark = (t, s, cl) => { const xx = x(t), end = xx > W - pr - 70; return `<line class="${cl}" x1="${f(xx)}" x2="${f(xx)}" y1="${pt - 4}" y2="${Hh - pb}"${cl === 'dash' ? ' stroke="var(--accent)"' : ''}/><text class="lbl" x="${f(xx + (end ? -6 : 6))}" y="${pt + 6}"${end ? ' text-anchor="end"' : ''}>${s}</text>`; };
+  if (next) g += mark(next, 'Usual next buy', 'dash'); else if (today - T(h.last) > 3 * 864e5) g += mark(today, 'Today', 'cross');
+  const order = Object.keys(colors);
+  for (const b of h.buys) {
+    const xx = x(T(b.date)) - bw / 2, ps = Object.entries(b.parts).sort((p, q) => order.indexOf(p[0]) - order.indexOf(q[0]));
+    let base = 0, seg = '';
+    ps.forEach(([s, a], i) => { const yb = y(base) - (i ? 1 : 0), yt = y(base + a) + (i < ps.length - 1 ? 1 : 0), hh = Math.max(1.5, yb - yt), r = Math.min(4, hh / 2, bw / 2); base += a;
+      seg += i < ps.length - 1 ? `<rect x="${f(xx)}" y="${f(yb - hh)}" width="${bw}" height="${f(hh)}" fill="${colors[s] || 'var(--neutral)'}"/>`
+        : `<path d="M${f(xx)} ${f(yb)}V${f(yb - hh + r)}Q${f(xx)} ${f(yb - hh)} ${f(xx + r)} ${f(yb - hh)}H${f(xx + bw - r)}Q${f(xx + bw)} ${f(yb - hh)} ${f(xx + bw)} ${f(yb - hh + r)}V${f(yb)}Z" fill="${colors[s] || 'var(--neutral)'}"/>`; });
+    const tip = `<span>${isoDay(b.date, { month: 'short', day: 'numeric', year: 'numeric' })}</span><b class="pv">${usd(b.amount)}</b><div class="pl">${ps.map(([s, a]) => `<i>${esc(s)}</i><em class="pv">${usd(a)}</em>`).join('')}</div>`;
+    g += `<g data-tip="${esc(tip)}">${seg}<rect class="hit" x="${f(xx - 8)}" y="${f(Math.min(y(b.amount) - 4, Hh - pb - 34))}" width="${bw + 16}" height="${f(Hh - pb - Math.min(y(b.amount) - 4, Hh - pb - 34))}"/></g>`;
+  }
+  const hh = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Each day you bought, and how much">${g}</svg>`;
+  if (box._h !== hh) { box._h = hh; box.querySelector('svg')?.remove(); box.insertAdjacentHTML('afterbegin', hh); tips(box); }
+}
+
+// ---- everything it could go to, side by side ----
+function renderNxCands(m) {
+  const rng = (lo, hi, v) => lo && hi && hi > lo ? `<div class="rng" title="Low ${plain(lo)} · high ${plain(hi)}"><div class="track"><i style="left:${clamp((v - lo) / (hi - lo) * 100, 0, 100).toFixed(1)}%"></i></div></div>` : '<span class="flat">—</span>';
+  put($('nxCandRows'), m.C.map(c => { const p = held(c.k), v = m.vol(c.k), w = m.withP(c.k), t = c.target, up = t && c.price ? (t.mean / c.price - 1) * 100 : null, dp = c.prevClose ? (c.price / c.prevClose - 1) * 100 : null;
+    const kind = c.broad ? 'Measured by the index itself' : c.held ? esc(c.name) : `${c.idea ? 'Your idea' : 'Watchlist'} · ${esc(c.name)}`;
+    return `<tr${c.broad ? '' : ` data-sym="${esc(c.k)}" title="Show ${esc(c.label)} on the chart"`}><td><div class="sym"><i class="sw" style="background:${c.col}"></i><div style="min-width:0"><b>${esc(c.label)}</b><span class="sub">${kind}</span></div></div></td>
+      <td class="num c1">${c.broad ? '<span class="flat">—</span>' : `${c.usd ? usd(c.price, dec(c.price)) : plain(c.price)}${dp == null ? '' : `<span class="sub ${cls(dp)}">${arrow(dp)} ${pct(dp)}</span>`}`}</td>
+      <td class="num">${p ? `<span class="${cls(p.plPct)}">${pct(p.plPct, 1)}</span><span class="sub">avg ${usd(p.avgCost)}</span>` : '<span class="flat">—</span>'}</td>
+      <td class="c4">${c.broad ? '<span class="flat">—</span>' : rng(c.wkLow, c.wkHigh, c.price)}</td>
+      <td class="num c3">${up == null ? '<span class="flat">—</span>' : `<span class="${cls(up)}">${pct(up, 0)}</span><span class="sub">to ${usd(t.mean, 0)} · ${t.n || '?'} analysts</span>`}</td>
+      <td class="num">${v == null ? '<span class="flat" title="Not enough price history yet">—</span>' : v.toFixed(0) + '%'}</td>
+      <td class="num c2">${w == null ? '<span class="flat">—</span>' : w.toFixed(2)}</td>
+      <td class="num c2">${p && S.total ? (p.value / S.total * 100).toFixed(1) + '%' : '<span class="flat">—</span>'}</td>
+      <td class="num c2">${p && m.now.shares[c.k] != null ? m.now.shares[c.k].toFixed(0) + '%' : '<span class="flat">—</span>'}</td>
+      <td>${c.idea ? `<button class="xb" type="button" data-unidea="${esc(c.k)}" aria-label="Stop weighing ${esc(c.label)}" title="Stop weighing it">${ic('x', 14)}</button>` : ''}</td></tr>`; }).join(''));
+  if (document.activeElement !== $('nxBroad')) $('nxBroad').checked = NS.broad;
+}
+
+// ---- on the overview: the suggestion in one card ----
+function renderNextCard() {
+  const card = $('nextCard');
+  if (!S || !NX || NX.error || !S.positions.length) return void (card.hidden = true);
+  nxInit();
+  const m = nxModel(), p = m.plans[m.way], h = NX.habit;
+  card.hidden = !p.ok || !(m.B > 0);
+  if (card.hidden) return;
+  put($('nextBody'), `<div class="top"><b class="pv">${amt(m.B)}</b><span>${h.gap ? (h.since >= h.gap ? `about due · ${many(h.since, 'day')} since your last` : `usual next around ${isoDay(h.due)}`) : 'your next buy'}</span></div>
+    <div class="alloc">${nxBarH(m, p)}</div>
+    <ul class="legend num">${nxList(p).filter(([, a]) => a > 0).map(([k, a]) => `<li><i class="sw" style="background:${m.by[k].col}"></i><span class="n">${esc(m.by[k].label)}</span><span class="pv">${amt(a)}</span></li>`).join('')}</ul>
+    <p class="note">${m.way === 'own' ? 'Your own split.' : m.way === 'claude' ? 'Claude’s read: ' + esc(m.read.headline) : esc(wayName(m, m.way)) + ': ' + wayRule(m, m.way).replace(/^./, c => c.toLowerCase())}</p>`);
+}
+
+// ---- controls ----
+const nxNum = el => { const s = el.value.replace(/[$\s]/g, ''); return parseFloat(s.includes('.') ? s.replace(/,/g, '') : s.replace(',', '.')); };
+function nxSetB(v, quiet) {
+  if (!NS || !(v >= 1 && v <= 1e9)) return;
+  if (NS.way === 'own' && nxM?.isOwn) { const f = v / (nxM.B || 1); if (nxM.B > 0) for (const k in NS.own) NS.own[k] = Math.round(NS.own[k] * f * 100) / 100; else NS.way = null; }
+  NS.budget = Math.abs(v - (nxM?.usual ?? -1)) < 0.005 ? null : v;  // "your usual" keeps following your habit
+  renderNext(); renderNextCard(); if (!quiet) nxSave();
+}
+$('nxBudget').oninput = e => { const v = nxNum(e.target); if (v >= 1 && v <= 1e9) { $('nxErr').textContent = ''; nxSetB(v); } else $('nxErr').textContent = 'The amount must be at least 1.'; };
+$('nxBudget').onkeydown = e => { if (e.key === 'Enter') e.target.blur(); };
+$('nxSlide').oninput = e => nxSetB(Math.max(5, +e.target.value));
+$('nxChips').onclick = e => { const b = e.target.closest('[data-b]'); if (b) nxSetB(+b.dataset.b); };
+$('nxWays').onclick = e => { const b = e.target.closest('[data-way]'); if (!b || b.disabled || !NS) return;
+  if (nxM?.isOwn) NS.budget = nxM.B || null;
+  NS.way = b.dataset.way; NS.own = {}; renderNext(); renderNextCard(); nxSave(); };
+$('nxWay').onclick = e => { if (!e.target.closest('[data-back]') || !NS) return; NS.budget = nxM?.B || null; NS.way = null; NS.own = {}; renderNext(); renderNextCard(); nxSave(); };
+const nxOwn = () => { if (!nxM.isOwn) { NS.own = { ...nxM.plans[nxM.way].parts }; NS.way = 'own'; } };
+$('nxParts').oninput = e => { const k = e.target.dataset.own; if (!k || !nxM) return;
+  const v = e.target.value.trim() === '' ? 0 : nxNum(e.target); if (!(v >= 0 && v <= 1e9)) return;
+  nxOwn(); NS.own[k] = v; renderNext(); renderNextCard(); nxSave(); };
+$('nxParts').onclick = e => {
+  const rec = e.target.closest('[data-rec]'), drop = e.target.closest('[data-drop]'); if (!nxM) return;
+  if (drop) { nxOwn(); delete NS.own[drop.dataset.drop]; if (!Object.keys(NS.own).length) NS.way = null; renderNext(); renderNextCard(); nxSave(); }
+  if (!rec) return;
+  const c = nxM.by[rec.dataset.rec], a = nxM.plans[nxM.way].parts[c.k] || 0;
+  if (c.broad) { openTrade(); toast(`Enter the fund you bought: ${dollars(a)} at its price gives the shares.`); }
+  else openTrade(c.k, null, { type: 'buy', qty: c.usd && c.price > 0 && a > 0 ? (a / c.price).toFixed(4) : '' });
+};
+$('nxAdd').onchange = e => { const k = e.target.value; if (!k || !nxM) return; nxOwn(); NS.own[k] = NS.own[k] || 0; renderNext(); nxSave();
+  $('nxParts').querySelector(`[data-own="${CSS.escape(k)}"]`)?.focus(); };
+async function nxIdeas(list, broad = NS.broad) {
+  const was = [NS.ideas, NS.broad]; NS.ideas = list; NS.broad = broad; clearTimeout(nxSaveT); nxSaveT = null;
+  try { const s = await post('/api/next', NS, 'PUT'); S.next = s.next; $('nxIdeaErr').textContent = ''; await loadNext(true); }
+  catch (err) { [NS.ideas, NS.broad] = was; $('nxIdeaErr').textContent = err.message; renderNext(); }
+}
+suggest($('nxIdea'), x => { $('nxIdea').value = ''; if (!NS || !S) return;
+  if (held(x.symbol) || NS.ideas.includes(x.symbol)) return void ($('nxIdeaErr').textContent = `${x.symbol} is already in the list.`);
+  if (NS.ideas.length >= 12) return void ($('nxIdeaErr').textContent = 'Up to 12 ideas can be weighed at once. Take one out first.');
+  nxIdeas([...NS.ideas, x.symbol]); });
+$('nxIdea').onkeydown = e => { if (e.key === 'Enter') e.preventDefault(); };
+$('nxBroad').onchange = e => { if (NS) nxIdeas(NS.ideas, e.target.checked); };
+$('nxCandRows').onclick = e => { const x = e.target.closest('[data-unidea]'); if (x) return NS && nxIdeas(NS.ideas.filter(s => s !== x.dataset.unidea));
+  const tr = e.target.closest('tr[data-sym]'); if (tr) show(tr.dataset.sym); };
+$('nextCard').onclick = e => { e.preventDefault(); go('next'); };
+{ const ro = new ResizeObserver(() => { if (view === 'next' && S && NX && nxM) { drawNxFlow(); drawNxHabit(); } }); ro.observe($('nxFlow')); ro.observe($('nxHabit')); }
+
+// ---- where it leads: twelve buys like this one ----
+function renderNxRoad(m, plan) {
+  const h = NX.habit, end = plan.end, g = m.goal, st = (k, v, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${v}</div><div class="s num">${s}</div></div>`;
+  const at = plan.reach > 0 ? nxWhenBuy(plan.reach) : null, sh = (s, k) => ((s.vals[k] || 0) / s.total * 100).toFixed(1) + '%';
+  put($('nxRoadStats'), (g ? st(`${esc(g.k)} under ${g.word}`, plan.reach > 0 ? `after ${many(plan.reach, 'buy')}` : `not in ${ROAD} buys`, plan.reach > 0 ? (at ? `around ${nxDay(at)}` : 'at this amount') : `${sh(end, g.k)} by then`)
+      : m.now.top ? st('Largest holding', arrowTo(`${esc(m.now.top.k)} ${m.now.top.pct.toFixed(1)}%`, `${end.top.k === m.now.top.k ? '' : esc(m.by[end.top.k].label) + ' '}${end.top.pct.toFixed(1)}%`), `after ${ROAD} buys`) : '')
+    + st('Yearly swing', arrowTo(m.now.swing.toFixed(1) + '%', end.swing.toFixed(1) + '%'), `after ${ROAD} buys`)
+    + st('Put in', `<span class="pv">${usd(m.B * ROAD, 0)}</span>`, h.gap ? `over about ${waitWords(h.gap * ROAD)}` : `in ${ROAD} buys`));
+  put($('nxRoadNote'), `${ROAD} buys of <span class="pv">${amt(m.B)}</span>, ${m.way === 'own' || m.way === 'claude' ? 'each split the same way as this one' : `each placed by “${esc(wayName(m, m.way))}” as things stand at that moment`}. Prices are held where they are today, so this shows only what your own buying does.`);
+  drawNxRoad(m, plan);
+}
+function drawNxRoad(m = nxM, plan = m?.plans[m.way]) {
+  const box = $('nxRoad'), W = box.clientWidth, Hh = box.clientHeight; if (!m || !plan || W < 220 || Hh < 140) return;
+  const R = plan.road, n = R.length - 1, pl = m.goal ? 48 : 34, pt = 12, pb = 24, f = z => z.toFixed(1);
+  const sh = (s, k) => (k === 'CASH' ? Math.max(0, s.cash) : s.vals[k] || 0) / s.total * 100;
+  const ks = [...m.C.map(c => c.k).filter(k => R.some(s => sh(s, k) > 0.4)), ...(R.some(s => sh(s, 'CASH') > 1) ? ['CASH'] : [])];
+  const col = k => k === 'CASH' ? 'var(--neutral)' : m.by[k].col, name = k => k === 'CASH' ? 'Cash' : m.by[k].label;
+  const pr = Math.min(150, Math.max(...ks.map(k => name(k).length)) * 7 + 62), most = Math.max(...ks.flatMap(k => R.map(s => sh(s, k)))), tk = niceTicks(0, most, Hh < 250 ? 3 : 4); while (tk.ticks.at(-1) < most) tk.ticks.push(tk.ticks.at(-1) + tk.ticks[1]); const hi = tk.ticks.at(-1) || 100;
+  const x = i => pl + 6 + i / n * (W - pl - pr - 12), y = v => pt + (1 - v / hi) * (Hh - pt - pb);
+  let g = '';
+  for (const t of tk.ticks) g += `<line class="${t === 0 ? 'zero' : 'grid'}" x1="${pl}" x2="${W - pr}" y1="${f(y(t))}" y2="${f(y(t))}"/><text class="axis num" x="${pl - 8}" y="${f(y(t) + 4)}" text-anchor="end">${t}%</text>`;
+  for (let i = 0; i <= n; i += n / 3) g += `<text class="axis" x="${f(x(i))}" y="${Hh - 6}" text-anchor="${i === 0 ? 'start' : 'middle'}">${i === 0 ? 'Now' : `buy ${i}`}</text>`;
+  if (m.goal && m.goal.pct < hi) g += `<line class="dash" x1="${pl}" x2="${W - pr}" y1="${f(y(m.goal.pct))}" y2="${f(y(m.goal.pct))}" stroke="var(--text-3)"/><text class="axis" x="${pl - 8}" y="${f(y(m.goal.pct) + 4)}" text-anchor="end">${m.goal.word}</text>`;
+  for (const k of ks) g += `<path class="line" stroke="${col(k)}" d="${R.map((s, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(sh(s, k)))}`).join('')}"/><circle class="mark" cx="${f(x(n))}" cy="${f(y(sh(R[n], k)))}" r="4.5" fill="${col(k)}"/>`;
+  // the name and where each one ends, kept from sitting on top of each other
+  const ends = ks.map(k => ({ k, v: sh(R[n], k), y: y(sh(R[n], k)) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 15);
+  for (let i = ends.length - 1, lim = Hh - pb - 2; i >= 0; i--) { ends[i].y = Math.min(ends[i].y, lim); lim = ends[i].y - 15; }
+  for (const e of ends) g += `<text class="lbl" x="${f(x(n) + 11)}" y="${f(e.y + 4)}">${esc(name(e.k))} <tspan class="me" fill="var(--text)" font-weight="600">${e.v.toFixed(1)}%</tspan></text>`;
+  const half = (x(1) - x(0)) / 2;
+  R.forEach((s, i) => { const d = i ? nxWhenBuy(i) : null;
+    const tip = `<span>${i ? `After buy ${i}${d ? ' · around ' + nxDay(d) : ''}` : 'Now'}</span><div class="pl">${ks.map(k => `<i><b class="sw" style="background:${col(k)}"></b> ${esc(name(k))}</i><em>${sh(s, k).toFixed(1)}%</em>`).join('')}<i>Yearly swing</i><em>${s.swing.toFixed(1)}%</em></div>`;
+    g += `<g class="col" data-tip="${esc(tip)}"><line class="cross" x1="${f(x(i))}" x2="${f(x(i))}" y1="${pt}" y2="${Hh - pb}"/>${ks.map(k => `<circle class="mark" cx="${f(x(i))}" cy="${f(y(sh(s, k)))}" r="4" fill="${col(k)}"/>`).join('')}<rect class="hit" x="${f(x(i) - half)}" y="${pt}" width="${f(half * 2)}" height="${Hh - pt - pb}"/></g>`; });
+  put($('nxRoadKey'), ks.length > 1 ? ks.map(k => `<span><i class="sw" style="background:${col(k)}"></i>${esc(name(k))}</span>`).join('') : '');
+  const h = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Each holding’s share of the portfolio over the next ${n} buys">${g}</svg>`;
+  if (box._h !== h) { box._h = h; box.querySelector('svg')?.remove(); box.insertAdjacentHTML('afterbegin', h); tips(box); }
+}
+
+// ---- a target mix of your own ----
+let tgEdit = null;  // the target while it is being edited
+function renderNxTarget(m = nxM) {
+  if (!m) return;
+  const t = Object.entries(NS.target || {}).filter(([k, v]) => m.by[k] && v > 0).sort((a, b) => b[1] - a[1]);
+  put($('nxTgtSay'), t.length ? t.map(([k, v]) => `<span><i class="sw" style="background:${m.by[k].col}"></i>${esc(m.by[k].label)} ${+v.toFixed(1)}%</span>`).join('')
+    : m.tg.kind === 'plan' ? 'Using the targets on your Plan page.' : 'Not set, so “Back to your mix” goes by the shares of your money you gave each holding.');
+  $('nxTgtEdit').textContent = tgEdit ? 'Close' : t.length ? 'Change' : 'Set a target';
+  $('nxTgtForm').hidden = !tgEdit;
+  if (!tgEdit) return;
+  const box = $('nxTgtRows'), key = m.C.map(c => c.k).join();
+  if (box.dataset.key !== key) { box.dataset.key = key;
+    box.innerHTML = m.C.map(c => `<label class="r"><span class="sym"><i class="sw" style="background:${c.col}"></i><b>${esc(c.label)}</b></span><span class="now"></span><span class="in"><input class="tin num" data-tp="${esc(c.k)}" inputmode="decimal" autocomplete="off" aria-label="Target share for ${esc(c.label)}, in percent"><span>%</span></span></label>`).join(''); }
+  m.C.forEach((c, i) => { const r = box.children[i], inp = r.querySelector('input');
+    if (document.activeElement !== inp) inp.value = tgEdit[c.k] > 0 ? +tgEdit[c.k].toFixed(1) : '';
+    r.querySelector('.now').textContent = c.held && S.invested ? `now ${(m.vals[c.k] / S.invested * 100).toFixed(0)}%` : 'not held'; });
+  const s = Object.values(tgEdit).reduce((a, x) => a + x, 0), ok = s === 0 || Math.abs(s - 100) < 0.05;
+  put($('nxTgtSum'), s === 0 ? 'Save with everything empty to go without a target.' : ok ? 'Adds up to 100%.' : `Adds up to ${+s.toFixed(1)}%: ${s < 100 ? `${+(100 - s).toFixed(1)} to go` : `${+(s - 100).toFixed(1)} too many`}.`);
+  $('nxTgtSave').disabled = !ok;
+  $('nxTgtForm').querySelector('[data-fill="claude"]').hidden = !Object.keys(AI?.read?.target || {}).some(k => m.by[k]);
+}
+$('nxTgtEdit').onclick = () => { if (!nxM) return; tgEdit = tgEdit ? null : Object.fromEntries(Object.entries(NS.target || {}).filter(([k, v]) => nxM.by[k] && v > 0)); renderNxTarget(); };
+$('nxTgtRows').oninput = e => { const k = e.target.dataset.tp; if (!k || !tgEdit) return; const v = e.target.value.trim() === '' ? 0 : nxNum(e.target);
+  if (v > 0 && v <= 100) tgEdit[k] = v; else if (v === 0) delete tgEdit[k]; else return; renderNxTarget(); };
+$('nxTgtForm').onclick = e => { const b = e.target.closest('[data-fill]'); if (!b || !nxM || !tgEdit) return;
+  if (b.dataset.fill === 'now') { const ks = Object.keys(nxM.vals), o = Object.fromEntries(ks.map(k => [k, Math.round(nxM.vals[k] / S.invested * 100)])), big = ks.sort((a, c) => o[c] - o[a])[0];
+    if (big) o[big] += 100 - Object.values(o).reduce((a, x) => a + x, 0); tgEdit = Object.fromEntries(Object.entries(o).filter(([, v]) => v > 0)); }
+  else if (b.dataset.fill === 'claude') tgEdit = Object.fromEntries(Object.entries(AI.read.target).filter(([k]) => nxM.by[k]));
+  else tgEdit = {};
+  renderNxTarget(); };
+$('nxTgtForm').onsubmit = e => { e.preventDefault(); if (!tgEdit || $('nxTgtSave').disabled) return; NS.target = { ...tgEdit }; tgEdit = null; renderNext(); renderNextCard(); nxSave(); };
+
+// ---- Claude's read: Folio does the arithmetic, Claude weighs it ----
+// AI: whether Claude can be reached, whether it is working, its latest read and its answers
+let aiPoll = null, aiTick = 0, aiWant = false;
+const aiKey = k => k === BROAD ? 'SP500_FUND' : k;
+const aiAgo = t => { const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${many(Math.round(s / 86400), 'day')} ago`; };
+const SURE = { low: 'Not a strong view', medium: 'A moderate view', high: 'A firm view' };
+// what Folio worked out, in a form Claude can read
+function nxFacts(m) {
+  const r1 = x => x == null || !isFinite(x) ? null : Math.round(x * 10) / 10, text = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+  const mix = s => Object.fromEntries(Object.entries(s.vals).filter(([, v]) => v > 0.005).map(([k, v]) => [aiKey(k), r1(v / s.total * 100)]));
+  return {
+    amount_on_the_page: m.B, their_usual_amount: m.usual,
+    portfolio_now: { yearly_swing_pct: r1(m.now.swing), sp500_yearly_swing_pct: r1(m.sp), largest: m.now.top && { symbol: m.now.top.k, share_pct: r1(m.now.top.pct) }, mix_pct: mix({ vals: m.vals, total: S.total }), cash_pct: r1(S.total ? Math.max(0, S.cash) / S.total * 100 : 0),
+      rise_needed_to_get_back_what_they_paid_pct: r1(Math.max(0, m.now.need)) },
+    per_candidate: m.C.map(c => ({ symbol: aiKey(c.k), yearly_swing_pct: r1(m.vol(c.k)), moves_with_portfolio: m.withP(c.k) == null ? null : Math.round(m.withP(c.k) * 100) / 100,
+      share_of_portfolio_pct: c.held ? r1(m.vals[c.k] / S.total * 100) : 0, share_of_swing_pct: c.held ? r1(m.now.shares[c.k]) : 0 })),
+    mix_new_money_is_steered_toward: { basis: m.tg.kind === 'set' ? 'a target the investor set on this page' : m.tg.kind === 'plan' ? 'targets the investor set on their Plan page' : 'no target set: the shares of their money they gave each holding so far',
+      shares_pct: Object.fromEntries(Object.entries(m.tg.t).map(([k, v]) => [aiKey(k), r1(v * 100)])) },
+    ways: Object.fromEntries(WAYS.map(([w]) => { const p = m.plans[w];
+      return [w, { name: wayName(m, w), rule: wayRule(m, w), usable: p.ok, folio_says: text(p.why), ...(p.ok ? { split: Object.fromEntries(Object.entries(p.parts).map(([k, a]) => [aiKey(k), a])),
+        after_this_buy: { largest: { symbol: aiKey(p.after.top.k), share_pct: r1(p.after.top.pct) }, yearly_swing_pct: r1(p.after.swing) },
+        [`after_${ROAD}_buys`]: { mix_pct: mix(p.end), cash_pct: r1(Math.max(0, p.end.cash) / p.end.total * 100), yearly_swing_pct: r1(p.end.swing), ...(m.goal ? { [`buys_until_${m.goal.k}_is_under_${m.goal.word.replace(' ', '_')}`]: p.reach > 0 ? p.reach : `more than ${ROAD}` } : {}) } } : {}) }]; })),
+    folio_rules_would_start_with: m.start.way,
+    meaning: `yearly_swing_pct: how much the value has swung in a year, from the past year of daily moves (annualised standard deviation); cash counts as still. share_of_swing_pct: how much of the portfolio's swing that holding causes. moves_with_portfolio: correlation of its daily moves with the holdings taken together, 1 = in step. after_${ROAD}_buys: ${ROAD} buys of the amount on the page, placed by that rule each time, with prices held where they are today.`,
+  };
+}
+function renderNxAi(m = nxM) {
+  if (!m) return;
+  const a = AI || { available: false, asks: [] }, r = a.read, lab = k => m.by[k]?.label || (k === BROAD ? 'S&P 500 fund' : k), col = k => m.by[k]?.col || 'var(--neutral)';
+  $('nxAiCard').classList.toggle('busy', !!a.busy);
+  put($('aiTag'), r ? `${esc(r.model)} · ${aiAgo(r.at)}${r.stale ? ' · <b>written before your latest entry</b>' : ''}` : '');
+  let h = a.busy ? `<div class="ai-busy" role="status"><i class="spin"></i><b>${a.kind === 'ask' ? 'Claude is thinking about your question…' : 'Claude is reading your portfolio…'}</b><span class="num" id="aiSecs"></span></div>` : '';
+  if (!r) h += a.busy ? '<p class="hint">This usually takes under a minute. You can leave the page; the answer will be here when you come back.</p>'
+    : '<p class="ai-lead">Folio’s four rules each look at one thing. Claude weighs them together with what the companies report, what analysts expect and the recent headlines, and says where it would put this buy and why.</p>'
+      + (a.available ? `<div><button class="btn" type="button" data-ai="read">${ic('spark', 15)}Ask Claude</button></div>` : '<p class="hint">Folio reaches Claude through Claude Code, which it can’t find on this computer.</p>');
+  else {
+    const tot = r.split.reduce((s, x) => s + x.amount, 0) || 1, used = m.way === 'claude', tk = Object.keys(r.target || {}), same = tk.length && tk.every(k => NS.target?.[k] === r.target[k]) && Object.keys(NS.target || {}).length === tk.length;
+    const list = (title, items) => items.length ? `<h3>${title}</h3><ul>${items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+    h += `<div class="ai-read"><div>
+        <p class="ai-head">${esc(r.headline)}</p>
+        <div class="alloc">${r.split.map(x => `<i style="flex:${x.amount / tot};background:${col(x.symbol)}" title="${esc(lab(x.symbol))} ${(x.amount / tot * 100).toFixed(0)}%"></i>`).join('')}</div>
+        <div class="ai-split num">${r.split.map(x => `<div class="r"><i class="sw" style="background:${col(x.symbol)}"></i><b>${esc(lab(x.symbol))}</b><span class="pv">${amt(x.amount)}</span><p>${esc(x.reason)}</p></div>`).join('')}</div>
+        <p class="ai-amt num"><b class="pv">${amt(r.amount)}</b> in all. ${esc(r.amountWhy)}</p>
+        <div class="ai-acts"><button class="btn" type="button" data-ai="use"${used ? ' disabled' : ''}>${used ? 'This split is on the page' : 'Use this split'}</button>${Math.abs(r.amount - m.B) > 0.5 ? `<button class="mini" type="button" data-ai="amt">Make it <span class="pv">${amt(r.amount)}</span></button>` : ''}<button class="mini" type="button" data-ai="read"${a.busy ? ' disabled' : ''}>Ask again</button><button class="mini" type="button" data-ai="clear"${a.busy ? ' disabled' : ''}>Remove</button></div>
+        <p class="tag">${SURE[r.confidence] || ''}${a.left < 10 ? ` · ${many(a.left, 'question')} left today` : ''}</p>
+        ${r.road ? `<h3>The next several buys</h3><p>${esc(r.road)}</p>` : ''}
+      </div><div>${list('Why', r.reasons)}</div>
+      <div>${list('What could change this', r.cautions)}${list('What Claude wasn’t told', r.unknowns)}`
+      + (tk.length ? `<h3>The mix it would steer toward</h3><div class="alloc">${tk.map(k => `<i style="flex:${r.target[k]};background:${col(k)}" title="${esc(lab(k))} ${r.target[k]}%"></i>`).join('')}</div>
+        <p class="ai-mix num">${tk.map(k => `<span><i class="sw" style="background:${col(k)}"></i>${esc(lab(k))} ${r.target[k]}%</span>`).join('')}</p>
+        <div><button class="mini" type="button" data-ai="target"${same ? ' disabled' : ''}>${same ? 'This is your target mix' : 'Make this my target mix'}</button></div>` : '') + '</div></div>';
+  }
+  put($('aiBody'), h);
+  put($('aiQa'), (a.asks || []).map(x => `<div><p class="q">${esc(x.q)}</p><p class="a">${esc(x.a)}</p></div>`).join(''));
+  $('aiAsk').hidden = !a.available;
+  $('aiSend').disabled = !!a.busy;
+  if (document.activeElement !== $('aiBrief') && $('aiBrief').value !== (NS.brief || '')) $('aiBrief').value = NS.brief || '';
+  $('aiMore').hidden = !a.available;
+}
+async function aiStart(kind, question) {
+  if (!nxM || AI?.busy) return;
+  $('aiErr').textContent = '';
+  try {
+    clearTimeout(nxSaveT); nxSaveT = null; const s = await post('/api/next', NS, 'PUT'); if (S) S.next = s.next;  // the note about you goes with the question
+    AI = await post(kind === 'ask' ? '/api/next/claude/ask' : '/api/next/claude', { budget: nxM.B, facts: nxFacts(nxM), question });
+    aiWant = kind === 'read'; if (kind === 'ask') $('aiQ').value = '';
+    renderNxAi(); aiWatch();
+  } catch (err) { $('aiErr').textContent = err.message; }
+}
+function aiWatch() {
+  if (aiPoll) return;
+  aiPoll = setInterval(async () => {
+    const el = $('aiSecs'); if (el && AI?.busy) el.textContent = `${Math.max(0, Math.round(Date.now() / 1000 - AI.since))} s`;
+    if (++aiTick % 2) return;
+    try { const was = AI?.read?.at, a = await api('/api/next/claude'); AI = a; if (NX) NX.claude = a;
+      if (a.busy) return;
+      clearInterval(aiPoll); aiPoll = null; $('aiErr').textContent = a.error || '';
+      if (aiWant && a.read && a.read.at !== was && !a.error && NS) { NS.way = 'claude'; NS.own = {}; nxSave(); }
+      aiWant = false; nxDrawAt = 0; renderNext(); renderNextCard();
+    } catch {}
+  }, 1000);
+}
+$('nxAiCard').onclick = async e => { const b = e.target.closest('[data-ai]'); if (!b || b.disabled || !nxM || !NS) return; const k = b.dataset.ai, r = AI?.read;
+  if (k === 'read') aiStart('read');
+  else if (k === 'use' && r) { NS.way = 'claude'; NS.own = {}; renderNext(); renderNextCard(); nxSave(); }
+  else if (k === 'amt' && r) nxSetB(r.amount);
+  else if (k === 'target' && r) { NS.target = Object.fromEntries(Object.entries(r.target).filter(([k]) => nxM.by[k])); tgEdit = null; renderNext(); renderNextCard(); nxSave(); toast('Target mix set. “Toward your target” now steers new money there.'); }
+  else if (k === 'clear') { try { AI = await api('/api/next/claude', { method: 'DELETE' }); if (NX) NX.claude = AI; if (NS.way === 'claude') { NS.way = null; nxSave(); } renderNext(); renderNextCard(); } catch (err) { $('aiErr').textContent = err.message; } }
+};
+$('aiAsk').onsubmit = e => { e.preventDefault(); const q = $('aiQ').value.trim(); if (q.length < 3) return void ($('aiErr').textContent = 'Type a question first.'); aiStart('ask', q); };
+$('aiBrief').oninput = e => { if (NS) { NS.brief = e.target.value; nxSave(); } };
+{ const ro = new ResizeObserver(() => { if (view === 'next' && S && NX && nxM) drawNxRoad(); }); ro.observe($('nxRoad')); }
+
+// ================= since you last looked =================
+let sinceRef = null, sincePending = true;
+const sinceSave = () => { if (S && S.positions.length && !S.stale?.length) store.set('seen', JSON.stringify({ t: Math.floor(Date.now() / 1000), total: S.total, dep: S.deposited, px: Object.fromEntries(S.positions.map(p => [p.symbol, p.price])) })); };
+function sinceCheck() {  // away for four hours or more: measure from how things stood when you left
+  sincePending = false;
+  const now = Math.floor(Date.now() / 1000), get = k => { try { return JSON.parse(store.get(k)); } catch { return null; } }, o = get('seen'), kept = get('since');
+  if (o && o.total > 0 && now - o.t >= 4 * 3600) { sinceRef = { ...o, at: now }; store.set('since', JSON.stringify(sinceRef)); }
+  else if (!sinceRef && kept?.total > 0) sinceRef = kept;
+  sinceSave();
+}
+function renderSince() {
+  const o = sinceRef, now = Date.now() / 1000;
+  if (!o || now - o.at > 12 * 3600 || !S.positions.length || S.stale?.length) return void put($('since'), '');
+  const made = (S.total - S.deposited) - (o.total - o.dep), p = made / o.total * 100, d = new Date(o.t * 1000);
+  const when = d.toDateString() === new Date().toDateString() ? 'at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : now - o.t < 6 * 86400 ? 'on ' + d.toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' }) : 'on ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const mv = S.positions.filter(x => o.px?.[x.symbol] > 0).map(x => [x.symbol, (x.price / o.px[x.symbol] - 1) * 100]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4);
+  put($('since'), `<span class="${cls(made)}">${arrow(made)} <span class="pv">${sgn(made)}</span> (${pct(p)})</span> since you last looked, ${when}${mv.length ? `<span class="mv">${mv.map(([s, c]) => `${esc(s)} <span class="${cls(c)}">${pct(c, 1)}</span>`).join(' · ')}</span>` : ''}`);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) sinceSave(); else sincePending = true; });
+addEventListener('pagehide', sinceSave);
 
 // ================= appearance: theme and accent =================
 const ACCENTS = [['blue', 'Blue'], ['violet', 'Violet'], ['rose', 'Rose'], ['teal', 'Teal'], ['orange', 'Orange']];
