@@ -1074,6 +1074,60 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
 }
 @media (min-width: 1500px) { #nxEffCard { grid-column: span 7; } #nxRoadCard { grid-column: span 5; } #nxCandCard { grid-column: span 12; } }
 @media (min-width: 1900px) { #next > #nxWaysCard { order: 3; } }
+/* ================= 7.0 ================= */
+/* ---- entries read from a screenshot or text ---- */
+#imp { width: min(560px, calc(100vw - 32px)); }
+.drop { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 88px; padding: 14px; border: 1.5px dashed var(--line-2); border-radius: 12px; color: var(--text-2); font-size: 14px; text-align: center; cursor: pointer; }
+.drop.over, .drop:hover { border-color: var(--accent); color: var(--text); }
+.drop img { max-height: 120px; max-width: 45%; border-radius: 8px; border: 1px solid var(--line); }
+#impText { display: block; width: 100%; margin: 10px 0 14px; font: inherit; font-size: 14px; line-height: 1.45; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; resize: vertical; min-height: 76px; }
+#impText:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+#imp .ai-busy { margin: 4px 0 16px; }
+.imp-list { list-style: none; margin: 0 0 8px; padding: 0; max-height: min(52vh, 460px); overflow: auto; }
+.imp-list:empty { display: none; }
+.imp-list label { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 11px 2px; border-top: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+.imp-list li:first-child label { border-top: 0; }
+.imp-list input { accent-color: var(--accent); width: 16px; height: 16px; margin: 3px 0 0; }
+.imp-list .sub { display: block; font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-list .flag { display: block; font-size: 12px; color: var(--text-2); margin-top: 3px; padding-left: 9px; border-left: 2px solid var(--warn); }
+.imp-list li.off label { cursor: default; } .imp-list li.off .iw > b, .imp-list li.off .pv { opacity: .55; }
+.imp-list .iw { min-width: 0; }
+.imp-link { margin: -6px 0 12px; } .imp-link button { border: 0; background: none; padding: 0; color: var(--accent); font-size: 13px; }
+.imp-link button:hover { text-decoration: underline; }
+#imp .btn:disabled { opacity: .5; cursor: default; }
+/* ---- how far from the target ---- */
+.tgt-bars { display: grid; gap: 7px; margin-top: 12px; max-width: 760px; }
+.tgt-bars:empty { display: none; }
+.tgt-bars > div { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12px; color: var(--text-3); }
+.tgt-bars .alloc { height: 10px; }
+.tgt-bars p { margin: 5px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-2); } .tgt-bars p b { color: var(--text); font-weight: 600; }
+#nxEff td .sub.thru { color: var(--text-3); white-space: nowrap; }
+/* ================= 8.0 ================= */
+/* ---- bets held on purpose ---- */
+.bet + .bet { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.bet-hd { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.bet-hd b { font-size: 15px; font-weight: 640; } .bet-hd .tag { flex: 1; min-width: 180px; }
+.bet-grid { display: grid; gap: 14px 40px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .bet-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.meter { position: relative; height: 10px; border-radius: 5px; background: var(--surface-2); margin: 4px 8px 0; }
+.meter .band { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: color-mix(in srgb, var(--accent) 42%, transparent); }
+.meter .mk { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--text); border: 2px solid var(--surface); }
+.meter .mk.after { background: var(--surface); border-color: var(--text); }
+.meter-ax { position: relative; height: 18px; margin: 0 8px; font-size: 11px; color: var(--text-3); } .meter-ax span { position: absolute; top: 4px; transform: translateX(-50%); white-space: nowrap; }
+.meter-key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--text-3); margin-top: 6px; } .meter-key span { display: inline-flex; align-items: center; gap: 6px; }
+.meter-key i { width: 10px; height: 10px; border-radius: 50%; background: var(--text); display: inline-block; } .meter-key i.after { background: transparent; border: 2px solid var(--text); } .meter-key i.band { border-radius: 3px; background: color-mix(in srgb, var(--accent) 42%, transparent); }
+.bet-say { margin: 12px 0 0; font-size: 14px; line-height: 1.55; color: var(--text-2); max-width: 80ch; } .bet-say b { color: var(--text); font-weight: 620; }
+.bet-t td, .bet-t th { padding: 7px 8px; font-size: 13px; text-align: right; } .bet-t td:first-child, .bet-t th:first-child { text-align: left; padding-left: 0; color: var(--text-2); } .bet-t td:last-child, .bet-t th:last-child { padding-right: 0; }
+.bet-t { width: 100%; } .bet-t th { white-space: normal; line-height: 1.3; vertical-align: bottom; } .bet-t tbody tr { cursor: default; } .bet-t tbody tr:hover td { background: transparent; }
+#betForm { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); max-width: 640px; display: grid; gap: 12px; }
+.bet-f { display: grid; gap: 14px; font-size: 13px; color: var(--text-2); } .bet-f > label, .bet-f > div { display: grid; gap: 6px; }
+.bet-f input:not(.tin) { font: inherit; font-size: 14px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.bet-f input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.bet-f .in { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; } .bet-f .tin { width: 64px; }
+#nxBetCard .err { margin: 0; min-height: 0; }
+.flagline { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-2); padding-left: 9px; border-left: 2px solid var(--warn); display: flex; gap: 6px 10px; align-items: center; flex-wrap: wrap; }
+.ai-more .chk { margin: 10px 0 0; font-size: 13px; }
+@media (min-width: 1100px) { #next > #nxBetCard { order: 4; } #nxBetCard { grid-column: span 12; } }
 </style>
 </head>
 <body>
@@ -1380,9 +1434,24 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <form class="ai-ask" id="aiAsk" hidden><input id="aiQ" maxlength="500" placeholder="Ask Claude about your next buy, e.g. “why not more NVDA?”" autocomplete="off" aria-label="A question for Claude"><button class="mini" id="aiSend" type="submit">Ask</button></form>
       <details class="ai-more" id="aiMore" hidden><summary>What Claude should know about you</summary>
         <textarea id="aiBrief" rows="2" maxlength="600" placeholder="e.g. I’m investing for ten years or more. I can’t buy US-listed funds. I have other savings in the bank." aria-label="What Claude should know about you"></textarea>
+        <label class="chk"><input type="checkbox" id="aiAuto">Ask Claude again by itself whenever your entries change</label>
       </details>
       <div class="err" id="aiErr" role="alert"></div>
       <p class="note">Claude is an AI model. It reads the figures on this page and recent headlines, it can be wrong, and it doesn’t know your wider finances; this is not professional advice. Asking sends your holdings, purchases and these figures to Anthropic through the Claude Code sign-in on this computer.</p>
+    </section>
+    <section class="card" id="nxBetCard">
+      <div class="ch"><h2>Bets you hold on purpose</h2><button class="mini" type="button" id="betAdd">Add a bet</button></div>
+      <div id="betBody"></div>
+      <form id="betForm" novalidate hidden>
+        <div class="bet-f">
+          <label>Name<input id="betName" maxlength="40" placeholder="e.g. Musk companies" autocomplete="off"></label>
+          <div><span>What is in it</span><div class="chips" id="betMembers" role="group" aria-label="Holdings in this bet"></div></div>
+          <div><span>Keep it between</span><span class="in"><input class="tin num" id="betLo" inputmode="decimal" aria-label="Lowest share, in percent"><span>% and</span><input class="tin num" id="betHi" inputmode="decimal" aria-label="Highest share, in percent"><span>% of the portfolio</span></span></div>
+        </div>
+        <div class="err" id="betErr" role="alert"></div>
+        <div class="tgt-acts"><button class="mini" type="button" id="betDel">Remove this bet</button><button class="mini" type="button" id="betCancel">Cancel</button><button class="mini" type="submit">Save</button></div>
+      </form>
+      <p class="note">A bet is a group of holdings you keep large deliberately. Folio stops its rules from taking it below the floor of your range, tells you when a target or a suggestion would, and tells Claude to keep its advice inside the range.</p>
     </section>
     <section class="card" id="nxHabitCard">
       <div class="ch"><h2>How you have been buying</h2><div class="cmpl num" id="nxHabitKey"></div></div>
@@ -1399,6 +1468,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
           <div class="tgt-rows num" id="nxTgtRows"></div>
           <div class="tgt-acts"><span class="num" id="nxTgtSum" role="status"></span><button class="mini" type="button" data-fill="now">Start from today’s mix</button><button class="mini" type="button" data-fill="claude" hidden>Start from Claude’s</button><button class="mini" type="button" data-fill="clear">Empty it</button><button class="mini" type="submit" id="nxTgtSave">Save</button></div>
         </form>
+        <div class="tgt-bars num" id="nxTgtBars"></div>
       </div>
     </section>
     <section class="card" id="nxEffCard">
@@ -1427,6 +1497,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
 <dialog id="dlg">
   <form id="form" method="dialog" novalidate>
     <h3 id="dlgTitle">Record a trade</h3>
+    <div class="imp-link" id="impLink"><button type="button" id="impOpen">Or read it from a screenshot or pasted text</button></div>
     <div class="seg" id="seg" role="group" aria-label="Type">
       <button type="button" data-t="buy">Buy</button><button type="button" data-t="sell">Sell</button><button type="button" data-t="dividend">Dividend</button>
       <button type="button" data-t="deposit">Deposit</button><button type="button" data-t="withdraw">Withdraw</button>
@@ -1461,6 +1532,21 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
   </form>
 </dialog>
 
+<dialog id="imp" aria-labelledby="impT">
+  <form id="impForm" method="dialog" novalidate>
+    <h3 id="impT">Record from a screenshot or text</h3>
+    <p id="impLead">Add a screenshot of your broker’s orders, or paste what it shows. Claude reads it, Folio checks the tickers and prices, and nothing is recorded until you say so.</p>
+    <div id="impIn">
+      <label class="drop" id="impDrop"><input type="file" id="impFile" accept="image/png,image/jpeg,image/webp" hidden><span id="impPic">Choose a screenshot, drop one here, or paste it</span></label>
+      <textarea id="impText" rows="3" maxlength="20000" placeholder="…or paste text, such as “Bought VUAA, 0.8034 shares at €124.59, today”" aria-label="Text to read"></textarea>
+    </div>
+    <div class="ai-busy" id="impBusy" role="status" hidden><i class="spin"></i><b>Claude is reading it…</b><span class="num" id="impSecs"></span></div>
+    <ul class="imp-list num" id="impList"></ul>
+    <div class="err" id="impErr" role="alert"></div>
+    <div class="actions"><button type="button" class="btn ghost" id="impCancel">Cancel</button><button type="button" class="btn ghost" id="impBack" hidden>Start over</button><button type="submit" class="btn" id="impGo">Read it</button></div>
+  </form>
+</dialog>
+
 <dialog id="ask">
   <form method="dialog">
     <h3 id="askT"></h3>
@@ -1479,7 +1565,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
   <form method="dialog">
     <h3>Keyboard shortcuts</h3>
     <dl class="keys">
-      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”, or “next 200” to see where $200 could go</dd>
+      <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”, or “next 200” to see where $200 could go. Paste a screenshot of your broker’s orders anywhere on the page to record them</dd>
       <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>X</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Journey, Next, Markets, Analysis, Plan, Lab</dd>
       <dt><kbd>F</kbd></dt><dd>Wall display: the portfolio full screen, for a screen across the room</dd>
       <dt><kbd>N</kbd></dt><dd>What Folio noticed for you</dd>
@@ -2445,7 +2531,7 @@ async function symChanged() {
 function openTrade(sym, tx, pre) {
   $('form').reset(); $('fDate').value = todayStr(); $('fDate').max = todayStr();
   editing = tx ? tx.id : null; fKeep = tx ? tx.native || 'USD' : null; fCur = tx?.native ? { ...tx.native } : null;
-  $('dlgTitle').textContent = tx ? 'Edit entry' : 'Record a trade';
+  $('dlgTitle').textContent = tx ? 'Edit entry' : 'Record a trade'; $('impLink').hidden = !!tx;
   $('fSym').value = sym || tx?.symbol || '';
   if (tx) {
     $('fDate').value = tx.date; $('fNote').value = tx.note || '';
@@ -3037,6 +3123,7 @@ function palLocal(q) {
     ['Overview', 'O', () => setView('overview'), 'home', 'dashboard portfolio holdings page'],
     ['Journey', 'J', () => setView('journey'), 'route', 'story history timeline day by day replay time machine every purchase scored months calendar moments milestones page'],
     ['Next buy', 'X', () => setView('next'), 'target', 'what to buy next how much suggestion suggestions amount budget habit rebalance average down spread calm page'],
+    ['Record from a screenshot or pasted text', '', () => openImport(), 'spark', 'import read revolut broker screenshot paste photo picture statement orders claude add trades'],
     ['Ask Claude about your next buy', '', () => { setView('next'); setTimeout(() => { $('nxAiCard').scrollIntoView({ block: 'center' }); ($('aiAsk').hidden ? $('nxAiCard').querySelector('[data-ai="read"]') : $('aiQ'))?.focus(); }, 80); }, 'spark', 'claude ai opinion read advice smarter why question where what buy'],
     ['Analysis', 'A', () => setView('analysis'), 'pulse', 'risk volatility beta correlation sectors drawdown page'],
     ['Markets', 'W', () => setView('markets'), 'wave', 'world indices europe asia rates commodities currencies crypto movers gainers losers trending open closed page'],
@@ -3067,7 +3154,7 @@ function palLocal(q) {
   if (nb) return [{ hd: 'Next buy' }, { name: `See where ${dollars(nb, nb % 1 ? 2 : 0)} could go`, key: 'Enter', fn: () => { nxWant = nb; nxDrawAt = 0; if (view === 'next') renderNext(); else setView('next'); }, icon: 'target', words: '' }];
   const en = parseEntry(q);
   if (en) return [{ hd: 'Record' }, { name: entryText(en), key: 'Enter', fn: () => quickEntry(en), icon: 'plus', words: '' }];
-  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 18)];
+  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 19)];
   const hit = s => s.toLowerCase().includes(q);
   const a = acts.filter(x => hit(x.name) || hit(x.words)), s = syms.filter(x => hit(x.sym) || hit(x.name) || hit(x.full));
   return [...(s.length ? [{ hd: 'On this page' }, ...s] : []), ...(a.length ? [{ hd: 'Do' }, ...a] : [])];
@@ -3801,7 +3888,7 @@ const amt = n => usd(n, Math.abs(n) >= 1000 || Math.abs(n - Math.round(n)) < 0.0
 function nxInit() {
   if (NS && (view === 'next' || nxSaveT)) return;  // while you are on the page, what is on it wins
   const s = S.next || {};
-  NS = { budget: s.budget ?? null, way: s.way || null, broad: s.broad !== false, ideas: [...(s.ideas || [])], own: { ...(s.own || {}) }, target: { ...(s.target || {}) }, brief: s.brief || '' };
+  NS = { budget: s.budget ?? null, way: s.way || null, broad: s.broad !== false, ideas: [...(s.ideas || [])], own: { ...(s.own || {}) }, target: { ...(s.target || {}) }, brief: s.brief || '', auto: !!s.auto, bets: (s.bets || []).map(b => ({ ...b, members: [...b.members] })) };
 }
 function nxSave() {
   clearTimeout(nxSaveT);
@@ -3820,7 +3907,7 @@ async function loadNext(force) {
 
 // everything a buy could go to: what you hold, a broad fund, your watchlist and your ideas
 function nxCands() {
-  const all = NX.cands.map(c => ({ ...c, k: c.symbol, label: c.symbol, price: priceOf(c.symbol) ?? c.price, usd: !c.currency || c.currency === 'USD' }));
+  const all = NX.cands.map(c => ({ ...c, k: c.symbol, label: c.tracks === BROAD ? `S&P 500 (${c.symbol.split('.')[0]})` : c.symbol, price: priceOf(c.symbol) ?? c.price, usd: !c.currency || c.currency === 'USD' }));
   const mine = all.filter(c => c.held).sort((a, b) => (held(b.k)?.value || 0) - (held(a.k)?.value || 0));
   const out = [...mine, ...(NS.broad && !all.some(c => c.tracks === BROAD) && NX.cov.names.includes(BROAD) ? [{ k: BROAD, symbol: BROAD, label: 'S&P 500 fund', name: 'Any fund that tracks the S&P 500', broad: true, usd: true }] : []), ...all.filter(c => !c.held)];
   let n = Object.keys(colors).length;  // colour follows the holding; the others take the next ones, in a fixed order
@@ -3863,6 +3950,17 @@ function nxModel() {
     const csum = ks.reduce((a, k) => a + cost0[k], 0);
     return { kind: 'paid', t: Object.fromEntries(ks.map(k => [k, csum > 0 ? cost0[k] / csum : 0])) };
   })();
+  // bets you hold on purpose: a group of holdings, and the range of the portfolio you want it to stay in
+  const bets = (NS.bets || []).map((b, i0) => ({ ...b, i0, ks: [...new Set(b.members.map(al))].filter(k => by[k]) })).filter(b => b.ks.length);
+  const betVal = (b, v) => b.ks.reduce((a, k) => a + (v[k] || 0), 0), betShare = (b, s) => s.total ? betVal(b, s.vals) / s.total * 100 : 0;
+  // a buy that would leave a bet under its floor gives up part of itself to the bet's holdings
+  const hold = (st, parts, total) => { let out = null;
+    for (const b of bets) { const cur = out || parts, need = b.lo / 100 * total - betVal(b, st.vals) - betVal(b, cur); if (need <= 0.005) continue;
+      const rest = Object.keys(cur).filter(k => !b.ks.includes(k)), have = rest.reduce((a, k) => a + cur[k], 0), move = Math.min(need, have); if (move <= 0.005) continue;
+      out = { ...cur }; for (const k of rest) out[k] -= cur[k] / have * move;
+      const w = b.ks.map(k => (tg.kind !== 'paid' && tg.t[k]) || st.vals[k] || 0), ws = w.reduce((a, x) => a + x, 0);
+      b.ks.forEach((k, i) => out[k] = (out[k] || 0) + (ws > 0 ? w[i] / ws : 1 / b.ks.length) * move); }
+    return out && Object.fromEntries(Object.entries(cents(out)).filter(([, a]) => a > 0.004)); };
   // each rule, as a way of placing b dollars into a portfolio that stands at st
   const place = {
     mix: (st, b) => { const ks = Object.keys(tg.t), now = sum(st.vals), gap = Object.fromEntries(ks.map(k => [k, Math.max(0, tg.t[k] * (now + b) - (st.vals[k] || 0))])), g = sum(gap);
@@ -3880,17 +3978,17 @@ function nxModel() {
   };
   const fixed = parts => { const s = sum(parts); return (st, b) => s > 0 ? Object.fromEntries(Object.entries(parts).map(([k, a]) => [k, a / s * b])) : {}; };
   // where a run of buys leads: the same amount each time, placed as things stand at that moment, prices held where they are today
-  const road = (fn, raw) => { const st = { vals: { ...vals }, cost: { ...cost0 } }, out = []; let total = S.total, cash = S.cash;
+  const road = (fn, raw, guard = true) => { const st = { vals: { ...vals }, cost: { ...cost0 } }, out = []; let total = S.total, cash = S.cash;
     const snap = parts => { const t = top(st.vals); return { vals: { ...st.vals }, total, cash, parts, top: t ? { k: t, pct: total ? st.vals[t] / total * 100 : 0 } : null, swing: swing(st.vals, total) }; };
     out.push(snap({}));
     for (let i = 0; i < ROAD; i++) {
-      const got = fn(st, B) || (i ? place.mix(st, B) : {}), parts = raw ? cents(got) : tidy(got);
+      const got = fn(st, B) || (i ? place.mix(st, B) : {}), use = Math.min(Math.max(0, cash), B), kept = guard ? hold(st, raw ? cents(got) : tidy(got), total + B - use) : null, parts = kept || (raw ? cents(got) : tidy(got));
       for (const k in parts) { st.vals[k] = (st.vals[k] || 0) + parts[k]; st.cost[k] = (st.cost[k] || 0) + parts[k]; }
-      const use = Math.min(Math.max(0, cash), B); total += B - use; cash -= use;
-      out.push(snap(parts));
+      total += B - use; cash -= use;
+      out.push({ ...snap(parts), held: !!kept });
     }
     return out; };
-  const mk = (fn, ok, why, raw) => { const r = road(fn, raw); return { ok: !!ok && (raw || sum(r[1].parts) > 0), parts: r[1].parts, after: r[1], road: r, end: r.at(-1), why }; };
+  const mk = (fn, ok, why, raw, guard) => { const r = road(fn, raw, guard); return { ok: !!ok && (raw || sum(r[1].parts) > 0), parts: r[1].parts, after: r[1], road: r, end: r.at(-1), why }; };
 
   const plans = {};
   { const ks = Object.keys(tg.t), off = ks.map(k => [k, inv > 0 ? ((vals[k] || 0) / inv - tg.t[k]) * 100 : 0]).sort((a, b) => a[1] - b[1])[0], what = tg.kind === 'paid' ? 'the shares of your money you gave them' : 'your target mix';
@@ -3901,28 +3999,30 @@ function nxModel() {
       : c.held ? `Of what you hold, ${esc(c.label)} is the steadiest place for it: it has swung about ${vol(k).toFixed(0)}% a year, against ${mine.toFixed(0)}% for your holdings together.`
       : `${c.broad ? 'A fund that tracks the S&amp;P 500' : esc(c.label)} has swung about ${vol(k).toFixed(0)}% a year, against ${mine.toFixed(0)}% for ${S.positions.length > 1 ? 'your holdings together' : esc(S.positions[0].symbol)}, and only partly moves with ${S.positions.length > 1 ? 'them' : 'it'}.` }; }
   { const r = Object.fromEntries(Object.entries(NX.habit.recent || {}).filter(([k]) => by[k])), ks = Object.keys(r).sort((a, b) => r[b] - r[a]), s = sum(r);
-    plans.habit = mk(place.habit, s > 0, !(s > 0) ? 'There are no purchases to go on yet.' : ks.length < 2 ? (NX.habit.recentDays < 2 ? `Your one buy so far was ${esc(ks[0])}.` : `Your last ${many(NX.habit.recentDays, 'buy')} all went to ${esc(ks[0])}.`)
-      : `Of the money in your last ${many(NX.habit.recentDays, 'buy')}, ${words(ks.map(k => `${(r[k] / s * 100).toFixed(0)}% went to ${esc(k)}`))}.`); }
+    plans.habit = mk(place.habit, s > 0, !(s > 0) ? 'There are no purchases to go on yet.' : ks.length < 2 ? (NX.habit.recentDays < 2 ? `Your one buy so far was ${esc(by[ks[0]].label)}.` : `Your last ${many(NX.habit.recentDays, 'buy')} all went to ${esc(by[ks[0]].label)}.`)
+      : `Of the money in your last ${many(NX.habit.recentDays, 'buy')}, ${words(ks.map(k => `${(r[k] / s * 100).toFixed(0)}% went to ${esc(by[k].label)}`))}.`); }
   { const under = S.positions.filter(p => by[p.symbol] && p.value < p.cost * 0.995).sort((a, b) => a.value / a.cost - b.value / b.cost)[0];
-    plans.cost = mk(place.cost, !!under, under ? `${esc(under.symbol)} is ${((1 - under.price / under.avgCost) * 100).toFixed(0)}% below your average price of ${usd(under.avgCost)}, further than anything else you hold.` : 'Nothing you hold is below what you paid for it.'); }
+    plans.cost = mk(place.cost, !!under, under ? `${esc(by[under.symbol].label)} is ${((1 - under.price / under.avgCost) * 100).toFixed(0)}% below your average price of ${usd(under.avgCost)}, further than anything else you hold.` : 'Nothing you hold is below what you paid for it.'); }
   const read = AI?.read || null;
   if (read) { const rs = Object.fromEntries(read.split.filter(x => by[al(x.symbol)]).map(x => [al(x.symbol), x.amount]));
     plans.claude = mk(fixed(rs), sum(rs) > 0 && B > 0, esc(read.headline) + (Math.abs(B - read.amount) > 0.5 ? ` <span class="flat">Scaled from the ${amt(read.amount)} Claude had in mind.</span>` : ''), true); }
-  if (isOwn) plans.own = { ...mk(fixed(Object.fromEntries(ownKeys.map(k => [k, NS.own[k]]))), true, 'Your own split. Change any amount, or add something else to it.', true), parts: Object.fromEntries(ownKeys.map(k => [k, NS.own[k]])) };
+  if (isOwn) plans.own = { ...mk(fixed(Object.fromEntries(ownKeys.map(k => [k, NS.own[k]]))), true, 'Your own split. Change any amount, or add something else to it.', true, false), parts: Object.fromEntries(ownKeys.map(k => [k, NS.own[k]])) };
 
   const t0 = top(vals), now = { top: t0 ? { k: t0, pct: S.total ? vals[t0] / S.total * 100 : 0 } : null, swing: swing(vals, S.total), held: swing(vals, inv), shares: shares(vals),
     need: inv > 0 ? (S.cost / inv - 1) * 100 : 0, needAfter: inv + B > 0 ? ((S.cost + B) / (inv + B) - 1) * 100 : 0 };
-  const goal = !now.top ? null : now.top.pct > 36 ? { k: t0, pct: 100 / 3, word: 'a third' } : now.top.pct > 27.5 ? { k: t0, pct: 25, word: 'a quarter' } : null;  // a mark to watch the largest holding against
+  const goal = bets.length || !now.top ? null : now.top.pct > 36 ? { k: t0, pct: 100 / 3, word: 'a third' } : now.top.pct > 27.5 ? { k: t0, pct: 25, word: 'a quarter' } : null;  // a mark to watch the largest holding against
+  for (const b of bets) b.now = betShare(b, { vals, total: S.total });
+  for (const p of Object.values(plans)) p.bets = bets.map(b => ({ after: betShare(b, p.after), end: betShare(b, p.end), reach: p.road.findIndex(s => betShare(b, s) <= b.hi + 0.05), heldAt: p.road.findIndex(s => s.held) }));
   for (const p of Object.values(plans)) { p.after.shares = shares(p.after.vals); p.reach = goal ? p.road.findIndex(s => (s.vals[goal.k] || 0) / s.total * 100 <= goal.pct) : -1; }
   // where Folio's rules would start, and why
   const sp = vol(BROAD), n = S.positions.length, outside = C.some(c => !c.held && plans.calm.parts[c.k] > 0);
   const start = plans.calm.ok && outside && n && (now.top.pct >= 40 || n <= 3 || (sp && now.held > 2 * sp))
-    ? { way: 'calm', why: `Your ${n === 1 ? 'one holding has' : `${n} holdings have`} swung about ${now.held.toFixed(0)}% a year${n > 1 ? ' together' : ''}${sp ? `, ${(now.held / sp).toFixed(1)} times the S&amp;P 500` : ''}, and ${esc(now.top.k)} alone is ${now.top.pct.toFixed(0)}% of the portfolio.` }
+    ? { way: 'calm', why: `Your ${n === 1 ? 'one holding has' : `${n} holdings have`} swung about ${now.held.toFixed(0)}% a year${n > 1 ? ' together' : ''}${sp ? `, ${(now.held / sp).toFixed(1)} times the S&amp;P 500` : ''}, and ${esc(by[now.top.k].label)} alone is ${now.top.pct.toFixed(0)}% of the portfolio.` }
     : plans.mix.ok && plans.mix.drift >= 5 ? { way: 'mix', why: plans.mix.why }
     : plans.habit.ok ? { way: 'habit', why: 'Your mix is close to what you chose, so there is nothing to correct.' }
     : { way: WAYS.map(w => w[0]).find(w => plans[w].ok) || 'mix', why: '' };
   const way = isOwn ? 'own' : NS.way && plans[NS.way]?.ok ? NS.way : start.way;
-  return nxM = { C, by, vals, B, usual, plans, now, start, way, vol, withP, isOwn, sp, tg, goal, read, al };
+  return nxM = { C, by, vals, B, usual, plans, now, start, way, vol, withP, isOwn, sp, tg, goal, read, al, bets, betShare };
 }
 const wayName = (m, w) => w === 'own' ? 'Your own split' : w === 'claude' ? 'Claude’s read' : w === 'mix' && m.tg.kind !== 'paid' ? 'Toward your target' : WAYS.find(x => x[0] === w)[1];
 const wayRule = (m, w) => w === 'mix' && m.tg.kind !== 'paid' ? 'Tops up whatever sits furthest below the share your target gives it.' : WAYS.find(x => x[0] === w)?.[3] || '';
@@ -3973,14 +4073,14 @@ function renderNext(light) {
   box.classList.toggle('own', m.isOwn);
   rows.forEach((k, i) => { const c = m.by[k], a = plan.parts[k] || 0, r = box.children[i], f = r.querySelector('input');
     if (document.activeElement !== f) f.value = a.toFixed(2);
-    put(r.querySelector('.sh'), c.broad ? 'in whichever fund you use' : c.usd && c.price > 0 ? `<span title="At the latest price, ${usd(c.price, dec(c.price))}">≈ <span class="pv">${(a / c.price).toFixed(4)}</span> shares</span>` : `priced in ${esc(c.currency || 'another currency')}`); });
+    put(r.querySelector('.sh'), c.broad ? 'in whichever fund you use' : c.usd && c.price > 0 ? `<span title="At the latest price, ${usd(c.price, dec(c.price))}">≈ <span class="pv">${(a / c.price).toFixed(4)}</span> shares</span>${c.native ? ` · <span class="pv" title="What to enter at your broker, at today’s rate of ${c.native.rate.toFixed(4)}">${money(a / c.native.rate, 2, c.native.currency)}</span>` : ''}` : `priced in ${esc(c.currency || 'another currency')}`); });
   const more = m.C.filter(c => !(c.k in plan.parts) || (!m.isOwn && !(plan.parts[c.k] > 0)));
   put($('nxAdd'), more.length ? `<option value="">Add something else to the split…</option>` + more.map(c => `<option value="${esc(c.k)}">${esc(c.label)}${c.held ? '' : ' · ' + esc(c.name)}</option>`).join('') : '');
   $('nxAdd').hidden = !more.length;
 
   // four ways
   const eff = p => { const a = p.after, k = nxList(p)[0][0], sh = (v, t) => (t ? v / t * 100 : 0).toFixed(1) + '%';
-    return `<span title="Its share of the whole portfolio, now and after">${esc(m.by[k].label)} ${arrowTo(sh(m.vals[k] || 0, S.total), sh(a.vals[k], a.total))}</span><span title="How much the portfolio has swung in a year, going by the past year’s daily moves">Yearly swing ${arrowTo(m.now.swing.toFixed(1) + '%', a.swing.toFixed(1) + '%')}</span><span title="${ROAD} buys of this amount, placed by this rule each time, with prices held where they are today">After ${ROAD} buys: ${esc(m.by[p.end.top.k].label)} <b>${p.end.top.pct.toFixed(0)}%</b>, swing <b>${p.end.swing.toFixed(0)}%</b></span>`; };
+    return `<span title="Its share of the whole portfolio, now and after">${esc(m.by[k].label)} ${arrowTo(sh(m.vals[k] || 0, S.total), sh(a.vals[k], a.total))}</span><span title="How much the portfolio has swung in a year, going by the past year’s daily moves">Yearly swing ${arrowTo(m.now.swing.toFixed(1) + '%', a.swing.toFixed(1) + '%')}</span><span title="${ROAD} buys of this amount, placed by this rule each time, with prices held where they are today">After ${ROAD} buys: ${esc(m.by[p.end.top.k].label)} <b>${p.end.top.pct.toFixed(0)}%</b>, swing <b>${p.end.swing.toFixed(0)}%</b></span>${m.bets.map((b, i) => `<span title="Your bet, as a share of the whole portfolio: now, after this buy, and after ${ROAD} buys like it">${esc(b.name)} ${arrowTo(b.now.toFixed(0) + '%', p.bets[i].after.toFixed(0) + '%')}, then <b>${p.bets[i].end.toFixed(0)}%</b></span>`).join('')}`; };
   put($('nxWays'), WAYS.map(([w, , icon]) => { const p = m.plans[w];
     return `<button type="button" class="way" data-way="${w}" aria-pressed="${m.way === w}"${p.ok ? '' : ' disabled'}><span class="hd"><span class="ico">${ic(icon, 15)}</span><b>${wayName(m, w)}</b>${w === m.start.way ? '<span class="badge on">Start here</span>' : ''}</span><span class="rule">${wayRule(m, w)}</span>`
       + (p.ok ? `<span class="alloc">${nxBarH(m, p)}</span><span class="say num">${nxSayH(m, p)}</span><span class="eff num">${eff(p)}</span>` : `<span class="say">${p.why}</span>`) + '</button>'; }).join(''));
@@ -3989,6 +4089,7 @@ function renderNext(light) {
   renderNxEffect(m, plan);
   renderNxRoad(m, plan);
   renderNxAi(m);
+  renderNxBets(m, plan);
   renderNxTarget(m);
   renderNxCands(m);
   drawNxHabit(); renderNxHabit(m);
@@ -3998,18 +4099,19 @@ function renderNext(light) {
 function renderNxEffect(m, plan) {
   const a = plan.after, st = (k, v, s, t) => `<div class="st"${t ? ` title="${t}"` : ''}><div class="k">${k}</div><div class="v num">${v}</div><div class="s num">${s}</div></div>`;
   const need = x => x > 0.05 ? pct(x, 1) : 'Nothing';
-  put($('nxEffStats'), st('Largest holding', arrowTo(`${esc(m.now.top.k)} ${m.now.top.pct.toFixed(1)}%`, `${a.top.k === m.now.top.k ? '' : esc(m.by[a.top.k].label) + ' '}${a.top.pct.toFixed(1)}%`), 'of the whole portfolio', '')
+  put($('nxEffStats'), st('Largest holding', arrowTo(`${esc(m.by[m.now.top.k].label)} ${m.now.top.pct.toFixed(1)}%`, `${a.top.k === m.now.top.k ? '' : esc(m.by[a.top.k].label) + ' '}${a.top.pct.toFixed(1)}%`), 'of the whole portfolio', '')
     + st('Yearly swing', arrowTo(m.now.swing.toFixed(1) + '%', a.swing.toFixed(1) + '%'), m.sp ? `the S&amp;P 500: ${m.sp.toFixed(0)}%` : '', 'How much the portfolio’s value has swung in a year, going by the daily moves of the past year. Cash counts as still.')
     + (S.cost > S.invested + 0.5 ? st('To get back to what you paid', arrowTo(need(m.now.need), need(m.now.needAfter)), 'the same whichever way you choose', 'The rise your holdings need, taken together, to be worth what you paid for them. New money bought at today’s prices lowers it by the same amount wherever it goes.')
       : st('Gain on what you paid', arrowTo(pct(-m.now.need, 1), pct(-m.now.needAfter, 1)), 'the same whichever way you choose', 'New money starts with no gain, so it thins the percentage without changing the amount.'))
-    + (() => { const k = Object.keys(m.now.shares).sort((x, y) => m.now.shares[y] - m.now.shares[x])[0]; return k ? st(`Swing that comes from ${esc(k)}`, arrowTo(m.now.shares[k].toFixed(0) + '%', (a.shares[k] ?? 0).toFixed(0) + '%'), `it is ${(m.vals[k] / S.total * 100).toFixed(0)}% of the money`, 'How much of the portfolio’s swing this one holding causes, going by the past year’s daily moves.') : ''; })()
+    + (() => { const k = Object.keys(m.now.shares).sort((x, y) => m.now.shares[y] - m.now.shares[x])[0]; return k ? st(`Swing that comes from ${esc(m.by[k].label)}`, arrowTo(m.now.shares[k].toFixed(0) + '%', (a.shares[k] ?? 0).toFixed(0) + '%'), `it is ${(m.vals[k] / S.total * 100).toFixed(0)}% of the money`, 'How much of the portfolio’s swing this one holding causes, going by the past year’s daily moves.') : ''; })()
     + st('Worth after', `<span class="pv">${usd(a.total)}</span>`, a.cash < S.cash - 0.005 ? `<span class="pv">${usd(S.cash - a.cash)}</span> of it from your cash` : 'with the new money', ''));
   const ks = [...m.C.filter(c => c.held || plan.parts[c.k] > 0).map(c => c.k)];
+  const thru = k => m.C.reduce((s, f) => s + (((f.broad ? NX.fundHolds : f.holds) || {})[k] || 0) * (a.vals[f.k] || 0), 0);  // dollars of k held inside the funds, after the buy
   put($('nxEffRows'), ks.map(k => { const c = m.by[k], p = held(k), add = plan.parts[k] || 0, was = m.vals[k] || 0, sh = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '0.0%';
     const q = c.price > 0 && c.usd ? add / c.price : 0, avg = p && add > 0 && q > 0 ? (p.cost + add) / (p.qty + q) : p ? p.avgCost : c.price, back = (av, px) => av > px * 1.0005 ? pct((av / px - 1) * 100, 1) : '—';
     return `<tr><td><div class="sym"><i class="sw" style="background:${c.col}"></i><b>${esc(c.label)}</b></div></td>
       <td class="num">${add > 0 ? `<span class="pv">${amt(add)}</span>${q > 0 ? `<span class="sub pv">${q.toFixed(4)} shares</span>` : ''}` : '<span class="flat">—</span>'}</td>
-      <td class="num">${add > 0 ? arrowTo(sh(was, S.total), sh(was + add, a.total)) : `<span class="flat">${arrowTo(sh(was, S.total), sh(was, a.total))}</span>`}</td>
+      <td class="num">${add > 0 ? arrowTo(sh(was, S.total), sh(was + add, a.total)) : `<span class="flat">${arrowTo(sh(was, S.total), sh(was, a.total))}</span>`}${thru(k) / a.total >= 0.0005 ? `<span class="sub thru" title="The fund holds ${esc(c.label)} too: ${usd(thru(k))} of it">${sh(was + add + thru(k), a.total)} with the fund’s</span>` : ''}</td>
       <td class="num hide-s">${c.broad ? '<span class="flat">—</span>' : p ? (add > 0 && q > 0 ? arrowTo(usd(p.avgCost), usd(avg)) : `<span class="flat">${usd(p.avgCost)}</span>`) : add > 0 && c.price ? `<span class="flat">new at</span> ${usd(c.price, dec(c.price))}` : '<span class="flat">—</span>'}</td>
       <td class="num hide-s">${p ? (add > 0 && q > 0 && back(p.avgCost, p.price) !== '—' ? arrowTo(back(p.avgCost, p.price), back(avg, p.price)) : `<span class="flat">${back(p.avgCost, p.price)}</span>`) : '<span class="flat">—</span>'}</td></tr>`; }).join(''));
   put($('nxFlowKey'), `<span><i class="key band hatch"></i>New money</span>`);
@@ -4173,39 +4275,89 @@ $('nextCard').onclick = e => { e.preventDefault(); go('next'); };
 function renderNxRoad(m, plan) {
   const h = NX.habit, end = plan.end, g = m.goal, st = (k, v, s) => `<div class="st"><div class="k">${k}</div><div class="v num">${v}</div><div class="s num">${s}</div></div>`;
   const at = plan.reach > 0 ? nxWhenBuy(plan.reach) : null, sh = (s, k) => ((s.vals[k] || 0) / s.total * 100).toFixed(1) + '%';
-  put($('nxRoadStats'), (g ? st(`${esc(g.k)} under ${g.word}`, plan.reach > 0 ? `after ${many(plan.reach, 'buy')}` : `not in ${ROAD} buys`, plan.reach > 0 ? (at ? `around ${nxDay(at)}` : 'at this amount') : `${sh(end, g.k)} by then`)
-      : m.now.top ? st('Largest holding', arrowTo(`${esc(m.now.top.k)} ${m.now.top.pct.toFixed(1)}%`, `${end.top.k === m.now.top.k ? '' : esc(m.by[end.top.k].label) + ' '}${end.top.pct.toFixed(1)}%`), `after ${ROAD} buys`) : '')
+  const b0 = m.bets[0], pb = b0 && plan.bets[0], bd = pb && pb.reach > 0 ? nxWhenBuy(pb.reach) : null;
+  put($('nxRoadStats'), (b0 ? st(`${esc(b0.name)} inside your range`, b0.now < b0.lo - 0.05 ? 'below it now' : b0.now <= b0.hi + 0.05 ? 'it is now' : pb.reach > 0 ? `after ${many(pb.reach, 'buy')}` : `not in ${ROAD} buys`,
+      b0.now > b0.hi + 0.05 && pb.reach > 0 ? (bd ? `around ${nxDay(bd)}` : 'at this amount') : `${pb.end.toFixed(1)}% after ${ROAD} buys`) : g ? st(`${esc(m.by[g.k].label)} under ${g.word}`, plan.reach > 0 ? `after ${many(plan.reach, 'buy')}` : `not in ${ROAD} buys`, plan.reach > 0 ? (at ? `around ${nxDay(at)}` : 'at this amount') : `${sh(end, g.k)} by then`)
+      : m.now.top ? st('Largest holding', arrowTo(`${esc(m.by[m.now.top.k].label)} ${m.now.top.pct.toFixed(1)}%`, `${end.top.k === m.now.top.k ? '' : esc(m.by[end.top.k].label) + ' '}${end.top.pct.toFixed(1)}%`), `after ${ROAD} buys`) : '')
     + st('Yearly swing', arrowTo(m.now.swing.toFixed(1) + '%', end.swing.toFixed(1) + '%'), `after ${ROAD} buys`)
     + st('Put in', `<span class="pv">${usd(m.B * ROAD, 0)}</span>`, h.gap ? `over about ${waitWords(h.gap * ROAD)}` : `in ${ROAD} buys`));
-  put($('nxRoadNote'), `${ROAD} buys of <span class="pv">${amt(m.B)}</span>, ${m.way === 'own' || m.way === 'claude' ? 'each split the same way as this one' : `each placed by “${esc(wayName(m, m.way))}” as things stand at that moment`}. Prices are held where they are today, so this shows only what your own buying does.`);
+  put($('nxRoadNote'), `${ROAD} buys of <span class="pv">${amt(m.B)}</span>, ${m.way === 'own' || m.way === 'claude' ? 'each split the same way as this one' : `each placed by “${esc(wayName(m, m.way))}” as things stand at that moment`}. Prices are held where they are today, so this shows only what your own buying does.${pb && pb.heldAt > 0 ? ` From buy ${pb.heldAt}, part of each buy goes to ${esc(b0.name)} so the bet stays at your ${+b0.lo}% floor.` : ''}`);
   drawNxRoad(m, plan);
 }
 function drawNxRoad(m = nxM, plan = m?.plans[m.way]) {
   const box = $('nxRoad'), W = box.clientWidth, Hh = box.clientHeight; if (!m || !plan || W < 220 || Hh < 140) return;
-  const R = plan.road, n = R.length - 1, pl = m.goal ? 48 : 34, pt = 12, pb = 24, f = z => z.toFixed(1);
+  const R = plan.road, n = R.length - 1, pl = m.bets.length ? 70 : m.goal ? 48 : 34, pt = 12, pb = 24, f = z => z.toFixed(1);
   const sh = (s, k) => (k === 'CASH' ? Math.max(0, s.cash) : s.vals[k] || 0) / s.total * 100;
   const ks = [...m.C.map(c => c.k).filter(k => R.some(s => sh(s, k) > 0.4)), ...(R.some(s => sh(s, 'CASH') > 1) ? ['CASH'] : [])];
   const col = k => k === 'CASH' ? 'var(--neutral)' : m.by[k].col, name = k => k === 'CASH' ? 'Cash' : m.by[k].label;
-  const pr = Math.min(150, Math.max(...ks.map(k => name(k).length)) * 7 + 62), most = Math.max(...ks.flatMap(k => R.map(s => sh(s, k)))), tk = niceTicks(0, most, Hh < 250 ? 3 : 4); while (tk.ticks.at(-1) < most) tk.ticks.push(tk.ticks.at(-1) + tk.ticks[1]); const hi = tk.ticks.at(-1) || 100;
+  const pr = Math.min(190, Math.max(...ks.map(k => name(k).length), ...m.bets.map(b => b.name.length)) * 7 + 62), most = Math.max(...ks.flatMap(k => R.map(s => sh(s, k))), ...m.bets.flatMap(b => [b.hi, ...R.map(s => m.betShare(b, s))])), tk = niceTicks(0, most, Hh < 250 ? 3 : 4); while (tk.ticks.at(-1) < most) tk.ticks.push(tk.ticks.at(-1) + tk.ticks[1]); const hi = tk.ticks.at(-1) || 100;
   const x = i => pl + 6 + i / n * (W - pl - pr - 12), y = v => pt + (1 - v / hi) * (Hh - pt - pb);
   let g = '';
   for (const t of tk.ticks) g += `<line class="${t === 0 ? 'zero' : 'grid'}" x1="${pl}" x2="${W - pr}" y1="${f(y(t))}" y2="${f(y(t))}"/><text class="axis num" x="${pl - 8}" y="${f(y(t) + 4)}" text-anchor="end">${t}%</text>`;
   for (let i = 0; i <= n; i += n / 3) g += `<text class="axis" x="${f(x(i))}" y="${Hh - 6}" text-anchor="${i === 0 ? 'start' : 'middle'}">${i === 0 ? 'Now' : `buy ${i}`}</text>`;
   if (m.goal && m.goal.pct < hi) g += `<line class="dash" x1="${pl}" x2="${W - pr}" y1="${f(y(m.goal.pct))}" y2="${f(y(m.goal.pct))}" stroke="var(--text-3)"/><text class="axis" x="${pl - 8}" y="${f(y(m.goal.pct) + 4)}" text-anchor="end">${m.goal.word}</text>`;
   for (const k of ks) g += `<path class="line" stroke="${col(k)}" d="${R.map((s, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(sh(s, k)))}`).join('')}"/><circle class="mark" cx="${f(x(n))}" cy="${f(y(sh(R[n], k)))}" r="4.5" fill="${col(k)}"/>`;
+  m.bets.forEach((b, j) => { g += `<rect x="${pl}" y="${f(y(b.hi))}" width="${f(W - pr - pl)}" height="${f(Math.max(2, y(b.lo) - y(b.hi)))}" fill="var(--text-3)" opacity=".13"/>${j ? '' : `<text class="axis" x="${pl - 8}" y="${f((y(b.lo) + y(b.hi)) / 2 + 4)}" text-anchor="end">your range</text>`}
+    <path class="line" stroke="var(--text-2)" stroke-dasharray="1 5" d="${R.map((s, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(m.betShare(b, s)))}`).join('')}"/><circle class="mark" cx="${f(x(n))}" cy="${f(y(m.betShare(b, R[n])))}" r="4.5" fill="var(--text-2)"/>`; });
   // the name and where each one ends, kept from sitting on top of each other
-  const ends = ks.map(k => ({ k, v: sh(R[n], k), y: y(sh(R[n], k)) })).sort((a, b) => a.y - b.y);
+  const ends = [...ks.map(k => ({ k, v: sh(R[n], k), y: y(sh(R[n], k)) })), ...m.bets.map(b => ({ name: b.name, v: m.betShare(b, R[n]), y: y(m.betShare(b, R[n])) }))].sort((a, b) => a.y - b.y);
   for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 15);
   for (let i = ends.length - 1, lim = Hh - pb - 2; i >= 0; i--) { ends[i].y = Math.min(ends[i].y, lim); lim = ends[i].y - 15; }
-  for (const e of ends) g += `<text class="lbl" x="${f(x(n) + 11)}" y="${f(e.y + 4)}">${esc(name(e.k))} <tspan class="me" fill="var(--text)" font-weight="600">${e.v.toFixed(1)}%</tspan></text>`;
+  for (const e of ends) g += `<text class="lbl" x="${f(x(n) + 11)}" y="${f(e.y + 4)}">${esc(e.name ?? name(e.k))} <tspan class="me" fill="var(--text)" font-weight="600">${e.v.toFixed(1)}%</tspan></text>`;
   const half = (x(1) - x(0)) / 2;
   R.forEach((s, i) => { const d = i ? nxWhenBuy(i) : null;
-    const tip = `<span>${i ? `After buy ${i}${d ? ' · around ' + nxDay(d) : ''}` : 'Now'}</span><div class="pl">${ks.map(k => `<i><b class="sw" style="background:${col(k)}"></b> ${esc(name(k))}</i><em>${sh(s, k).toFixed(1)}%</em>`).join('')}<i>Yearly swing</i><em>${s.swing.toFixed(1)}%</em></div>`;
+    const tip = `<span>${i ? `After buy ${i}${d ? ' · around ' + nxDay(d) : ''}` : 'Now'}</span><div class="pl">${ks.map(k => `<i><b class="sw" style="background:${col(k)}"></b> ${esc(name(k))}</i><em>${sh(s, k).toFixed(1)}%</em>`).join('')}${m.bets.map(b => `<i>${esc(b.name)}</i><em>${m.betShare(b, s).toFixed(1)}%</em>`).join('')}<i>Yearly swing</i><em>${s.swing.toFixed(1)}%</em></div>`;
     g += `<g class="col" data-tip="${esc(tip)}"><line class="cross" x1="${f(x(i))}" x2="${f(x(i))}" y1="${pt}" y2="${Hh - pb}"/>${ks.map(k => `<circle class="mark" cx="${f(x(i))}" cy="${f(y(sh(s, k)))}" r="4" fill="${col(k)}"/>`).join('')}<rect class="hit" x="${f(x(i) - half)}" y="${pt}" width="${f(half * 2)}" height="${Hh - pt - pb}"/></g>`; });
-  put($('nxRoadKey'), ks.length > 1 ? ks.map(k => `<span><i class="sw" style="background:${col(k)}"></i>${esc(name(k))}</span>`).join('') : '');
+  put($('nxRoadKey'), ks.length > 1 ? ks.map(k => `<span><i class="sw" style="background:${col(k)}"></i>${esc(name(k))}</span>`).join('') + m.bets.map(b => `<span><i class="key dashed" style="border-color:var(--text-2)"></i>${esc(b.name)}</span>`).join('') : '');
   const h = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Each holding’s share of the portfolio over the next ${n} buys">${g}</svg>`;
   if (box._h !== h) { box._h = h; box.querySelector('svg')?.remove(); box.insertAdjacentHTML('afterbegin', h); tips(box); }
 }
+
+// ---- bets you hold on purpose ----
+let betEdit = null, betIn = new Set();  // which bet is being edited (its place in the list, or 'new'), and what is ticked for it
+function renderNxBets(m = nxM, plan = m?.plans[m.way]) {
+  if (!m || !plan) return;
+  const row = (what, size, swing) => `<tr><td>${what}</td><td>${size.toFixed(1)}%</td><td>${pct(-size / 2, 1)}</td><td class="hide-s">${swing == null ? '<span class="flat">—</span>' : swing.toFixed(1) + '%'}</td></tr>`;
+  put($('betBody'), m.bets.length ? m.bets.map((b, i) => { const p = plan.bets[i], at = x => clamp(x, 0, 100).toFixed(1), d = p.reach > 0 ? nxWhenBuy(p.reach) : null;
+    const where = b.now > b.hi + 0.05 ? 'above your range' : b.now < b.lo - 0.05 ? 'below your range' : 'inside your range';
+    const then = b.now > b.hi + 0.05 ? (p.reach > 0 ? `Placed like this, it is inside your range after about <b>${many(p.reach, 'buy')}</b>${d ? `, around ${nxDay(d)}` : ''}, without selling anything.` : `Placed like this, it is still at ${p.end.toFixed(0)}% after ${ROAD} buys.`)
+      : b.now < b.lo - 0.05 ? (p.after > b.now + 0.05 ? 'This buy moves it toward your range.' : 'This buy does not bring it closer to your range.') : (p.after < b.lo - 0.05 ? 'This buy would take it under your floor.' : 'This buy keeps it there.');
+    return `<div class="bet"><div class="bet-hd"><b>${esc(b.name)}</b><span class="tag">${words(b.ks.map(k => esc(m.by[k].label)))} · keep between ${+b.lo}% and ${+b.hi}% of the portfolio</span><button class="mini" type="button" data-bet="${b.i0}">Change</button></div>
+      <div class="bet-grid"><div>
+        <div class="meter" role="img" aria-label="${esc(b.name)}: ${b.now.toFixed(0)}% now, ${p.after.toFixed(0)}% after this buy, range ${+b.lo}% to ${+b.hi}%"><i class="band" style="left:${b.lo}%;width:${b.hi - b.lo}%"></i><i class="mk after" style="left:${at(p.after)}%" title="After this buy: ${p.after.toFixed(1)}%"></i><i class="mk now" style="left:${at(b.now)}%" title="Now: ${b.now.toFixed(1)}%"></i></div>
+        <div class="meter-ax num"><span style="left:${b.lo}%">${+b.lo}%</span><span style="left:${b.hi}%">${+b.hi}%</span></div>
+        <div class="meter-key"><span><i></i>Now</span><span><i class="after"></i>After this buy</span><span><i class="band"></i>Your range</span></div>
+        <p class="bet-say num"><b>${b.now.toFixed(1)}%</b> of your portfolio now, ${where}. This buy takes it to <b>${p.after.toFixed(1)}%</b>. ${then}</p>
+      </div><table class="bet-t num"><thead><tr><th></th><th>Size of the bet</th><th title="What the whole portfolio would lose if every holding in the bet fell by half and nothing else moved">If it halved, the portfolio would lose</th><th class="hide-s" title="How much the whole portfolio has swung in a year, going by the past year’s daily moves">Yearly swing</th></tr></thead><tbody>
+        ${row('Now', b.now, m.now.swing)}${row('After this buy', p.after, plan.after.swing)}${row(`After ${ROAD} buys like this`, p.end, plan.end.swing)}${row('At the floor of your range', b.lo, null)}</tbody></table></div></div>`; }).join('')
+    : '<p class="ai-lead">Nothing here yet. If you keep some holdings large on purpose, name the bet and say how big it should stay. Folio and Claude will then work around it instead of arguing with it.</p>');
+  $('betAdd').hidden = betEdit != null || (NS.bets || []).length >= 4; $('betForm').hidden = betEdit == null;
+  if (betEdit == null) return;
+  $('betDel').hidden = betEdit === 'new';
+  put($('betMembers'), m.C.filter(c => !c.broad).map(c => `<button type="button" data-m="${esc(c.k)}" aria-pressed="${betIn.has(c.k)}"><i class="sw" style="background:${c.col}"></i>${esc(c.label)}</button>`).join(''));
+}
+const betOpen = i => { const b = i === 'new' ? { name: '', members: [], lo: 30, hi: 50 } : NS.bets[i]; if (!b || !nxM) return; betEdit = i; betIn = new Set(b.members.map(nxM.al));
+  $('betName').value = b.name; $('betLo').value = +b.lo; $('betHi').value = +b.hi; $('betErr').textContent = ''; renderNxBets(); if (i === 'new') $('betName').focus(); };
+$('betAdd').onclick = () => betOpen('new');
+$('betBody').onclick = e => { const b = e.target.closest('[data-bet]'); if (b) betOpen(+b.dataset.bet); };
+$('betMembers').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; betIn.has(b.dataset.m) ? betIn.delete(b.dataset.m) : betIn.add(b.dataset.m); renderNxBets(); };
+$('betCancel').onclick = () => { betEdit = null; renderNxBets(); };
+$('betDel').onclick = () => { if (betEdit == null || betEdit === 'new') return; NS.bets.splice(betEdit, 1); betEdit = null; renderNext(); renderNextCard(); nxSave(); };
+$('betForm').onsubmit = e => { e.preventDefault(); if (betEdit == null || !NS) return;
+  const name = $('betName').value.trim(), lo = nxNum($('betLo')), hi = nxNum($('betHi'));
+  if (!name) return void ($('betErr').textContent = 'Give the bet a name.');
+  if (!betIn.size) return void ($('betErr').textContent = 'Pick at least one holding for it.');
+  if (!(lo >= 0 && hi <= 100 && lo <= hi)) return void ($('betErr').textContent = 'The range runs from 0 to 100, lower figure first.');
+  const b = { name, members: [...betIn], lo, hi }; NS.bets = NS.bets || []; if (betEdit === 'new') NS.bets.push(b); else NS.bets[betEdit] = b;
+  betEdit = null; renderNext(); renderNextCard(); nxSave(); };
+// a mix in whole percent, moved the least it takes for a bet to sit inside its range
+function fitMix(mix, b, al) { const ks = [...new Set(b.members.map(al))].filter(k => mix[k] > 0), share = ks.reduce((a, k) => a + mix[k], 0), want = share < b.lo ? b.lo : share > b.hi ? b.hi : null, rest = 100 - share;
+  if (want == null || !(share > 0) || (rest <= 0 && want < 100)) return mix;
+  const out = Object.fromEntries(Object.entries(mix).map(([k, v]) => [k, Math.round(v * (ks.includes(k) ? want / share : rest > 0 ? (100 - want) / rest : 0))])), top = Object.keys(out).sort((x, y) => out[y] - out[x])[0];
+  out[top] += 100 - Object.values(out).reduce((a, x) => a + x, 0); return Object.fromEntries(Object.entries(out).filter(([, v]) => v > 0)); }
+$('nxTgtBars').onclick = e => { const b = e.target.closest('[data-fit]'), bet = b && NS.bets?.[+b.dataset.fit]; if (!bet || !nxM) return;
+  const sum = Object.values(NS.target).reduce((a, x) => a + x, 0) || 100, cur = Object.fromEntries(Object.entries(NS.target).map(([k, v]) => [nxM.al(k), v / sum * 100]).filter(([k]) => nxM.by[k]));
+  NS.target = fitMix(cur, bet, nxM.al); tgEdit = null; renderNext(); renderNextCard(); nxSave(); toast(`Target fitted to keep ${bet.name} inside its range.`); };
 
 // ---- a target mix of your own ----
 let tgEdit = null;  // the target while it is being edited
@@ -4215,6 +4367,14 @@ function renderNxTarget(m = nxM) {
   put($('nxTgtSay'), t.length ? t.map(([k, v]) => `<span><i class="sw" style="background:${m.by[k].col}"></i>${esc(m.by[k].label)} ${+v.toFixed(1)}%</span>`).join('')
     : m.tg.kind === 'plan' ? 'Using the targets on your Plan page.' : 'Not set, so “Back to your mix” goes by the shares of your money you gave each holding.');
   $('nxTgtEdit').textContent = tgEdit ? 'Close' : t.length ? 'Change' : 'Set a target';
+  { const tg = m.tg.t, ks = m.C.map(c => c.k).filter(k => m.vals[k] > 0 || tg[k] > 0), plan = m.plans[m.way];
+    const off = v => { const all = ks.reduce((s, k) => s + (v[k] || 0), 0); return all > 0 ? ks.reduce((s, k) => s + Math.abs((v[k] || 0) / all - (tg[k] || 0)), 0) * 50 : 0; };  // the share of your holdings that sits somewhere other than the target
+    const bar = (get, word) => `<div><span>${word}</span><div class="alloc">${ks.filter(k => get(k) > 0.0005).map(k => `<i style="flex:${get(k)};background:${m.by[k].col}" title="${esc(m.by[k].label)} ${(get(k) * 100).toFixed(1)}%"></i>`).join('')}</div></div>`;
+    const inv = ks.reduce((s, k) => s + (m.vals[k] || 0), 0), d0 = off(m.vals), d1 = off(plan.after.vals), n = m.plans.mix.road.findIndex(s => off(s.vals) < 1.5);
+    put($('nxTgtBars'), m.tg.kind === 'paid' || !inv ? '' : bar(k => (m.vals[k] || 0) / inv, 'Now') + bar(k => tg[k] || 0, 'Target')
+      + `<p><b>${d0.toFixed(0)}%</b> of what you hold sits somewhere other than your target.${d0 >= 1.5 ? ` This buy ${d1 < d0 - 0.05 ? `brings that to <b>${d1.toFixed(0)}%</b>` : d1 > d0 + 0.05 ? `takes it to <b>${d1.toFixed(0)}%</b>, further away` : 'leaves it where it is'}${n > 0 ? `, and “Toward your target” closes the gap in about <b>${many(n, 'buy')}</b> of ${amt(m.B)}` : n < 0 ? `; closing the gap takes more than ${ROAD} buys of ${amt(m.B)}` : ''}.` : ' You are there.'}</p>`
+      + (m.tg.kind !== 'set' ? '' : m.bets.map(b => { const sh = b.ks.reduce((a, k) => a + (tg[k] || 0), 0) * 100;
+          return sh < b.lo - 0.5 || sh > b.hi + 0.5 ? `<p class="flagline"><span>This target gives ${esc(b.name)} <b>${sh.toFixed(0)}%</b>, ${sh < b.lo ? `below the ${+b.lo}%` : `above the ${+b.hi}%`} you want to keep.</span><button class="mini" type="button" data-fit="${b.i0}">Fit the target to it</button></p>` : ''; }).join(''))); }
   $('nxTgtForm').hidden = !tgEdit;
   if (!tgEdit) return;
   const box = $('nxTgtRows'), key = m.C.map(c => c.k).join();
@@ -4241,7 +4401,7 @@ $('nxTgtForm').onsubmit = e => { e.preventDefault(); if (!tgEdit || $('nxTgtSave
 
 // ---- Claude's read: Folio does the arithmetic, Claude weighs it ----
 // AI: whether Claude can be reached, whether it is working, its latest read and its answers
-let aiPoll = null, aiTick = 0, aiWant = false;
+let aiPoll = null, aiTick = 0, aiWant = false, aiAutoAt = null;
 const aiKey = k => k === BROAD ? 'SP500_FUND' : k;
 const aiAgo = t => { const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${many(Math.round(s / 86400), 'day')} ago`; };
 const SURE = { low: 'Not a strong view', medium: 'A moderate view', high: 'A firm view' };
@@ -4261,6 +4421,8 @@ function nxFacts(m) {
       return [w, { name: wayName(m, w), rule: wayRule(m, w), usable: p.ok, folio_says: text(p.why), ...(p.ok ? { split: Object.fromEntries(Object.entries(p.parts).map(([k, a]) => [aiKey(k), a])),
         after_this_buy: { largest: { symbol: aiKey(p.after.top.k), share_pct: r1(p.after.top.pct) }, yearly_swing_pct: r1(p.after.swing) },
         [`after_${ROAD}_buys`]: { mix_pct: mix(p.end), cash_pct: r1(Math.max(0, p.end.cash) / p.end.total * 100), yearly_swing_pct: r1(p.end.swing), ...(m.goal ? { [`buys_until_${m.goal.k}_is_under_${m.goal.word.replace(' ', '_')}`]: p.reach > 0 ? p.reach : `more than ${ROAD}` } : {}) } } : {}) }]; })),
+    deliberate_bets: m.bets.map((b, i) => ({ name: b.name, members: b.ks.map(aiKey), share_now_pct: r1(b.now), keep_between_pct: [b.lo, b.hi],
+      under_each_way: Object.fromEntries(WAYS.map(([w]) => [w, m.plans[w].ok ? { after_this_buy_pct: r1(m.plans[w].bets[i].after), [`after_${ROAD}_buys_pct`]: r1(m.plans[w].bets[i].end) } : null])) })),
     folio_rules_would_start_with: m.start.way,
     meaning: `yearly_swing_pct: how much the value has swung in a year, from the past year of daily moves (annualised standard deviation); cash counts as still. share_of_swing_pct: how much of the portfolio's swing that holding causes. moves_with_portfolio: correlation of its daily moves with the holdings taken together, 1 = in step. after_${ROAD}_buys: ${ROAD} buys of the amount on the page, placed by that rule each time, with prices held where they are today.`,
   };
@@ -4289,7 +4451,7 @@ function renderNxAi(m = nxM) {
       <div>${list('What could change this', r.cautions)}${list('What Claude wasn’t told', r.unknowns)}`
       + (tk.length ? `<h3>The mix it would steer toward</h3><div class="alloc">${tk.map(k => `<i style="flex:${r.target[k]};background:${col(k)}" title="${esc(lab(k))} ${r.target[k]}%"></i>`).join('')}</div>
         <p class="ai-mix num">${tk.map(k => `<span><i class="sw" style="background:${col(k)}"></i>${esc(lab(k))} ${r.target[k]}%</span>`).join('')}</p>
-        <div><button class="mini" type="button" data-ai="target"${same ? ' disabled' : ''}>${same ? 'This is your target mix' : 'Make this my target mix'}</button></div>` : '') + '</div></div>';
+        <div><button class="mini" type="button" data-ai="target"${same ? ' disabled' : ''}>${same ? 'This is your target mix' : 'Make this my target mix'}</button></div>${r.targetFitted ? '<p class="tag">Folio moved this mix just enough to keep your bet inside its range.</p>' : ''}` : '') + '</div></div>';
   }
   put($('aiBody'), h);
   put($('aiQa'), (a.asks || []).map(x => `<div><p class="q">${esc(x.q)}</p><p class="a">${esc(x.a)}</p></div>`).join(''));
@@ -4297,6 +4459,9 @@ function renderNxAi(m = nxM) {
   $('aiSend').disabled = !!a.busy;
   if (document.activeElement !== $('aiBrief') && $('aiBrief').value !== (NS.brief || '')) $('aiBrief').value = NS.brief || '';
   $('aiMore').hidden = !a.available;
+  if (document.activeElement !== $('aiAuto')) $('aiAuto').checked = !!NS.auto;
+  const sig = S.transactions.length + ':' + (S.transactions[0]?.id || '');
+  if (NS.auto && a.available && !a.busy && view === 'next' && (!r || r.stale) && aiAutoAt !== sig) { aiAutoAt = sig; aiStart('read'); }
 }
 async function aiStart(kind, question) {
   if (!nxM || AI?.busy) return;
@@ -4330,6 +4495,7 @@ $('nxAiCard').onclick = async e => { const b = e.target.closest('[data-ai]'); if
 };
 $('aiAsk').onsubmit = e => { e.preventDefault(); const q = $('aiQ').value.trim(); if (q.length < 3) return void ($('aiErr').textContent = 'Type a question first.'); aiStart('ask', q); };
 $('aiBrief').oninput = e => { if (NS) { NS.brief = e.target.value; nxSave(); } };
+$('aiAuto').onchange = e => { if (NS) { NS.auto = e.target.checked; nxSave(); renderNxAi(); } };
 { const ro = new ResizeObserver(() => { if (view === 'next' && S && NX && nxM) drawNxRoad(); }); ro.observe($('nxRoad')); }
 
 // ================= since you last looked =================
@@ -4353,6 +4519,80 @@ function renderSince() {
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) sinceSave(); else sincePending = true; });
 addEventListener('pagehide', sinceSave);
+
+// ================= entries read from a screenshot or pasted text =================
+let impImg = null, impItems = null, impPoll = null;
+const shrink = file => new Promise((res, rej) => { const img = new Image(), url = URL.createObjectURL(file);  // no larger than it needs to be to stay readable
+  img.onload = () => { const k = Math.min(1, 2200 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.9)); };
+  img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('That picture can’t be opened. Use a PNG or JPEG screenshot.')); }; img.src = url; });
+async function impSetFile(f) {
+  $('impErr').textContent = '';
+  if (!f || !/^image\//.test(f.type)) return void ($('impErr').textContent = 'That isn’t a picture. Use a PNG or JPEG screenshot.');
+  try { impImg = await shrink(f); $('impPic').innerHTML = `<img src="${impImg}" alt=""><span>${esc(f.name && f.name !== 'image.png' ? f.name : 'Screenshot')} added. Choose another to replace it.</span>`; }
+  catch (err) { impImg = null; $('impErr').textContent = err.message; }
+}
+function impShow() {
+  const list = !!impItems, busy = !!impPoll;
+  $('impIn').hidden = list || busy; $('impLead').hidden = list; $('impBusy').hidden = !busy; $('impBack').hidden = !list; $('impGo').hidden = busy;
+  const it = impItems || [], n = [...$('impList').querySelectorAll('input:checked')].length;
+  $('impGo').textContent = list ? (n ? `Record ${many(n, 'entry', 'entries')}` : 'Record') : 'Read it'; $('impGo').disabled = list && !n;
+  $('impT').textContent = list ? (it.length ? `Claude found ${many(it.length, 'entry', 'entries')}` : 'Nothing to record') : 'Record from a screenshot or text';
+}
+function impList() {
+  const day = d => new Date(d + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  $('impList').innerHTML = (impItems || []).map((x, i) => { const stock = x.type === 'buy' || x.type === 'sell', c = x.currency || 'USD', sum = stock ? x.qty * x.price + (x.type === 'buy' ? 1 : -1) * (x.fee || 0) : x.amount;
+    const what = !x.ok && !(sum > 0) ? `<b>${esc({ buy: 'Buy', sell: 'Sale', dividend: 'Dividend', deposit: 'Deposit', withdraw: 'Withdrawal' }[x.type] || 'Entry')}${x.symbol ? ' · ' + esc(x.symbol) : ''}</b>`
+      : stock ? `<b>${x.type === 'buy' ? 'Bought' : 'Sold'} ${qty(x.qty)} ${esc(x.symbol)}</b> at ${money(x.price, dec(x.price), c)}` : x.type === 'dividend' ? `<b>Dividend</b> from ${esc(x.symbol)}` : `<b>${x.type === 'deposit' ? 'Deposited' : 'Withdrew'}</b>`;
+    return `<li class="${x.ok ? '' : 'off'}"><label><input type="checkbox" data-i="${i}"${x.ok && !x.dup ? ' checked' : ''}${x.ok ? '' : ' disabled'}><div class="iw">${what}<span class="sub">${day(x.date)}${x.name ? ' · ' + esc(x.name) : ''}${x.fee ? ' · fee ' + money(x.fee, 2, c) : ''}</span>${[...(x.note ? [x.note] : []), ...x.flags].map(f => `<span class="flag">${esc(f)}</span>`).join('')}</div><span class="pv">${sum > 0 ? money(sum, 2, c) : ''}</span></label></li>`; }).join('');
+}
+function openImport(file) {
+  impImg = null; impItems = null; clearInterval(impPoll); impPoll = null;
+  $('impForm').reset(); $('impPic').textContent = 'Choose a screenshot, drop one here, or paste it'; $('impList').innerHTML = ''; $('impErr').textContent = '';
+  if ($('dlg').open) $('dlg').close();
+  impShow(); $('imp').showModal(); if (file) impSetFile(file); else $('impText').focus();
+}
+$('impOpen').onclick = () => openImport();
+$('impCancel').onclick = () => { clearInterval(impPoll); impPoll = null; $('imp').close(); };
+$('impBack').onclick = () => openImport();
+$('impFile').onchange = e => impSetFile(e.target.files[0]);
+$('impList').onchange = impShow;
+{ const d = $('impDrop'); d.ondragover = e => { e.preventDefault(); d.classList.add('over'); }; d.ondragleave = () => d.classList.remove('over');
+  d.ondrop = e => { e.preventDefault(); d.classList.remove('over'); impSetFile(e.dataTransfer.files[0]); }; }
+document.addEventListener('paste', e => {  // a screenshot pasted anywhere on the page
+  const f = [...(e.clipboardData?.files || [])].find(f => /^image\//.test(f.type)); if (!f) return;
+  if ($('imp').open) { if (!impItems && !impPoll) { e.preventDefault(); impSetFile(f); } }
+  else if (!document.querySelector('dialog[open]') && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) { e.preventDefault(); openImport(f); }
+});
+$('impForm').onsubmit = async e => {
+  e.preventDefault(); $('impErr').textContent = '';
+  if (!impItems) {  // send it to be read, then wait for the answer
+    const text = $('impText').value.trim();
+    if (!text && !impImg) return void ($('impErr').textContent = 'Paste some text or add a screenshot first.');
+    try { let v = await post('/api/import', { text, image: impImg });
+      impPoll = setInterval(async () => {
+        $('impSecs').textContent = `${Math.max(0, Math.round(Date.now() / 1000 - v.since))} s`;
+        try { v = await api('/api/import'); } catch { return; }
+        if (v.busy || !impPoll) return;
+        clearInterval(impPoll); impPoll = null;
+        if (v.error) { $('impErr').textContent = v.error; return impShow(); }
+        impItems = v.items || []; impList(); $('impErr').textContent = impItems.length ? '' : v.said; impShow();
+      }, 1000);
+      impShow();
+    } catch (err) { $('impErr').textContent = err.message; }
+    return;
+  }
+  const pick = [...$('impList').querySelectorAll('input:checked')].map(b => impItems[+b.dataset.i]); let done = 0;
+  $('impGo').disabled = true;
+  try {
+    for (const x of pick) { const stock = x.type === 'buy' || x.type === 'sell';
+      setState(await post('/api/tx', stock ? { type: x.type, symbol: x.symbol, qty: x.qty, price: x.price, fee: x.fee || 0, date: x.date, note: '', fund: true, ...(x.currency ? { currency: x.currency } : {}) }
+        : x.type === 'dividend' ? { type: x.type, symbol: x.symbol, amount: x.amount, date: x.date } : { type: x.type, amount: x.amount, date: x.date }));
+      done++; x.done = true; }
+    $('imp').close(); toast(`${many(done, 'entry', 'entries')} recorded`);
+  } catch (err) { impItems = impItems.filter(x => !x.done); impList(); impShow(); $('impErr').textContent = `${done ? many(done, 'entry', 'entries') + ' recorded, then this: ' : ''}${err.message}`; }
+  if (done) afterLedger();
+};
 
 // ================= appearance: theme and accent =================
 const ACCENTS = [['blue', 'Blue'], ['violet', 'Violet'], ['rose', 'Rose'], ['teal', 'Teal'], ['orange', 'Orange']];
