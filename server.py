@@ -33,7 +33,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "9.0"
+VERSION = "9.1"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -1264,6 +1264,7 @@ def set_lab(body):
     lab["years"] = body.get("years") if body.get("years") in (1, 3, 5, 10) else 5
     lab["rebalance"] = body.get("rebalance") if body.get("rebalance") in ("never", "yearly", "quarterly") else "yearly"
     lab["mode"] = "past" if body.get("mode") == "past" else "mine"
+    lab["follow"] = body.get("follow") is True  # the mix is whatever is held today, until it is changed by hand
     with _lock:
         doc = load()
         doc["lab"] = lab

@@ -682,6 +682,7 @@ button.search:hover { border-color: var(--line-2); color: var(--text-2); }
 .xb:hover { background: var(--surface-2); color: var(--down); }
 .lab-in .inl { margin: 10px 0 12px; }
 .lab-in .acts2 { margin-bottom: 16px; }
+.lab-fl { color: var(--text-3); font-weight: 400; margin-left: 6px; white-space: nowrap; text-transform: none; letter-spacing: 0; }
 .lab-in .tabs { justify-self: start; }
 .lab-in .tabs button { padding: 5px 10px; }
 #labPlot { min-height: clamp(300px, calc(100vh - 640px), 620px); }
@@ -1406,7 +1407,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
           <table id="labTable">
             <thead><tr><th>In the mix</th><th>Share %</th><th></th></tr></thead>
             <tbody id="labRows"></tbody>
-            <tfoot><tr><td>Total</td><td class="num" id="labSum"></td><td></td></tr></tfoot>
+            <tfoot><tr><td id="labTot">Total</td><td class="num" id="labSum"></td><td></td></tr></tfoot>
           </table>
           <div class="inl"><div class="sg"><input id="labAdd" placeholder="Add a ticker or company name" autocomplete="off" spellcheck="false" aria-label="Ticker to add to the mix"></div></div>
           <div class="acts2"><button class="mini" id="labMine" type="button">What I hold</button><button class="mini" id="labTarget" type="button" hidden>My target mix</button><button class="mini" id="labEq" type="button">Equal shares</button></div>
@@ -3471,7 +3472,7 @@ function labColors() {
 function labInit() {
   if (L) return;
   const sv = S.lab || {};
-  L = { mode: sv.mode || 'mine', mix: { ...(sv.mix || {}) }, start: sv.start ?? 10000, monthly: sv.monthly ?? 100, years: sv.years || 5, rebalance: sv.rebalance || 'yearly' };
+  L = { mode: sv.mode || 'mine', mix: { ...(sv.mix || {}) }, start: sv.start ?? 10000, monthly: sv.monthly ?? 100, years: sv.years || 5, rebalance: sv.rebalance || 'yearly', follow: sv.follow ?? !Object.keys(sv.mix || {}).length };
   if (!Object.keys(L.mix).length) L.mix = mineMix();
   $('lStart').value = L.start; $('lMonthly').value = L.monthly;
 }
@@ -3479,9 +3480,16 @@ function saveLab() {
   clearTimeout(labTimer);
   labTimer = setTimeout(async () => { labTimer = null; try { const s = await post('/api/lab', L, 'PUT'); if (S) S.lab = s.lab; } catch (err) { $('labErr').textContent = err.message; } }, 800);
 }
+// While the mix follows your holdings, a new purchase or a sale shows up in it by itself.
+const labFollows = () => !!(L && L.follow && S.invested > 0 && S.positions.length);
+function labFollow() {
+  if (!labFollows()) return;
+  const m = mineMix();
+  if (JSON.stringify(m) !== JSON.stringify(L.mix)) { L.mix = m; $('labRows').dataset.key = ''; }
+}
 async function labLoad(force) {
   if (!S) return;
-  labInit();
+  labInit(); labFollow();
   const mine = ownMode(), syms = Object.keys(L.mix).filter(s => s !== 'CASH').sort().join(), key = (mine ? 'mine|' : 'past|') + syms;
   if (key === labKey && !force) return renderLab();
   if (key !== labKey) LD = null;
@@ -3541,6 +3549,7 @@ function labRun() {
 function renderLab(light) {
   if (view !== 'lab' || !S || light) return;
   labInit();
+  if (labFollows() && Object.keys(mineMix()).sort().join() !== Object.keys(L.mix).sort().join()) return void labLoad();  // something was bought or sold since
   const mine = ownMode(), can = S.transactions.length > 0;
   $('labMode').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', (b.dataset.lm === 'mine') === mine); if (b.dataset.lm === 'mine') b.disabled = !can; });
   $('labPast').hidden = mine;
@@ -3556,7 +3565,10 @@ function renderLab(light) {
   keys.forEach((s, i) => { const tr = body.rows[i], d = by[s];
     tr.querySelector('.sw').style.background = col[s];
     put(tr.querySelector('.sub'), s === 'CASH' ? 'earns nothing' : gone.has(s) ? '<span class="warnt">no price history found</span>' : d ? esc(d.name) : labKey === null ? '' : 'loading…'); });
-  const sum = keys.reduce((a, s) => a + (L.mix[s] || 0), 0);
+  const sum = keys.reduce((a, s) => a + (L.mix[s] || 0), 0), fl = labFollows();
+  $('labMine').setAttribute('aria-pressed', fl);
+  $('labMine').title = fl ? 'The mix is what you hold today, and a new purchase joins it by itself. Change a share and it stays as you set it.' : 'Use what you hold today, and keep following it as you buy';
+  put($('labTot'), fl ? 'Total <span class="lab-fl">follows what you hold</span>' : 'Total');
   put($('labSum'), keys.length ? `<span class="${Math.abs(sum - 100) < .51 ? '' : 'warnt'}" title="Shares that don’t add up to 100 are scaled so they do">${+sum.toFixed(1)}%</span>` : '');
   $('labYears').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.y === L.years));
   $('labReb').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.rb === L.rebalance));
@@ -3647,13 +3659,13 @@ function drawLabYears() {
 }
 new ResizeObserver(() => { if (view === 'lab' && LS) drawLab(); }).observe($('labPlot'));
 new ResizeObserver(() => { if (view === 'lab' && LS) drawLabYears(); }).observe($('labYearsPlot'));
-const labMix = mix => { L.mix = mix; $('labRows').dataset.key = ''; saveLab(); labLoad(); };
+const labMix = (mix, follow = false) => { L.mix = mix; L.follow = follow; $('labRows').dataset.key = ''; saveLab(); labLoad(); };
 $('labForm').onsubmit = e => e.preventDefault();
 $('labMode').onclick = e => { const m = e.target.dataset.lm; if (m && L && !e.target.disabled && m !== L.mode) { L.mode = m; saveLab(); labLoad(); } };
 $('labRows').oninput = e => { const s = e.target.dataset.lw; if (!s || !L) return;
   const v = parseFloat(e.target.value.replace(',', '.'));
   if (e.target.value.trim() === '') L.mix[s] = 0; else if (v >= 0 && v <= 100) L.mix[s] = v; else return;
-  renderLab(); saveLab(); };
+  L.follow = false; renderLab(); saveLab(); };
 $('labRows').onclick = e => { const b = e.target.closest('[data-lx]'); if (!b || !L) return; const m = { ...L.mix }; delete m[b.dataset.lx]; labMix(m); };
 $('labForm').addEventListener('input', e => { const k = e.target.dataset.l; if (!k || !L) return;
   const v = parseFloat(e.target.value.replace(',', '.')), [lo, hi, name] = LLIM[k];
@@ -3661,7 +3673,7 @@ $('labForm').addEventListener('input', e => { const k = e.target.dataset.l; if (
   $('labErr').textContent = ''; L[k] = v; renderLab(); saveLab(); });
 $('labYears').onclick = e => { const y = +e.target.dataset.y; if (y && L) { L.years = y; renderLab(); saveLab(); } };
 $('labReb').onclick = e => { const r = e.target.dataset.rb; if (r && L) { L.rebalance = r; renderLab(); saveLab(); } };
-$('labMine').onclick = () => { if (S && L) labMix(mineMix()); };
+$('labMine').onclick = () => { if (S && L) labMix(mineMix(), true); };
 $('labEq').onclick = () => { if (!L) return; const k = Object.keys(L.mix), each = k.length ? Math.floor(1000 / k.length) / 10 : 0; labMix(Object.fromEntries(k.map((s, i) => [s, i ? each : +(100 - each * (k.length - 1)).toFixed(1)]))); };
 const targetMix = () => Object.fromEntries(Object.entries(S.plan?.targets || {}).filter(([, w]) => w > 0));
 $('labTarget').onclick = () => { if (S && L && Object.keys(targetMix()).length) labMix(targetMix()); };
