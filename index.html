@@ -1431,9 +1431,9 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <p class="note">Each calendar year’s return, before any money added. A star marks a year that is only partly inside the period.</p>
     </section>
     <section class="card" id="labPartCard">
-      <div class="ch"><h2>What each one added</h2></div>
+      <div class="ch"><h2>What each part would have added</h2></div>
       <div class="plb parts num" id="labParts"></div>
-      <p class="note">Gain or loss from each part of the mix over the period, in money.</p>
+      <p class="note" id="labPartNote">Gain or loss from each part of the mix over the period, in money.</p>
     </section>
   </div>
 
@@ -1808,22 +1808,25 @@ function decodeTick(b64) {
   }
   return o;
 }
+// A tick comes in the listing's own currency (euros for a Xetra fund); holdings, the watchlist and the open stock are kept in dollars.
+const tickFx = id => S?.positions.find(p => p.symbol === id)?.fx || S?.watch.find(w => w.symbol === id)?.fx || (D && D.symbol === id && D.fx) || 1;
 function applyTick(t) {
   if (!(t.price > 0)) return false;
   let hit = false;
+  const usd = t.price * tickFx(t.id);
   const m = M.find(m => m.symbol === t.id);
   if (m) { m.price = t.price; if (m.spark.length) m.spark[m.spark.length - 1] = t.price; hit = true; }
   const wm = W && view === 'markets' && wItems().find(m => m.symbol === t.id);
   if (wm) { wm.price = t.price; hit = true; }
   const w = S?.watch.find(w => w.symbol === t.id);
-  if (w) { w.price = t.price; if (w.spark?.length) w.spark[w.spark.length - 1] = t.price; hit = true; }
-  if (D && D.symbol === t.id && t.time / 1000 >= (D.time || 0) - 2) { D.price = t.price; D.time = t.time / 1000; if (t.mh === 1) { D.regular = t.price; D.ext = null; } else if (t.mh === 0) D.ext = 'pre'; else if (t.mh >= 2) D.ext = 'post'; hit = true; }
+  if (w) { w.price = usd; if (w.spark?.length) w.spark[w.spark.length - 1] = usd; hit = true; }
+  if (D && D.symbol === t.id && t.time / 1000 >= (D.time || 0) - 2) { D.price = usd; D.time = t.time / 1000; if (t.mh === 1) { D.regular = usd; D.ext = null; } else if (t.mh === 0) D.ext = 'pre'; else if (t.mh >= 2) D.ext = 'post'; hit = true; }
   const p = S?.positions.find(p => p.symbol === t.id);
   if (!p || t.time / 1000 < (p.time || 0) - 2) return hit;
-  if (Math.abs(t.price - p.price) >= 0.005) flashes[p.symbol] = { dir: t.price > p.price ? 1 : -1 };
-  p.price = t.price; p.time = t.time / 1000;
-  if (t.mh === 1) { p.reg = t.price; p.ext = null; if (p.dayHigh) p.dayHigh = Math.max(p.dayHigh, t.price); if (p.dayLow) p.dayLow = Math.min(p.dayLow, t.price); } else if (t.mh === 0) p.ext = 'pre'; else if (t.mh >= 2) p.ext = 'post';
-  if (p.spark.length) p.spark[p.spark.length - 1] = t.price;
+  if (Math.abs(usd - p.price) >= 0.005) flashes[p.symbol] = { dir: usd > p.price ? 1 : -1 };
+  p.price = usd; p.time = t.time / 1000;
+  if (t.mh === 1) { p.reg = usd; p.ext = null; if (p.dayHigh) p.dayHigh = Math.max(p.dayHigh, usd); if (p.dayLow) p.dayLow = Math.min(p.dayLow, usd); } else if (t.mh === 0) p.ext = 'pre'; else if (t.mh >= 2) p.ext = 'post';
+  if (p.spark.length) p.spark[p.spark.length - 1] = usd;
   return true;
 }
 function recalc() {
@@ -1851,12 +1854,12 @@ function setState(s) {
   if (s.ui && !UI.startsWith('__') && s.ui !== UI) return location.reload();
   S = s;
   for (const p of S.positions) { p.reg = p.qty ? p.price - p.extChange / p.qty : p.price; if (ticks[p.symbol]) applyTick(ticks[p.symbol]); }
-  for (const w of S.watch) if (ticks[w.symbol]?.price > 0) w.price = ticks[w.symbol].price;
+  for (const w of S.watch) if (ticks[w.symbol]?.price > 0) w.price = ticks[w.symbol].price * (w.fx || 1);
   const evs = S.inbox?.events || [];  // anything noticed since this page last looked
   if (evTop) for (const e of evs.filter(e => !evTop.has(e.id)).reverse()) toast(e.title + (e.body ? ' · ' + e.body : ''));
   evTop = new Set(evs.map(e => e.id));
   $('ver').textContent = 'Folio ' + (S.version || '');
-  recalc(); if (sincePending) sinceCheck(); render(); renderInbox(); renderPages(); connect(); loadNews();
+  recalc(); if (sincePending) sinceCheck(); render(); renderInbox(); if (view === 'lab' && !L) labLoad(); renderPages(); connect(); loadNews();
 }
 function paint() {
   renderQ = false; renderAt = performance.now(); render(); renderStrip(); renderPop(); renderPages(true);
@@ -2455,7 +2458,7 @@ async function loadDetail() {
   try {
     const d = await api('/api/detail?symbol=' + encodeURIComponent(want));
     if (want !== sel) return;
-    if (ticks[want]?.price > 0 && ticks[want].time / 1000 >= (d.time || 0) - 2) d.price = ticks[want].price;
+    if (ticks[want]?.price > 0 && ticks[want].time / 1000 >= (d.time || 0) - 2) d.price = ticks[want].price * (d.fx || 1);
     const first = !D || D.symbol !== want;
     D = d; if (S) render(); connect();
     first ? drawChart() : renderStats();
@@ -3301,11 +3304,11 @@ function renderPulse() {
     const perYear = s.rarer / (s.days / 252), often = s.rarer <= 1 ? `the largest ${dn ? 'fall' : 'rise'} in about ${Math.round(s.days / 252)} years` : `A ${dn ? 'fall' : 'rise'} this large has come on ${s.rarer} of the last ${s.days.toLocaleString('en-US')} trading days, about ${perYear >= 2.5 ? `${Math.round(perYear)} times a year` : perYear >= 1.5 ? 'twice a year' : perYear >= 0.75 ? 'once a year' : `once every ${Math.round(1 / perYear)} years`}`;
     const zone = v && (v.level < 15 ? 'calm' : v.level < 20 ? 'an ordinary level' : v.level < 30 ? 'nervous' : 'real fear');
     const odd = PU.rows.filter(r => !['^GSPC', '^TNX', '^VIX', '^IXIC'].includes(r.symbol) && Math.abs(r.z) >= 1.5).sort((a, b) => Math.abs(b.z) - Math.abs(a.z)).slice(0, 3);
-    const live = secs.filter(x => x.pct != null), down = live.filter(x => x.pct < 0).length, best = [...live].sort((a, b) => b.pct - a.pct)[0], worst = [...live].sort((a, b) => a.pct - b.pct)[0];
+    const live = secs.filter(x => x.pct != null), down = live.filter(x => x.pct < 0).length, up = live.filter(x => x.pct > 0).length, best = [...live].sort((a, b) => b.pct - a.pct)[0], worst = [...live].sort((a, b) => a.pct - b.pct)[0];
     put($('mkRead'), `<p class="mk-head">${head}</p>
       <p>The S&amp;P 500 ${dn ? 'fell' : 'rose'} <b>${Math.abs(s.day).toFixed(2)}%</b>, <b>${times(s)}</b>.${Math.abs(z) >= 1.5 ? ` ${often[0] === 'A' ? often : `It was ${often}`}.` : ''}${R['^IXIC'] ? ` The Nasdaq, heavier in technology, ${R['^IXIC'].day < 0 ? 'fell' : 'rose'} ${Math.abs(R['^IXIC'].day).toFixed(2)}%.` : ''}</p>`
       + (v ? `<p>The VIX, which shows how nervous traders are, ${v.level >= v.prev ? 'rose' : 'fell'} to <b>${v.level.toFixed(1)}</b>: ${zone}, higher than on ${v.below}% of days in the past ${v.years} years.${t ? ` The 10-year Treasury yield ${t.day < 0 ? 'fell' : 'rose'} ${Math.abs(t.day).toFixed(2)} points to ${t.price.toFixed(2)}%${z <= -1 && t.z <= -1 ? ', as money moved into government bonds, the usual shelter' : z <= -1 && t.z >= 1 ? ', so bonds fell with stocks and gave no shelter' : ''}.` : ''}</p>` : '')
-      + (live.length ? `<p>${down === live.length ? `All ${live.length} parts of the market fell` : down === 0 ? `All ${live.length} parts of the market rose` : `${down} of the ${live.length} parts of the market fell`}; ${esc(best.name.toLowerCase())} did best (${pct(best.pct)}) and ${esc(worst.name.toLowerCase())} worst (${pct(worst.pct)}).${odd.length ? ` Also out of the ordinary: ${words(odd.map(r => `${esc(r.name.split(' · ')[0])} ${mv(r)}`))}.` : ''}</p>` : '')
+      + (live.length ? `<p>${up + down === 0 || best.pct === worst.pct ? '' : `${down === live.length ? `All ${live.length} parts of the market fell` : up === live.length ? `All ${live.length} parts of the market rose` : `${down} of the ${live.length} parts of the market fell`}; ${esc(best.name.toLowerCase())} did best (${pct(best.pct)}) and ${esc(worst.name.toLowerCase())} ${worst.pct > 0 ? 'least well' : 'worst'} (${pct(worst.pct)}).`}${odd.length ? ` ${up + down === 0 || best.pct === worst.pct ? 'Out' : 'Also out'} of the ordinary: ${words(odd.map(r => `${esc(r.name.split(' · ')[0])} ${mv(r)}`))}.` : ''}</p>` : '')
       + (you && Math.abs(you.bench) >= 0.25 ? `<div class="mk-you num">${[['The S&amp;P 500', pct(you.bench), 'last session'], ['Your holdings usually move', you.beta.toFixed(1) + '×', 'as far as the index'], ['So to be expected', pct(you.expected), 'for your holdings'], ['They moved', `<span class="${cls(you.day)}">${pct(you.day)}</span>`, Math.abs(you.day - you.expected) < Math.max(0.6, Math.abs(you.expected) * 0.2) ? 'about what the index implied' : (you.day < you.expected ? 'worse than the index implied' : 'better than the index implied')]].map(([k, val, sub]) => `<div class="st"><div class="k">${k}</div><div class="v">${val}</div><div class="s">${sub}</div></div>`).join('')}</div>` : '')); }
   // ---- Claude's brief ----
   { const c = PU.claude, b = c.brief, old = b && b.asOf !== PU.asOf, ago = b && aiAgo(b.at), list = (t, xs) => xs.length ? `<h3>${t}</h3><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
@@ -3608,6 +3611,8 @@ function drawLab() {
     + (r.mine && r.paidIn[0] > 0 && Math.abs(r.own[0] / r.paidIn[0] - 1) > .02 ? ` On the first day your purchases were already worth ${Math.abs((r.own[0] / r.paidIn[0] - 1) * 100).toFixed(0)}% ${r.own[0] < r.paidIn[0] ? 'less' : 'more'} than the money put in, because the prices you logged differ from that day’s closing prices. The mix and the index buy at the close, so they start that much ${r.own[0] < r.paidIn[0] ? 'ahead' : 'behind'}; entries logged on the days and at the prices you really bought make the comparison exact.` : '')
     + (r.cut ? ` Nothing in this mix goes back further than ${day(r.t[0], { month: 'short', year: 'numeric' })}, so the test starts there.` : '') + (late.length ? ' ' + late.join('. ') + '.' : '');
   const top = Math.max(1, ...r.parts.map(p => Math.abs(p.gain))), col = labColors();
+  put($('labPartNote'), r.mine ? 'A what-if, not your real result: what each part of the mix above would have gained or lost, had every deposit you made been split by those shares from your first day. What each holding really gained or lost is on the Overview.'
+    : 'Gain or loss from each part of the mix over the period, in money.');
   put($('labParts'), r.parts.map(p => `<div class="r"><b><i class="sw" style="background:${col[p.s]}"></i>${esc(p.s === 'CASH' ? 'Cash' : label(p.s))}</b><div class="bar"><i class="${p.gain >= 0 ? 'up' : 'down'}" style="width:${(Math.abs(p.gain) / top * 50).toFixed(1)}%"></i></div><span class="val ${cls(p.gain)}">${sign(p.gain)}${m0(Math.abs(p.gain))}</span></div>`).join(''));
 
   const box = $('labPlot'), Wd = box.clientWidth, Hh = box.clientHeight;

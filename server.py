@@ -33,7 +33,7 @@ try:
 except Exception:  # no time zone database on this system
     NY = timezone(timedelta(hours=-5))
 
-VERSION = "9.1"
+VERSION = "9.2"
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("FOLIO_DATA", ROOT / "data" / "portfolio.json"))
 PORT = int(os.environ.get("FOLIO_PORT", "8791"))
@@ -199,7 +199,7 @@ def _in_dollars(q, fx, div):
     out["prevClose"] = None if q["prevClose"] is None else q["prevClose"] * prev
     out["points"] = [(t, c * at(t)) for t, c in q["points"]]
     out["bars"] = [(t, o * r, h * r, l * r, c * r, v) for t, o, h, l, c, v in q["bars"] for r in (at(t),)]
-    out["native"] = {"currency": "GBP" if div != 1 else q["currency"], "price": q["price"] / div, "rate": fx["price"]}
+    out["native"] = {"currency": "GBP" if div != 1 else q["currency"], "price": q["price"] / div, "rate": fx["price"], "per": now}  # per: dollars for one unit as the exchange quotes it
     out["currency"] = "USD"
     return out
 
@@ -419,9 +419,12 @@ def detail(symbol):
     kind = g("quoteType") or qt["type"]
     prof = profile(symbol) if kind == "EQUITY" else {}
     now = time.time()
+    per = (qt.get("native") or {}).get("per")
+    if per:  # these come in the listing's own currency; in dollars, like the price beside them
+        g = lambda k, g=g: g(k) * per if k in ("regularMarketOpen", "marketCap", "epsTrailingTwelveMonths", "fiftyDayAverage", "twoHundredDayAverage") and g(k) else g(k)
     return {
         "symbol": qt["symbol"], "name": qt["name"], "price": qt["price"], "regular": qt["regular"], "prevClose": qt["prevClose"],
-        "ext": qt["ext"], "state": qt["state"], "time": qt["time"], "currency": qt["currency"],
+        "ext": qt["ext"], "state": qt["state"], "time": qt["time"], "currency": qt["currency"], "fx": per,
         "exchange": g("fullExchangeName") or qt["exchange"], "type": kind,
         "open": g("regularMarketOpen"), "dayHigh": qt["dayHigh"], "dayLow": qt["dayLow"],
         "wkHigh": qt["wkHigh"], "wkLow": qt["wkLow"],
@@ -502,6 +505,7 @@ def state():
             "dividends": p["div"],
             "spark": [c for _, c in qt["points"]] if qt else [],
             "state": qt["state"] if qt else "closed", "time": qt and qt["time"],
+            "fx": ((qt or {}).get("native") or {}).get("per"),  # live ticks arrive in the listing's own currency
         })
         value += v
         cost += p["cost"]
@@ -520,7 +524,7 @@ def state():
         "asOf": max([r["time"] or 0 for r in rows], default=0),
         "transactions": sorted(doc["transactions"], key=lambda t: t["date"])[::-1],  # newest first
         "watch": [{"symbol": s, "name": w["name"], "price": w["price"], "prevClose": w["prevClose"],
-                   "spark": [c for _, c in w["points"]][::5]}
+                   "spark": [c for _, c in w["points"]][::5], "fx": (w.get("native") or {}).get("per")}
                   for s, w in quotes(doc["watchlist"], "1d").items() if w],
         "alerts": doc["alerts"], "plan": doc["plan"], "lab": doc["lab"], "next": doc["next"], "inbox": inbox_view(),
         "ui": ui_version(), "version": VERSION,
@@ -1075,13 +1079,22 @@ SECTORS = {"XLK": ("Technology", "Technology"), "XLC": ("Communication", "Commun
            "XLB": ("Materials", "Basic Materials"), "XLRE": ("Real estate", "Real Estate")}  # fund -> (name, Yahoo's name for the sector)
 
 
+def _settled_prev(px, prev, hist):
+    """The close a change is measured from. Before the next session opens a quote shows no change at all, so the last full day's is used."""
+    if abs(px - prev) < 1e-9 and len(hist) >= 2:
+        return hist[-2] if abs(hist[-1] - px) <= abs(px) * 0.002 else hist[-1]
+    return prev
+
+
 def sectors():
-    """Today's change in each part of the US market, from the sector funds that track them."""
+    """The latest session's change in each part of the US market, from the sector funds that track them."""
     def make():
         out = []
+        hist = _dailies(list(SECTORS))
         for s, qt in quotes(list(SECTORS), "1d").items():
             if qt and qt["prevClose"]:
-                out.append({"symbol": s, "name": SECTORS[s][0], "sector": SECTORS[s][1], "pct": round((qt["regular"] / qt["prevClose"] - 1) * 100, 2)})
+                prev = _settled_prev(qt["regular"], qt["prevClose"], [c for _, c, _ in (hist.get(s) or {}).get("rows", [])])
+                out.append({"symbol": s, "name": SECTORS[s][0], "sector": SECTORS[s][1], "pct": round((qt["regular"] / prev - 1) * 100, 2)})
         if not out:
             raise Bad("Couldn't load the sector funds.")
         return out
@@ -1124,9 +1137,11 @@ def daily(symbol):
         meta, ind = res["meta"], res.get("indicators") or {}
         close = (ind.get("quote") or [{}])[0].get("close") or []
         adj = (ind.get("adjclose") or [{}])[0].get("adjclose") or close
-        off, rows = meta.get("gmtoffset") or 0, []
-        for t, c, a in zip(res.get("timestamp") or [], close, adj):
+        off, rows, ts, gap = meta.get("gmtoffset") or 0, [], res.get("timestamp") or [], None
+        for i, (t, c, a) in enumerate(zip(ts, close, adj)):
             if c is None or c <= 0:
+                if i == len(ts) - 2:  # Yahoo can leave yesterday's close empty for a while, mostly on European listings
+                    gap = _utc_day(t + off)
                 continue
             row = (_utc_day(t + off), c, a if a and a > 0 else c)
             if rows and rows[-1][0] == row[0]:
@@ -1141,6 +1156,13 @@ def daily(symbol):
             days = [r[0] for r in fx]
             rate = lambda d: fx[max(bisect.bisect_right(days, d) - 1, 0)][1] / div
             rows = [(d, c * rate(d), a * rate(d)) for d, c, a in rows]
+        if gap and rows[-1][0] > gap > rows[-2][0]:  # filled from the live quote, which knows the close it is measured from
+            try:
+                q = yahoo(symbol, "1d")
+                if q["prevClose"] and abs(q["regular"] - q["prevClose"]) > 1e-9 and abs(q["regular"] / rows[-1][1] - 1) < 0.005:
+                    rows.insert(len(rows) - 1, (gap, q["prevClose"], q["prevClose"]))
+            except Bad:
+                pass
         return {"symbol": meta["symbol"], "name": meta.get("longName") or meta.get("shortName") or meta["symbol"], "rows": rows}
     try:
         return cached(("daily", symbol), 43200, make)
@@ -2324,8 +2346,7 @@ def _pulse_core():
         if not qt or not qt["prevClose"] or len(hist) < 60:
             continue
         px, prev, rate = qt["regular"], qt["prevClose"], kind == "rate"
-        if abs(px - prev) < 1e-9:  # between sessions the quote has no change to show: the last full day's is used
-            prev = hist[-2] if abs(hist[-1] - px) <= abs(px) * 0.002 else hist[-1]
+        prev = _settled_prev(px, prev, hist)  # between sessions the quote has no change to show: the last full day's is used
         last = hist[-253:]
         moves = [b - a if rate else (b / a - 1) * 100 for a, b in zip(last, last[1:])]
         day, usual = (px - prev) if rate else (px / prev - 1) * 100, _rms(moves)
@@ -2337,6 +2358,8 @@ def _pulse_core():
                "rarer": sum((m <= day) if day < 0 else (m >= day) for m in ten), "days": len(ten)}  # days it moved at least this far, the same way
         rows.append(row)
     out = {"asOf": q[BENCH[0]]["time"], "state": q[BENCH[0]]["state"], "rows": rows}
+    b, days = q[BENCH[0]], d[BENCH[0]]["rows"]  # the day the index's change belongs to, once that session is over and in the history
+    out["settled"] = days[-1][0] if abs(b["regular"] - b["prevClose"]) < 1e-9 and abs(days[-1][1] - b["regular"]) <= b["regular"] * 0.002 else None
     vix = [c for _, c, _ in (d.get("^VIX") or {}).get("rows", [])]
     if q.get("^VIX") and len(vix) > 250:
         v = q["^VIX"]["regular"]
@@ -2377,7 +2400,7 @@ def _pulse_you(doc, core):
             col.append(last)
         return [None if a is None or b is None else b / a - 1 for a, b in zip(col, col[1:])]
     bm = moves(got[BENCH[0]]["rows"])
-    beta, weight, parts = 0.0, 0.0, []
+    beta, weight, moved, mweight, parts = 0.0, 0.0, 0.0, 0.0, []
     for p in st["positions"]:
         s = p["symbol"]
         if (tracks(s) or s) not in got:
@@ -2388,7 +2411,13 @@ def _pulse_you(doc, core):
         var = _cov([b for _, b in both], [b for _, b in both])
         b1 = _cov([a for a, _ in both], [b for _, b in both]) / var if var else 0
         beta, weight = beta + b1 * p["value"], weight + p["value"]
-        parts.append({"symbol": s, "day": round(p["dayPct"], 2), "beta": round(b1, 2), "share": round(p["value"] / st["invested"] * 100, 1) if st["invested"] else 0})
+        day = p["dayPct"]
+        if core.get("settled"):  # the index's figure is its last full session's, so each holding's is that same day's
+            cl = [(x, c) for x, c, _ in got[s]["rows"] if x <= core["settled"]][-2:]
+            day = (cl[1][1] / cl[0][1] - 1) * 100 if len(cl) == 2 and cl[1][0] == core["settled"] and cl[0][1] else None  # None: no price for that day
+        if day is not None:
+            moved, mweight = moved + day * p["value"], mweight + p["value"]
+        parts.append({"symbol": s, "day": None if day is None else round(day, 2), "beta": round(b1, 2), "share": round(p["value"] / st["invested"] * 100, 1) if st["invested"] else 0})
     bench = next((r["day"] for r in core["rows"] if r["symbol"] == BENCH[0]), None)
     if not weight or bench is None:
         return None
@@ -2397,7 +2426,7 @@ def _pulse_you(doc, core):
         sec = (profile(s) or {}).get("sector")
         if sec:
             sect.setdefault(sec, []).append(s)
-    return {"day": round(st["dayPct"], 2), "bench": bench, "beta": round(beta / weight, 2), "expected": round(beta / weight * bench, 2), "parts": parts, "sectors": sect}
+    return {"day": round(moved / mweight if mweight else st["dayPct"], 2), "bench": bench, "beta": round(beta / weight, 2), "expected": round(beta / weight * bench, 2), "parts": parts, "sectors": sect}
 
 
 def pulse():
