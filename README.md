@@ -5,12 +5,16 @@ A small self-hosted dashboard for a stock portfolio. You record your buys and se
 - Live prices from Yahoo Finance's trade stream, including pre-market and after hours
 - Portfolio and per-stock charts (1D, 1W, 1M, 3M, 1Y, 5Y), as a line or as candles with volume, with your buys and sells marked, optional 50-day and 200-day moving averages, and drag-to-measure between any two moments
 - Compare view: your portfolio, each holding and the S&P 500 in percent on one chart
-- One box (`/` or `Ctrl K`) to search for any stock, fund, index or coin and chart it without owning it, or to run any command
+- One box (`/` or `Ctrl K`) to search for any stock, fund, index or coin and chart it without owning it, to run any command, or to ask Claude a question typed in plain words
 - Details for the charted stock: day and 52-week range, volume, market value, P/E, next earnings date, a short company description, and your own position and break-even
 - For companies, three more panels beside the chart: analysts' price targets and recommendations, reported profit against expectations with sales and margins, and each of your own trades measured against today's price
 - **Journey** page: your investment from the first day. A short account of where you stand; a day-by-day chart of the portfolio's value against the money you put in (or of what it was made of) that you can scrub, step through or play back, with what you held and what you did on the chosen day; every purchase scored against today's price and against the S&P 500 since its day; the moments worth remembering (round amounts passed, best and worst day, furthest ahead and behind); each month's result; and every trading day as a coloured square. It can also be saved as a picture to keep or send, with or without amounts
 - **Markets** page: indices in the US, Europe and Asia, interest rates, commodities, currencies and coins with live prices; which exchanges are trading right now, on your clock; today's gainers, losers, most traded and trending US stocks; and a ranking of how far each market and each of your holdings has come today, this month, this year and over a year
 - **The markets, read**, at the top of that page: the day in plain words, each market's move set against its own ordinary day (so a 3.7% fall reads as "4.1 times an ordinary day, about twice a year"), where each stands against its high and its 200-day average, how nervous traders are (the VIX against ten years of itself), which parts of the market led and lagged with yours marked, what lending to the US pays now and a year ago, and what the day meant for your holdings: how far they usually move against the index, and how far they did. One press asks Claude for a brief of what seems to be behind it, drawn only from the headlines, and what it means for what you hold
+- **Learn** page: how investing works, taught from your own portfolio as you go. Thirty short lessons in six chapters (what you own, what it is worth, how it moves, how you buy, time, reading the market), each with the idea in plain words and then the same idea in your own figures: the slice of the company your shares are, what buyers pay for a dollar of its profit, your ordinary day in dollars, what your bet would cost if it halved, your result in dollars and in euros. A lesson is marked as met on the day your entries first showed it (your first dividend, your first fund, your first fall of 10%), and the inbox says when a new one comes within reach. At the top, what stands out today with the lesson behind it; below, the rules a patient investor keeps, checked against your entries (buying on your rhythm, holding through falls, your bet in its range, costs), with room for rules of your own
+- **Claude on the Learn page**: one press asks Claude for the lesson most worth reading today, worked through in your numbers, with the words it used explained, where in Folio to see it, and a question to ask next. Ask for another, or have one written each morning. A question box answers anything about your portfolio, a figure or the markets, and every lesson and answer is kept in a notebook
+- **What waiting has done**, on the same page: every stretch of a day, a month, a year, up to twenty years in the S&P 500 since 1927, and how often each ended ahead; every calendar year as a coloured square; each fall of 10% or more since 1950 with how long it took to come back; and what missing the ten best days of twenty years cost
+- A small **?** on cards across the app opens the lesson behind that figure, with your numbers, where you are looking
 - **Analysis** page: yearly swing (volatility), beta, deepest fall and Sharpe ratio of today's holdings; a risk-against-return chart; which holding causes how much of the swings; how closely your stocks move together; falls from the high against the S&P 500; what past market falls (2018, 2020, 2022, 2025 and the past year's worst) would do to today's holdings; your money by sector; today's move in each US market sector; and a few plain-language findings at the top
 - **Plan** page: a goal, a monthly amount and your assumptions, drawn as the range of two thousand simulated futures with the chance of getting there; and a target mix that shows how far each holding is from its target and the trades (or buys only, with new money) that would close the gap
 - **Lab** page: what if you had bought something else. Starting from your own entries, it draws what you actually did beside any mix of up to 12 tickers, and beside the S&P 500, each given the same money on the same days. Or start from a made-up amount up to ten years back, with a monthly addition and optional rebalancing: growth, swing, deepest fall, each calendar year, and what each part added. The mix starts as what you hold and keeps following it as you buy, until you change a share yourself. One click tests your target mix, or carries the result's growth and swing into the plan
@@ -55,7 +59,7 @@ Settings are environment variables:
 | `FOLIO_PORT` | `8791` | Port to listen on |
 | `FOLIO_HOST` | `0.0.0.0` | Address to bind. Use `127.0.0.1` to keep it to this machine |
 | `FOLIO_DATA` | `data/portfolio.json` | Where the ledger is stored |
-| `FOLIO_CLAUDE` | `claude` | The Claude Code command used for Claude's read |
+| `FOLIO_CLAUDE` | `claude` | The Claude Code command used for Claude's read, brief, lessons and answers |
 | `FOLIO_CLAUDE_MODEL` | `claude-opus-5-5` | The model that writes it |
 
 There is no login. With the default `FOLIO_HOST`, anyone on your network can view the dashboard, record trades and ask Claude.
@@ -65,7 +69,7 @@ There is no login. With the default `FOLIO_HOST`, anyone on your network can vie
 | Key | Action |
 |---|---|
 | `/` or `Ctrl K` | Search for any ticker, run any command, or type an entry |
-| `O` `J` `X` `W` `A` `P` `L` | Overview, Journey, Next, Markets, Analysis, Plan, Lab |
+| `O` `J` `X` `W` `A` `P` `L` `E` | Overview, Journey, Next, Markets, Analysis, Plan, Lab, Learn |
 | `F` | Wall display (`Esc` leaves it) |
 | `N` | What Folio noticed for you |
 | `T` | Record a trade |

@@ -12,7 +12,7 @@
 (() => { let t = null; try { t = localStorage.getItem('folio-theme'); } catch {}
   document.documentElement.dataset.theme = t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   let v = null; try { v = localStorage.getItem('folio-view'); } catch {}
-  document.documentElement.dataset.view = ['journey', 'next', 'markets', 'analysis', 'plan', 'lab'].includes(v) ? v : 'overview';
+  document.documentElement.dataset.view = ['journey', 'next', 'markets', 'analysis', 'plan', 'lab', 'learn'].includes(v) ? v : 'overview';
   let a = null; try { a = localStorage.getItem('folio-accent'); } catch {}
   if (['violet', 'rose', 'teal', 'orange'].includes(a)) document.documentElement.dataset.accent = a; })();
 </script>
@@ -1171,13 +1171,183 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
 .secl .t { position: relative; height: 12px; } .secl .t::before { content: ""; position: absolute; left: var(--z); top: -3px; bottom: -3px; width: 1px; background: var(--line-2); }
 .secl .t i { position: absolute; top: 0; bottom: 0; border-radius: 4px; min-width: 2px; }
 .secl .v { text-align: right; }
+
+/* ---- learn: what your own holdings can teach you ---- */
+:root[data-view="learn"] #learn { display: grid; }
+#lnTodayCard .mk-read { align-items: start; }
+.ln-items { display: grid; gap: 4px; margin: 4px -10px 0; }
+.ln-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px; border: 0; background: transparent; border-radius: 12px; text-align: left; width: 100%; }
+.ln-item:hover { background: var(--surface-2); }
+.ln-item .ico { grid-row: span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--tone, var(--accent)) 16%, transparent); color: var(--tone, var(--accent)); align-self: start; margin-top: 2px; }
+.ln-item b { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--text); }
+.ln-item .s { grid-column: 2; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+.ln-item .to { grid-row: span 2; font-size: 12px; color: var(--text-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.ln-item:hover .to { color: var(--accent); }
+.mk-ai .ln-why { color: var(--text); }
+#lnAi > :is(p, dl, .ln-next) { max-width: 86ch; }
+#learnBody .ln-items { margin: -4px -10px 0; } #learnBody .ln-item { grid-template-columns: 30px minmax(0, 1fr); padding: 8px 10px; } #learnBody .ln-item b { font-size: 14px; } #learnBody .note { margin: 8px 0 0; }
+.ln-terms { margin: 0; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
+.ln-terms div { margin: 0; } .ln-terms dt { display: inline; font-weight: 600; color: var(--text); } .ln-terms dd { display: inline; margin: 0; }
+.ln-next { display: grid; gap: 8px; margin-top: 16px; }
+.ln-go { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: transparent; border-radius: 12px; font-size: 13.5px; line-height: 1.5; color: var(--text-2); width: 100%; }
+.ln-go:hover:not(:disabled) { border-color: var(--text-3); color: var(--text); }
+.ln-go:disabled { opacity: .55; cursor: default; }
+.ln-go .ic { color: var(--accent); grid-row: span 2; }
+.ln-go b { font-weight: 600; color: var(--text); font-size: 12px; letter-spacing: .03em; text-transform: uppercase; }
+.ln-go span { grid-column: 2; }
+.ln-daily { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-2); cursor: pointer; }
+.ln-daily input { accent-color: var(--accent); margin: 0; }
+
+/* the path: every lesson, in the order you tend to meet them */
+.ln-path { display: grid; gap: 20px 30px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); align-items: start; }
+.ln-ch h3 { margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); display: flex; justify-content: space-between; gap: 10px; }
+.ln-ch h3 span { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.ln-ch ol { list-style: none; margin: 0 -8px; padding: 0; display: grid; }
+.ln-l { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 0 10px; align-items: center; width: 100%; padding: 7px 8px; border: 0; background: transparent; border-radius: 10px; text-align: left; font-size: 14px; }
+.ln-l:hover { background: var(--surface-2); }
+.ln-l[aria-current="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.ln-l .m { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-2); display: grid; place-items: center; color: var(--surface); }
+.ln-l.seen .m { background: var(--up); border-color: var(--up); }
+.ln-l.new .m { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.ln-l.ahead .m { border-style: dashed; }
+.ln-l .n { display: flex; flex-direction: column; min-width: 0; }
+.ln-l .n b { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-l.ahead .n b { color: var(--text-2); font-weight: 500; }
+.ln-l .n span { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-l .w { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.ln-l.new .w { color: var(--accent); font-weight: 600; }
+.ln-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin: 2px 0 16px; }
+.ln-bar i { display: block; height: 100%; border-radius: 3px; background: var(--up); transition: width .4s; }
+
+/* the lesson being read */
+.ln-kick { font-size: 12px; color: var(--text-3); margin: 0 0 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.ln-kick .met { color: var(--up); font-weight: 600; } .ln-kick .new { color: var(--accent); font-weight: 600; }
+.ln-title { margin: 0 0 14px; font-size: clamp(24px, 2.3vw, 32px); font-weight: 660; letter-spacing: -.02em; line-height: 1.15; }
+.ln-body { max-width: 78ch; }
+#lnReadCard { container-type: inline-size; }
+.ln-body.two > div:last-child:not(:first-child) > h3 { margin-top: 18px; }
+@container (min-width: 860px) { .ln-body.two { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 44px; align-items: start; } .ln-body.two > div:last-child:not(:first-child) > h3 { margin-top: 4px; } }
+.ln-body p, .ln-body li { font-size: 15px; line-height: 1.65; color: var(--text-2); margin: 0 0 10px; }
+.ln-body p b, .ln-body li b { color: var(--text); font-weight: 600; }
+.ln-body .idea p { font-size: 16px; color: var(--text); }
+.ln-body ul { margin: 0 0 10px; padding-left: 18px; } .ln-body li { margin-bottom: 5px; }
+.ln-body h3 { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); margin: 20px 0 10px; }
+.ln-you { border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; }
+.ln-you > :last-child { margin-bottom: 0; }
+.ln-mind { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.ln-mind p { margin: 0; font-size: 14px; }
+.ln-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
+.ln-acts .grow { flex: 1; }
+.ln-acts .btn.ghost:disabled { opacity: .5; }
+.ln-qa { display: grid; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); max-width: 78ch; } .ln-qa:empty { display: none; }
+.ln-qa .q { margin: 0 0 4px; font-weight: 600; font-size: 14px; color: var(--text); } .ln-qa .a { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.ln-qa .tag { display: block; margin-top: 4px; }
+
+/* small figures inside a lesson */
+.ln-bars { display: grid; gap: 8px; margin: 12px 0 4px; font-size: 13px; }
+.ln-bars .r { display: grid; grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.ln-bars .k { color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.ln-bars .r.me .k { color: var(--text); font-weight: 600; }
+.ln-bars .t { position: relative; height: 10px; border-radius: 5px; background: var(--surface-2); }
+.ln-bars .t i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; min-width: 3px; background: var(--accent); }
+.ln-bars .t i.b2 { opacity: .35; }
+.ln-bars .t em { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); border-radius: 1px; }
+.ln-bars .v { text-align: right; white-space: nowrap; font-weight: 600; color: var(--text); }
+.ln-bars .v small { font-weight: 400; color: var(--text-3); font-size: 12px; margin-left: 6px; }
+.ln-rng { margin: 14px 0; font-size: 13px; }
+.ln-rng .h { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; } .ln-rng .h span { color: var(--text-3); }
+.ln-rng .t { position: relative; height: 8px; margin: 12px 4px 10px; border-radius: 4px; background: var(--surface-2); }
+.ln-rng .t .span { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--line-2); }
+.ln-rng .t .mean { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1.5px dashed var(--text-3); }
+.ln-rng .t .px { position: absolute; top: -5px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; border: 3px solid var(--surface); }
+.ln-rng .s { color: var(--text-2); line-height: 1.5; }
+.ln-alloc { height: 12px; margin: 14px 0 8px; } .ln-alloc i { border-radius: 4px; }
+.ln-key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--text-2); margin: 0 0 4px; }
+.ln-key span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ln-falls { display: flex; align-items: flex-start; gap: 3px; height: 120px; margin: 16px 0 26px; border-top: 1px solid var(--line-2); position: relative; }
+.ln-falls i { flex: 1; min-width: 4px; max-width: 26px; border-radius: 0 0 4px 4px; background: var(--down); opacity: .75; position: relative; }
+.ln-falls i.bear { opacity: 1; } .ln-falls i.now { background: var(--accent); opacity: 1; }
+.ln-falls i:hover { opacity: 1; filter: brightness(1.15); }
+.ln-falls i[data-y]::after { content: attr(data-y); position: absolute; top: 122px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-3); font-style: normal; }
+.ln-falls .tip { z-index: 5; }
+
+/* rules */
+.ln-rules { list-style: none; margin: 0; padding: 0; display: grid; }
+.ln-rules li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+.ln-rules li:first-child { border-top: 0; padding-top: 2px; }
+.ln-rules .m { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; margin-top: 1px; background: color-mix(in srgb, var(--tone) 18%, transparent); color: var(--tone); }
+.ln-rules b { font-size: 15px; font-weight: 600; }
+.ln-rules .s { grid-column: 2; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.ln-rules .st { font-size: 12px; font-weight: 600; color: var(--tone); white-space: nowrap; padding-top: 2px; }
+.ln-rules .why { grid-column: 2; justify-self: start; border: 0; background: transparent; padding: 0; font-size: 12px; color: var(--text-3); display: inline-flex; align-items: center; gap: 4px; }
+.ln-rules .why:hover { color: var(--accent); }
+.ln-rules .x { border: 0; background: transparent; color: var(--text-3); padding: 2px; border-radius: 6px; } .ln-rules .x:hover { color: var(--down); }
+#lnRuleForm { margin-top: 12px; }
+
+/* what waiting has done */
+.ln-odds { display: grid; gap: 9px; font-size: 13px; margin-top: 2px; }
+.ln-odds .r { display: grid; grid-template-columns: 82px minmax(0, 1fr) 54px; gap: 12px; align-items: center; padding: 3px 0; border-radius: 8px; }
+.ln-odds .r.me .k { color: var(--text); font-weight: 650; }
+.ln-odds .k { color: var(--text-2); white-space: nowrap; }
+.ln-odds .t { position: relative; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--down) 22%, var(--surface-2)); overflow: hidden; }
+.ln-odds .t i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--up); border-radius: 6px 0 0 6px; opacity: .85; }
+.ln-odds .t span { position: absolute; left: 10px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 12px; color: #fff; font-weight: 600; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+.ln-odds .t .half { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--surface); opacity: .6; }
+.ln-odds .v { text-align: right; font-weight: 650; font-size: 15px; }
+.ln-odds .you { grid-column: 2 / -1; font-size: 12px; color: var(--accent); font-weight: 600; margin: -6px 0 0; }
+.ln-odds-x { display: grid; grid-template-columns: 82px minmax(0, 1fr) 54px; gap: 12px; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+.ln-odds-x div { display: flex; justify-content: space-between; }
+.ln-yrs { display: grid; grid-template-columns: 46px repeat(10, minmax(0, 1fr)); gap: 3px; margin-top: 2px; font-size: 11px; color: var(--text-3); align-items: center; }
+.ln-yrs i { height: 20px; border-radius: 4px; background: color-mix(in srgb, var(--c) var(--k), var(--surface-2)); }
+.ln-yrs i.no { background: transparent; } .ln-yrs i.cur { box-shadow: 0 0 0 2px var(--text); }
+.ln-yrs span.c { text-align: center; }
+.ln-yrs i[data-tip]:hover { outline: 2px solid var(--text-2); outline-offset: 1px; }
+
+/* the notebook */
+.ln-book { display: grid; gap: 0; }
+.ln-book details { border-top: 1px solid var(--line); padding: 11px 0; } .ln-book details:first-child { border-top: 0; padding-top: 0; }
+.ln-book summary { cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; list-style: none; font-size: 14px; }
+.ln-book summary::-webkit-details-marker { display: none; }
+.ln-book summary .ic { color: var(--text-3); } .ln-book summary b { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-book details[open] summary b { white-space: normal; }
+.ln-book summary .tag { white-space: nowrap; }
+.ln-book .in { padding: 10px 0 2px 32px; max-width: 88ch; }
+.ln-book .in p { font-size: 14px; line-height: 1.6; color: var(--text-2); margin: 0 0 8px; }
+.ln-book .in h3 { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); margin: 12px 0 5px; }
+.ln-sugg { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ln-sugg button { border: 1px solid var(--line); background: transparent; color: var(--text-2); border-radius: 999px; padding: 6px 13px; font-size: 13px; text-align: left; line-height: 1.35; }
+.ln-sugg button:hover:not(:disabled) { color: var(--text); border-color: var(--text-3); } .ln-sugg button:disabled { opacity: .5; cursor: default; }
+#lnAskCard .ai-ask { margin-top: 0; max-width: none; } #lnAskCard .ai-qa { border-top: 0; padding-top: 0; }
+#lnAskCard .err, #lnTodayCard .err { margin: 8px 0 0; min-height: 0; }
+#lnAskCard .ai-qa .more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* a small "what is this?" on cards elsewhere, opening the lesson behind the figure */
+.lrn { border: 0; background: transparent; color: var(--text-3); padding: 0; margin-left: 7px; vertical-align: -3px; border-radius: 50%; opacity: .65; }
+.lrn:hover, .lrn[aria-expanded="true"] { color: var(--accent); opacity: 1; }
+.ln-pop { position: fixed; z-index: 45; width: min(440px, calc(100vw - 24px)); max-height: min(70vh, 620px); overflow: auto; background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: var(--pop); padding: 18px; animation: rise .18s ease-out; text-transform: none; letter-spacing: 0; }
+.ln-pop h4 { margin: 0 0 8px; font-size: 18px; font-weight: 650; letter-spacing: -.01em; color: var(--text); }
+.ln-pop .ln-body p, .ln-pop .ln-body li { font-size: 13.5px; } .ln-pop .ln-body .idea p { font-size: 14px; }
+.ln-pop .ln-acts { margin-top: 12px; }
+
+@media (max-width: 700px) { .ln-item { grid-template-columns: 30px minmax(0, 1fr); } .ln-item .to { display: none; } .ln-odds .r, .ln-odds-x { grid-template-columns: 70px minmax(0, 1fr) 44px; gap: 8px; } }
+@media (min-width: 1000px) {
+  #lnTodayCard .mk-read { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  #lnTodayCard .mk-ai { padding-left: 44px; border-left: 1px solid var(--line); }
+  #lnReadCard { grid-column: span 7; } #lnAskCard { grid-column: span 5; }
+  #lnRulesCard { grid-column: span 5; } #lnWaitCard { grid-column: span 7; }
+  #lnYearsCard, #lnBookCard { grid-column: span 6; }
+}
+@media (min-width: 1800px) {
+  #lnReadCard { grid-column: span 6; } #lnAskCard, #lnRulesCard { grid-column: span 3; }
+  #lnWaitCard, #lnYearsCard, #lnBookCard { grid-column: span 4; }
+}
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1><img src="/icon.svg" alt="">Folio</h1>
-    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="journey" title="Your investment from the first day (J)">Journey</button><button data-view="next" title="What to buy next, and how much (X)">Next</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button></nav>
+    <nav class="tabs views" id="views" aria-label="Pages"><button data-view="overview" title="Your portfolio (O)">Overview</button><button data-view="journey" title="Your investment from the first day (J)">Journey</button><button data-view="next" title="What to buy next, and how much (X)">Next</button><button data-view="markets" title="Markets around the world (W)">Markets</button><button data-view="analysis" title="Risk, spread and sectors (A)">Analysis</button><button data-view="plan" title="A goal and a target mix (P)">Plan</button><button data-view="lab" title="What if you had bought something else (L)">Lab</button><button data-view="learn" title="Learn as you go, from your own holdings (E)">Learn</button></nav>
     <button class="search" id="searchBox" title="Search for any stock, or jump to anything"><span>Search or jump to…</span><kbd id="palKey">Ctrl K</kbd></button>
     <span class="grow"></span>
     <span class="pill" id="market"><i class="dot"></i><span>Loading</span></span>
@@ -1248,6 +1418,10 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     <section class="card" id="nextCard" title="See how this was worked out, and other ways to place it (X)" hidden>
       <div class="ch"><h2>Next buy</h2><a href="#" id="nextMore">See why</a></div>
       <div class="num" id="nextBody"></div>
+    </section>
+    <section class="card" id="learnCard" title="Lessons written from your own holdings (E)" hidden>
+      <div class="ch"><h2>Worth understanding today</h2><a href="#" id="learnMore">Learn</a></div>
+      <div id="learnBody"></div>
     </section>
     <section class="card">
       <h2>Allocation</h2>
@@ -1355,6 +1529,50 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
       <p class="note" id="mixNote"></p>
     </section>
   </div>
+  <div class="page" id="learn">
+    <section class="card" id="lnTodayCard">
+      <div class="ch"><h2>Today, from your own portfolio</h2><span class="tag num" id="lnTag"></span></div>
+      <div class="mk-read"><div id="lnToday"><div class="flat" style="font-size:13px">Gathering your figures…</div></div><div class="mk-ai" id="lnAi"></div></div>
+    </section>
+    <section class="card" id="lnPathCard">
+      <div class="ch"><h2>Your path</h2><span class="tag num" id="lnProg"></span></div>
+      <div class="ln-bar" id="lnBar"><i style="width:0"></i></div>
+      <div class="ln-path" id="lnPath"></div>
+      <p class="note">Each lesson is written from your own entries and today’s prices. A filled mark is one you have opened; a dashed one is something your portfolio has not met yet, and you can read it anyway.</p>
+    </section>
+    <section class="card" id="lnReadCard">
+      <div id="lnReader"></div>
+    </section>
+    <section class="card" id="lnAskCard">
+      <div class="ch"><h2>Ask anything</h2><span class="tag num" id="lnAskTag"></span></div>
+      <form class="ai-ask" id="lnAsk"><input id="lnQ" maxlength="500" placeholder="Ask Claude, e.g. “why did my portfolio fall more than the index?”" autocomplete="off" aria-label="A question for Claude"><button class="mini" id="lnSend" type="submit">Ask</button></form>
+      <div class="ln-sugg" id="lnSugg"></div>
+      <div class="err" id="lnAskErr" role="alert"></div>
+      <div class="ai-qa" id="lnQa"></div>
+    </section>
+    <section class="card" id="lnRulesCard">
+      <div class="ch"><h2>Your rules, and how they hold</h2></div>
+      <ul class="ln-rules" id="lnRules"></ul>
+      <form class="inl" id="lnRuleForm"><input id="lnRule" maxlength="160" placeholder="Add a rule in your own words" autocomplete="off" aria-label="A rule of your own"><button class="mini">Add</button></form>
+      <p class="note">Folio checks the first ones against your entries. The ones you write yourself are yours to keep.</p>
+    </section>
+    <section class="card" id="lnWaitCard">
+      <div class="ch"><h2>What waiting has done</h2><span class="tag num" id="lnWaitTag"></span></div>
+      <div class="ln-odds num tipbox" id="lnOdds"></div>
+      <p class="mk-say num" id="lnOddsSay"></p>
+      <p class="note">Every stretch of each length in the S&amp;P 500, day by day. Green is the share of them that ended higher than they began. Prices only: dividends would lift every figure. It describes the whole market; a single company can fall and not come back.</p>
+    </section>
+    <section class="card" id="lnYearsCard">
+      <div class="ch"><h2>Every year, one square</h2><span class="tag num" id="lnYearsTag"></span></div>
+      <div class="ln-yrs tipbox" id="lnYears"></div>
+      <p class="mk-say num" id="lnYearsSay"></p>
+    </section>
+    <section class="card" id="lnBookCard">
+      <div class="ch"><h2>Your notebook</h2><span class="tag num" id="lnBookTag"></span></div>
+      <div class="ln-book" id="lnBook"></div>
+    </section>
+  </div>
+
   <div class="page" id="markets">
     <section class="card" id="mkReadCard">
       <div class="ch"><h2>The markets, read</h2><span class="tag num" id="mkTag"></span></div>
@@ -1633,7 +1851,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     <h3>Keyboard shortcuts</h3>
     <dl class="keys">
       <dt><kbd>/</kbd> or <kbd>Ctrl K</kbd></dt><dd>Search for any stock, jump to anything, or type an entry such as “buy 1 tsla at 403.46 on jun 16”, or “next 200” to see where $200 could go. Paste a screenshot of your broker’s orders anywhere on the page to record them</dd>
-      <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>X</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd></dt><dd>Overview, Journey, Next, Markets, Analysis, Plan, Lab</dd>
+      <dt><kbd>O</kbd> <kbd>J</kbd> <kbd>X</kbd> <kbd>W</kbd> <kbd>A</kbd> <kbd>P</kbd> <kbd>L</kbd> <kbd>E</kbd></dt><dd>Overview, Journey, Next, Markets, Analysis, Plan, Lab, Learn</dd>
       <dt><kbd>F</kbd></dt><dd>Wall display: the portfolio full screen, for a screen across the room</dd>
       <dt><kbd>N</kbd></dt><dd>What Folio noticed for you</dd>
       <dt><kbd>T</kbd></dt><dd>Record a trade</dd>
@@ -1652,6 +1870,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
   </form>
 </dialog>
 
+<div class="ln-pop" id="lnPop" role="dialog" aria-label="What is this?" hidden></div>
 <div class="inbox" id="inbox" role="dialog" aria-label="Noticed for you" hidden>
   <div class="ch"><h2>Noticed for you</h2><div class="acts2"><button class="mini" id="inClear" type="button">Clear</button><button class="mini" id="inSet" type="button" aria-pressed="false">Settings</button></div></div>
   <ul class="acts num" id="inList"></ul>
@@ -1662,6 +1881,7 @@ body[data-mood="down"] #wall::before { --mood: color-mix(in srgb, var(--down) 14
     <label><input type="checkbox" data-n="summary">A line on how each trading day closed</label>
     <label><input type="checkbox" data-n="milestones">Your portfolio passes a round amount or closes at its highest so far</label>
     <label><input type="checkbox" data-n="rhythm">Your usual wait between buys has passed</label>
+    <label><input type="checkbox" data-n="lessons">Your entries bring a new lesson within reach</label>
     <label><input type="checkbox" data-n="desktop">Also show these as desktop notifications</label>
   </form>
 </div>
@@ -2048,7 +2268,7 @@ function render() {
     const d = new Date(x.date + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     return `<li><div class="w">${what}<span class="sub">${d}${x.note ? ' · ' + esc(x.note) : ''}</span></div><span class="pv">${usd(amt)}</span><button class="x" data-edit="${esc(x.id)}" aria-label="Edit entry" title="Edit entry">${ic('pencil', 14)}</button><button class="x del" data-del="${esc(x.id)}" aria-label="Remove entry" title="Remove entry">${ic('x', 14)}</button></li>`;
   }).join('') || '<li class="flat">Nothing recorded yet.</li>'; }
-  renderSince(); if (view === 'overview') renderNextCard();
+  renderSince(); if (view === 'overview') { renderNextCard(); renderLearnCard(); }
   fitTable(); railMore();
 }
 
@@ -2481,7 +2701,8 @@ function reloadChart() { hovering = false; if (H) $('chart').classList.add('busy
 let beat = 0;
 async function refresh() {
   try { const n = beat++;
-    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); if (view === 'journey') loadJourney(); if (view === 'next' || view === 'overview') loadNext(); }
+    if (n % 12 === 0) { loadMarket(); loadInsights(); loadDetail(); if (view === 'analysis' || view === 'plan' || view === 'lab') loadAnalysis(); if (view === 'lab') labLoad(); if (view === 'journey') loadJourney(); if (view === 'next' || view === 'overview') loadNext(); if (view === 'learn') loadLearn(); }
+    if (n % 60 === 0 && view === 'overview') loadLearn();
     if (n % 6 === 0 && view === 'markets') loadWorld();
     if (n % 120 === 0) loadCalendar();
     if (live && n % 3) return;  // the stream carries prices; this just resyncs
@@ -2618,7 +2839,7 @@ $('cancel').onclick = () => $('dlg').close();
 $('seg').onclick = e => e.target.dataset.t && !e.target.disabled && setType(e.target.dataset.t);
 $('fSym').onchange = symChanged;
 ['fQty', 'fPrice', 'fFee', 'fAmt'].forEach(id => $(id).oninput = updateSum);
-const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; jLoadAt = 0; loadNext(true); if (view === 'journey') loadJourney(true); if (view === 'markets') loadWorld(); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); };
+const afterLedger = () => { reloadChart(); loadInsights(); loadCalendar(); anAt = 0; wAt = 0; labKey = null; jLoadAt = 0; loadNext(true); if (view === 'journey') loadJourney(true); if (view === 'markets') loadWorld(); else if (view === 'learn') loadLearn(true); else if (view !== 'overview') loadAnalysis(); if (view === 'lab') labLoad(); lnAt = 0; };
 
 $('form').onsubmit = async e => {
   e.preventDefault();
@@ -2692,6 +2913,7 @@ document.addEventListener('keydown', e => {
   if (wallOn && !'hcd'.includes(k)) { if (k === 'escape' || k === 'f') { e.preventDefault(); wall(false); } return; }
   if (k === 'escape' && !$('inbox').hidden) return toggleInbox(false);
   if (k === 'escape' && !$('look').hidden) return toggleLook(false);
+  if (k === 'escape' && !$('lnPop').hidden) return lnPopClose();
   if (k === '/') { e.preventDefault(); openPal(); }
   else if (k === '?') $('help').showModal();
   else if (k === 'o') go('overview');
@@ -2701,6 +2923,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'p') go('plan');
   else if (k === 'w') go('markets');
   else if (k === 'l') go('lab');
+  else if (k === 'e') go('learn');
   else if (k === 'n') toggleInbox();
   else if (k === 'f') wall(true);
   else if (view === 'journey' && (k === 'arrowleft' || k === 'arrowright') && JN?.days.length) { e.preventDefault(); jSet(jIdx() + (k === 'arrowright' ? 1 : -1)); }
@@ -2733,10 +2956,11 @@ function setView(v) {
   if (v === view) return;
   view = v; document.documentElement.dataset.view = v; store.set('view', v);
   syncViews(); window.scrollTo(0, 0);
-  if (v === 'overview') { fitTable(true); drawChart(); renderPerf(); loadNext(); railMore(); }
+  if (v === 'overview') { fitTable(true); drawChart(); renderPerf(); loadNext(); renderLearnCard(); railMore(); }
   else if (v === 'markets') loadWorld();
   else if (v === 'journey') loadJourney();
   else if (v === 'next') { nxDrawAt = 0; loadNext(); }
+  else if (v === 'learn') loadLearn();
   else { loadAnalysis(); if (v === 'lab') labLoad(); }
   if (v !== 'journey' && jTimer) jPlay(false);
   connect();
@@ -2785,6 +3009,7 @@ function renderPages(light) {
   else if (view === 'plan') renderPlan(light);
   else if (view === 'markets') renderMarkets(light);
   else if (view === 'lab') renderLab(light);
+  else if (view === 'learn') renderLearn(light);
 }
 
 // ---- analysis ----
@@ -3199,6 +3424,10 @@ function palLocal(q) {
     ['Markets', 'W', () => setView('markets'), 'wave', 'world indices europe asia rates commodities currencies crypto movers gainers losers trending open closed page'],
     ['Plan', 'P', () => setView('plan'), 'flag', 'goal projection target mix rebalance future page'],
     ['Lab', 'L', () => setView('lab'), 'trend', 'what if bought something else backtest test a mix against the past my purchases history page'],
+    ['Learn', 'E', () => setView('learn'), 'book', 'lessons teach explain glossary what is meaning rules patience history waiting notebook page'],
+    ['Ask Claude a question', '', () => { setView('learn'); setTimeout(() => { $('lnAskCard').scrollIntoView({ block: 'center' }); $('lnQ').focus(); }, 80); }, 'chat', 'claude ai why how explain question answer learn'],
+    ['Ask Claude for today’s lesson', '', () => { setView('learn'); setTimeout(() => lnAsk('lesson'), 400); }, 'spark', 'claude ai teach lesson learn daily'],
+    ...(LN ? LN.lessons.filter(l => LN_L[l.id]).map(l => [`Lesson: ${l.title}`, '', () => { lnOpen(l.id); setView('learn'); }, 'book', 'learn what is explain ' + l.id]) : []),
     ['What Folio noticed for you', 'N', () => toggleInbox(true), 'bell', 'inbox notifications events noticed'],
     ['Wall display', 'F', () => wall(true), 'screen', 'full screen fullscreen kiosk tv ambient monitor big'],
     ['Save a picture of your journey', '', async () => { if (!JN) await loadJourney(true); openSnap(); }, 'image', 'share image png snapshot card screenshot'],
@@ -3224,10 +3453,12 @@ function palLocal(q) {
   if (nb) return [{ hd: 'Next buy' }, { name: `See where ${dollars(nb, nb % 1 ? 2 : 0)} could go`, key: 'Enter', fn: () => { nxWant = nb; nxDrawAt = 0; if (view === 'next') renderNext(); else setView('next'); }, icon: 'target', words: '' }];
   const en = parseEntry(q);
   if (en) return [{ hd: 'Record' }, { name: entryText(en), key: 'Enter', fn: () => quickEntry(en), icon: 'plus', words: '' }];
-  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 19)];
+  if (!q) return [{ hd: 'Go to' }, ...syms.filter(s => s.kind === 'You hold it' || s.kind === 'Watchlist'), { hd: 'Do' }, ...acts.slice(0, 20)];
   const hit = s => s.toLowerCase().includes(q);
+  const raw = $('palQ').value.trim(), askQ = raw.length >= 12 && /^(ask\s+\S|why|what|how|is|are|should|does|do|can|when|which|explain)\b/i.test(raw) ? raw.replace(/^ask\s+/i, '') : null;
+  const asks = askQ ? [{ hd: 'Ask' }, { name: `Ask Claude: ${askQ}`, key: '', fn: () => { setView('learn'); let n = 0; const run = () => LN ? lnAsk('ask', { question: askQ }) : ++n < 40 && setTimeout(run, 300); run(); }, icon: 'chat', words: '' }] : [];
   const a = acts.filter(x => hit(x.name) || hit(x.words)), s = syms.filter(x => hit(x.sym) || hit(x.name) || hit(x.full));
-  return [...(s.length ? [{ hd: 'On this page' }, ...s] : []), ...(a.length ? [{ hd: 'Do' }, ...a] : [])];
+  return [...asks, ...(s.length ? [{ hd: 'On this page' }, ...s] : []), ...(a.length ? [{ hd: 'Do' }, ...a] : [])];
 }
 function palDraw() {
   const rows = palItems.filter(x => !x.hd);
@@ -3693,13 +3924,13 @@ $('mixTest').onclick = () => { if (!S) return; labInit(); const t = targetMix();
 
 // ================= inbox: what Folio noticed =================
 let evTop = null, inSeen = 0;
-const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell', milestone: 'star', rhythm: 'target' };
+const EVI = { move: 'pulse', high: 'trend', low: 'fall', earnings: 'cal', summary: 'flag', alert: 'bell', milestone: 'star', rhythm: 'target', learn: 'book' };
 function renderInbox() {
   const box = S.inbox || { events: [], seen: 0, settings: {} }, n = box.events.filter(e => e.t > box.seen).length;
   $('bellBtn').classList.toggle('has', n > 0); $('bellN').textContent = n > 9 ? '9+' : n || '';
   $('bellBtn').setAttribute('aria-label', n ? `Noticed for you: ${n} new` : 'Noticed for you');
   if ($('inbox').hidden) return;
-  put($('inList'), box.events.map(e => `<li class="${e.t > inSeen ? 'new' : ''}"${e.symbol ? ` data-sym="${esc(e.symbol)}" title="Show ${esc(e.symbol)} on the chart"` : e.go === 'next' ? ' data-go="next" title="Open Next"' : ''}><span class="ico" style="--tone:var(--${e.tone === 'up' || e.tone === 'down' ? e.tone : 'accent'})">${ic(EVI[e.kind] || 'bell', 14)}</span><div class="w"><b>${esc(e.title)}</b><span class="sub">${e.body ? esc(e.body) + ' · ' : ''}${ago(e.t)}</span></div></li>`).join('')
+  put($('inList'), box.events.map(e => `<li class="${e.t > inSeen ? 'new' : ''}"${e.symbol ? ` data-sym="${esc(e.symbol)}" title="Show ${esc(e.symbol)} on the chart"` : e.go ? ` data-go="${esc(e.go)}" title="Open ${e.go.startsWith('learn') ? 'Learn' : 'Next'}"` : ''}><span class="ico" style="--tone:var(--${e.tone === 'up' || e.tone === 'down' ? e.tone : 'accent'})">${ic(EVI[e.kind] || 'bell', 14)}</span><div class="w"><b>${esc(e.title)}</b><span class="sub">${e.body ? esc(e.body) + ' · ' : ''}${ago(e.t)}</span></div></li>`).join('')
     || '<li class="flat">Nothing yet. Folio keeps an eye on your holdings while markets trade and leaves a line here when something happens.</li>');
   if (!$('inForm').contains(document.activeElement)) for (const el of $('inForm').querySelectorAll('[data-n]')) el.type === 'checkbox' ? el.checked = !!box.settings[el.dataset.n] : el.value = box.settings[el.dataset.n] ?? '';
 }
@@ -3713,7 +3944,7 @@ async function toggleInbox(on = $('inbox').hidden) {
 $('bellBtn').onclick = e => { e.stopPropagation(); toggleInbox(); };
 document.addEventListener('pointerdown', e => { if (!$('inbox').hidden && !e.target.closest('#inbox, #bellBtn')) toggleInbox(false); });
 addEventListener('resize', () => { if (!$('inbox').hidden) placeInbox(); });
-$('inList').onclick = e => { const li = e.target.closest('[data-sym], [data-go]'); if (li) { toggleInbox(false); li.dataset.go ? go(li.dataset.go) : show(li.dataset.sym); } };
+$('inList').onclick = e => { const li = e.target.closest('[data-sym], [data-go]'); if (li) { toggleInbox(false); if (li.dataset.go) { const [v, l] = li.dataset.go.split(':'); if (l) lnOpen(l); go(v); } else show(li.dataset.sym); } };
 $('inSet').onclick = () => { $('inForm').hidden = !$('inForm').hidden; $('inSet').setAttribute('aria-pressed', !$('inForm').hidden); };
 $('inClear').onclick = async () => { try { const s = await post('/api/inbox', { clear: true, seen: true }); S.inbox = s.inbox; renderInbox(); } catch (err) { toast(err.message, true); } };
 $('inForm').onsubmit = e => e.preventDefault();
@@ -4951,6 +5182,514 @@ async function quickEntry(e) {
   setType(e.type);
   (isStock(e.type) ? (!$('fQty').value ? $('fQty') : !$('fPrice').value ? $('fPrice') : $('save')) : !$('fAmt').value ? $('fAmt') : $('save')).focus();
 }
+
+// ================= learn: what your own holdings can teach you =================
+// LN: what /api/learn sends. facts: figures worked out from your entries. long: the S&P 500 day by day since 1927.
+// seen: lessons you opened. notes: what Claude wrote for you, newest first.
+Object.assign(IC, {
+  check: '<path d="m5 12.500 4.500 4.500L19 7.500"/>',
+  book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  chat: '<path d="M4 5h16v11H10l-5 4v-4H4V5Z"/>',
+});
+let LN = null, lnAt = 0, lnBusy = false, lnPoll = null, lnSel = store.get('lesson'), lnErr = '', lnAsked = '', lnAbout = null;
+const lf = () => LN?.facts;
+const lm = (n, d) => `<b class="pv">${usd(n, d ?? (Math.abs(n) >= 1000 ? 0 : 2))}</b>`;  // an amount of yours
+const lsg = n => `${sign(n)}${usd(Math.abs(n), Math.abs(n) >= 1000 ? 0 : 2)}`;
+const lpx = n => usd(n, 2);  // a market price
+const lbig = n => n >= 1e12 ? usd(n / 1e12, 2) + ' trillion' : n >= 1e9 ? usd(n / 1e9, 1) + ' billion' : usd(n / 1e6, 0) + ' million';
+const lcount = n => n >= 1e9 ? (n / 1e9).toFixed(2) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en-US');
+const lqty = q => (+q.toFixed(4)).toLocaleString('en-US', { maximumFractionDigits: 4 });
+const lday = d => isoDay(d, { month: 'long', day: 'numeric' }) + (d.slice(0, 4) !== String(new Date().getFullYear()) ? ', ' + d.slice(0, 4) : '');
+const ltime = t => day(t, { month: 'long', day: 'numeric' });
+const p1 = (n, d = 1) => Math.abs(n).toFixed(d) + '%';
+const cap1 = s => s.replace(/^[a-z]/, c => c.toUpperCase());
+const low1 = s => s[0].toLowerCase() + s.slice(1);
+const lnm = p => p.tracks ? `the S&amp;P 500 fund (${esc(label(p.symbol).split('.')[0])})` : `<b>${esc(label(p.symbol))}</b>`;
+const lshort = s => lf()?.pos.find(x => x.symbol === s)?.tracks ? 'the S&P 500 fund' : label(s);
+const lsym = s => { const p = lf().pos.find(x => x.symbol === s); return p ? lnm(p) : `<b>${esc(label(s))}</b>`; };
+const leq = f => f.pos.filter(p => !p.fund), lfn = f => f.pos.filter(p => p.fund);
+const curWord = c => ({ EUR: 'euros', GBP: 'pounds', CHF: 'Swiss francs' }[c] || c), curOne = c => ({ EUR: 'euro', GBP: 'pound', CHF: 'franc' }[c] || c);
+const lspan = d => d < 30 ? `about ${many(Math.max(1, Math.round(d / 5)), 'week')}` : d < 380 ? `about ${many(Math.round(d / 21), 'month')}` : `about ${(d / 252).toFixed(1)} years`;
+const lmid = a => [...a].sort((x, y) => x - y)[a.length >> 1];
+const lnMonth = '<p>Folio needs about a month of prices for what you hold before it can measure this.</p>';
+const lnBars = (rows, max) => { const m = max || Math.max(...rows.map(r => r.v), 1e-9);
+  return `<div class="ln-bars num">${rows.map(r => `<div class="r${r.me ? ' me' : ''}"><span class="k">${r.sw ? `<i class="sw" style="background:${r.sw}"></i>` : ''}${r.k}</span><div class="t"><i style="width:${clamp(r.v / m * 100, 0, 100).toFixed(1)}%${r.col ? `;background:${r.col}` : ''}"></i>${r.mark != null ? `<em style="left:${clamp(r.mark / m * 100, 0, 100).toFixed(1)}%"></em>` : ''}</div><span class="v${r.pv ? ' pv' : ''}">${r.t}${r.sub ? `<small>${r.sub}</small>` : ''}</span></div>`).join('')}</div>`; };
+const lnHold = (f, key, text, extra = []) => lnBars([...f.pos.filter(p => p[key] != null).map(p => ({ k: esc(label(p.symbol)), v: Math.max(p[key], 0), t: text(p[key]), sw: colors[p.symbol], col: colors[p.symbol] })), ...extra]);
+
+const LN_CH = [['What you own', ['share', 'fraction', 'cap', 'fund', 'overlap']], ['What it is worth', ['paper', 'price', 'pe', 'dividend', 'earnings', 'analysts']],
+  ['How it moves', ['swing', 'beta', 'together', 'concentration', 'fall', 'currency']], ['How you buy', ['averaging', 'costs', 'benchmark', 'rebalance', 'selling']],
+  ['Time', ['patience', 'corrections', 'bestdays', 'compound', 'single']], ['Reading the market', ['vix', 'rates', 'sectors']]];
+// when your entries first showed each thing, and what is said while they have not
+const LN_MET = {
+  share: ['the day of your first buy', 'record a buy and this one fills in'], fraction: ['your first buy of part of a share', 'so far you have only bought whole shares'],
+  fund: ['the day you bought your first fund', 'you hold no fund yet'], overlap: ['when a fund joined companies you already held', 'it starts once you hold a fund beside single companies'],
+  dividend: ['your first dividend', 'no dividend has reached you yet'], earnings: ['the first results published while you held', 'no results have come out while you held'],
+  month: ['a month in, with enough history to measure', 'Folio needs about a month of your history'], second: ['your second holding', 'you hold one thing so far'],
+  fall: ['the first time your portfolio stood 10% below its high', 'your portfolio has not been 10% below its high'], currency: ['your first buy priced in another currency', 'everything you bought was priced in dollars'],
+  repeat: ['the first time you bought something again', 'you have not bought the same thing twice yet'], target: ['since you set a target mix', 'you have not set a target mix'],
+  sale: ['your first sale', 'you have not sold anything'],
+};
+const LN_PAGE = { overview: 'the Overview', journey: 'Journey', next: 'Next', markets: 'Markets', analysis: 'Analysis', plan: 'Plan', lab: 'the Lab', learn: 'this page' };
+
+// each lesson: a line for the path (tease), the idea, the same idea in your own figures (you), a caution (mind), where Folio shows it (go), and a question to take further (ask)
+const LN_L = {
+  share: {
+    tease: f => { const p = leq(f).find(p => p.shares); return p ? `${lqty(p.qty)} of ${label(p.symbol)}’s ${lcount(p.shares)} shares` : ''; }, pv: 1,
+    idea: ['A company is cut into equal parts called shares, and whoever holds a share owns that part of the company: its factories, its cash, its future profits.', 'Buying a share lends the company nothing and pays you nothing by itself. You own a slice, and the slice is worth whatever the next buyer will pay for it.'],
+    you: f => { const e = leq(f).filter(p => p.shares && p.cap); if (!e.length) return ''; const p = e[0];
+      return `<p>${cap1(lnm(p))} is cut into ${lcount(p.shares)} shares. You hold <b class="pv">${lqty(p.qty)}</b>, so you own one part in <b class="pv">${lcount(p.shares / p.qty)}</b> of it. The whole company is priced at ${lbig(p.cap)}; your part of that is worth ${lm(p.value)}.</p>`
+        + (e.length > 1 ? `<ul>${e.slice(1).map(p => `<li>${lnm(p)}: <span class="pv">${lqty(p.qty)}</span> of ${lcount(p.shares)} shares, worth ${lm(p.value)}</li>`).join('')}</ul>` : ''); },
+    mind: 'The number of shares is arbitrary. A company can split every share in two tomorrow, and nothing about what you own changes.',
+    go: ['overview', 'See your holdings'], ask: 'What do I actually own when I hold a share, and what rights come with it?' },
+  fraction: {
+    tease: () => { const t = [...S.transactions].reverse().find(t => t.type === 'buy' && Math.abs(t.qty - Math.round(t.qty)) > 1e-6); return t ? `${lqty(t.qty)} of ${label(t.symbol)} for ${amt(t.qty * t.price)}` : ''; }, pv: 1,
+    idea: ['Brokers let you buy a part of a share, so you can put in a round amount of money instead of a round number of shares.', 'A part behaves exactly like a whole one, in proportion: it moves by the same percentage and earns the same share of any dividend. What you can’t always do is move it to another broker; parts of a share usually have to be sold first.'],
+    you: f => { const t = [...S.transactions].reverse().find(t => t.type === 'buy' && Math.abs(t.qty - Math.round(t.qty)) > 1e-6); if (!t) return '<p>Every buy so far has been a whole number of shares.</p>';
+      const p = f.pos.find(p => p.symbol === t.symbol);
+      return `<p>On ${lday(t.date)} you put ${lm(t.qty * t.price + (t.fee || 0))} into ${lsym(t.symbol)} and received <b class="pv">${t.qty < 1 ? t.qty + '</b> of a share' : t.qty + '</b> shares'} at ${lpx(t.price)} each.${p ? ` Today you hold <b class="pv">${lqty(p.qty)}</b> shares of it, and the part moves exactly as the whole ones do.` : ''}</p>`; },
+    go: ['journey', 'See every purchase'], ask: 'Are fractional shares really the same as whole shares, and is there any catch?' },
+  cap: {
+    tease: f => { const p = leq(f).filter(p => p.cap).sort((a, b) => b.cap - a.cap)[0]; return p ? `${label(p.symbol)} is priced at ${lbig(p.cap)}` : ''; },
+    idea: ['A share’s price says nothing about how big a company is. Size is the price multiplied by the number of shares: the market value, or market capitalisation. It is what it would cost to buy every share at today’s price.', 'So a $140 share of a company with 24 billion shares is a far bigger company than a $360 share of one with 4 billion.'],
+    you: f => { const e = leq(f).filter(p => p.cap).sort((a, b) => b.cap - a.cap); if (!e.length) return ''; const top = e[0], px = [...e].sort((a, b) => b.price - a.price)[0];
+      return (px !== top ? `<p>By the price of one share, ${lnm(px)} (${lpx(px.price)}) looks like your biggest company. By market value it is ${lnm(top)}: ${lbig(top.cap)}, against ${lbig(px.cap)} for ${lnm(px)}.</p>` : `<p>${cap1(lnm(top))} is priced at ${lbig(top.cap)} in all: ${lcount(top.shares)} shares at ${lpx(top.price)} each.</p>`)
+        + lnBars(e.map(p => ({ k: esc(label(p.symbol)), v: p.cap, t: lbig(p.cap), sub: lpx(p.price) + ' a share', sw: colors[p.symbol], col: colors[p.symbol] }))); },
+    mind: 'Market value is an opinion, renewed with every trade. It can halve without a single factory closing.',
+    go: ['overview', 'Open a holding’s details'], ask: 'Why is a company’s market value more useful than its share price?' },
+  fund: {
+    tease: f => { const p = lfn(f)[0]; return p ? (p.tracks ? 'About 500 companies in one share' : `${label(p.symbol)}, ${p1(p.share)} of the portfolio`) : 'Many companies in one share'; },
+    idea: ['A fund pools money from many investors and buys a whole basket of shares with it. An index fund doesn’t choose: it copies a published list, an index, holding each company in proportion to its size.', 'The S&amp;P 500 is the list of about 500 of the largest US companies, so one share of a fund that tracks it is a thin slice of all of them at once. When a company grows it takes up more of the fund; when it shrinks or drops off the list it fades out, without you doing anything.'],
+    you: f => { const p = lfn(f)[0]; if (!p) return '<p>You don’t hold a fund yet. The Next page weighs an S&amp;P 500 fund beside your holdings, so you can see what a buy of one would change.</p>';
+      const top = Object.entries(p.top || {}), sum = top.reduce((a, [, v]) => a + v, 0);
+      return `<p>${cap1(lnm(p))} is worth ${lm(p.value)}, <b>${p1(p.share)}</b> of your portfolio.${top.length ? ` Its ${top.length} largest holdings make up ${p1(sum, 0)} of it${p.tracks ? '; the other 490 or so share the rest' : ''}.` : ''}${p.acc ? ' It is an accumulating fund: the dividends its companies pay stay inside and are reinvested, so they reach you as a higher price instead of as cash.' : ''}</p>`
+        + (top.length ? lnBars(top.map(([k, v]) => { const own = f.pos.some(x => x.symbol === k); return { k: esc(k), v, t: p1(v, 2), me: own, sw: own ? colors[k] : null, col: own ? colors[k] : 'var(--neutral)' }; })) : ''); },
+    mind: 'A fund of 500 companies still falls when the whole market falls. It spreads the risk of any one company, not the risk of the market.',
+    go: ['next', 'See what a buy of it changes'], ask: 'What exactly happens inside an index fund when a company grows, shrinks or leaves the index?' },
+  overlap: {
+    tease: f => { const o = f.overlap[0]; return o ? `${amt(o.usd)} of the fund is ${label(o.symbol)} again` : 'A fund can hold what you hold'; }, pv: 1,
+    idea: ['A fund holds companies you may also hold directly. Then part of the money you put in the fund lands on a company you already own, and you depend on it a little more than your list of holdings suggests.', 'It isn’t a mistake, only something to know when you judge how spread out you are.'],
+    you: f => { if (!f.overlap.length) return lfn(f).length ? '<p>None of your fund’s ten largest holdings is something you also hold directly.</p>' : '<p>This starts to matter once you hold a fund beside single companies.</p>';
+      const o = f.overlap[0], p = f.pos.find(x => x.symbol === o.symbol);
+      const lines = f.overlap.map(o => { const via = f.pos.find(x => x.symbol === o.via); return `${lsym(o.symbol)} is <b>${p1(o.pct, 2)}</b> of ${lnm(via)}, so ${lm(o.usd)} of your ${lm(via.value)} in the fund is ${esc(label(o.symbol))} again`; });
+      const bet = f.bets.map(b => { const add = f.overlap.filter(o => b.members.includes(o.symbol)).reduce((a, o) => a + o.usd, 0); return add > 0 ? ` Your ${esc(b.name)} bet gains ${lm(add)} the same way.` : ''; }).join('');
+      return `<p>${lines.join('. ')}.</p><p>Counting that, ${lnm(p)} is ${p1((p.value + o.usd) / f.total * 100)} of the portfolio instead of ${p1(p.share)}.${bet} The amounts are small now and grow with every buy of the fund.</p>`; },
+    go: ['next', 'See the fund beside your holdings'], ask: 'How much of my single stocks do I also own through my fund, and does it matter?' },
+  paper: {
+    tease: f => `${lsg(f.pl)} on paper, ${f.sales ? lsg(f.realized) : usd(0, 0)} settled`, pv: 1,
+    idea: ['The value Folio shows is what you would get if you sold everything at this moment’s prices. Until you sell, a gain or a loss is only on paper (the formal word is unrealised): it changes with every trade in the market and can shrink, grow or reverse.', 'Selling settles it. The result becomes realised, and from then on that money no longer moves with the share.'],
+    you: f => `<p>You paid ${lm(f.cost)} for what you hold, and at this moment’s prices it is worth ${lm(f.invested)}: <b class="pv ${cls(f.pl)}">${lsg(f.pl)}</b> on paper, ${pct(f.plPct, 1)}. ${f.sales ? `Your ${many(f.sales, 'sale')} so far settled <b class="pv ${cls(f.realized)}">${lsg(f.realized)}</b>.` : `You have not sold anything, so nothing is settled: the realised result is ${lm(0)}.`}</p>`
+      + lnBars(f.pos.map(p => ({ k: esc(label(p.symbol)), v: Math.abs(p.pl), t: lsg(p.pl), sub: pct(p.plPct, 1), pv: 1, sw: colors[p.symbol], col: `var(--${p.pl < 0 ? 'down' : 'up'})` }))),
+    mind: 'A loss on paper is still a real fall in what your holdings are worth today. What it isn’t is final.',
+    go: ['overview', 'See it in your holdings'], ask: 'What is the difference between a paper loss and a real loss, in my case?' },
+  price: {
+    tease: () => { const p = [...S.positions].sort((a, b) => b.value - a.value).find(p => p.dayHigh && p.dayLow); return p ? `${label(p.symbol)} ${lpx(p.dayLow)} to ${lpx(p.dayHigh)} in a day` : ''; },
+    idea: ['A price is the last amount at which a buyer and a seller agreed. Every trade is one person deciding the share is worth more than the cash and another deciding the opposite, so the price moves whenever that balance shifts: on news, on results, on interest rates, or on nothing you can see.', 'US shares trade from 9:30 to 16:00 New York time, with thinner trading before and after. A fund listed in Europe trades on European hours, even when everything inside it is American.'],
+    you: f => { const p = [...S.positions].sort((a, b) => b.value - a.value).find(p => p.dayHigh && p.dayLow); if (!p) return ''; const nat = f.pos.find(x => x.native);
+      return `<p>In its latest session ${lsym(p.symbol)} changed hands between ${lpx(p.dayLow)} and ${lpx(p.dayHigh)}: ${p1((p.dayHigh / p.dayLow - 1) * 100)} apart inside one day.${p.wkLow && p.wkHigh ? ` Over the past year it has been as low as ${lpx(p.wkLow)} and as high as ${lpx(p.wkHigh)}.` : ''}</p>`
+        + (nat ? `<p>${cap1(lnm(nat))} is listed in ${curWord(nat.native)} on a European exchange. It trades through the European day, hours before New York opens, so in the morning it moves on what traders expect of the US session and on the exchange rate.</p>` : ''); },
+    mind: 'Most of a day’s movement carries no message. Folio’s Markets page sets each move against an ordinary day for that reason.',
+    go: ['markets', 'See who is trading now'], ask: 'Who is on the other side when I buy, and why does the price move when nothing has happened?' },
+  pe: {
+    tease: f => { const e = leq(f).filter(p => p.pe > 0).sort((a, b) => b.pe - a.pe); return e.length ? e.slice(0, 3).map(p => `${label(p.symbol)} ${p.pe.toFixed(0)}`).join(' · ') : ''; },
+    idea: ['The price-to-earnings ratio, P/E, divides a share’s price by the profit the company earned per share over the past year. It says how many dollars buyers pay for each dollar of yearly profit.', 'A high figure means buyers expect profit to grow a great deal; a low one means they expect little growth, or see risk. The forward P/E does the same sum with the profit analysts expect over the coming year.'],
+    you: f => { const e = leq(f).filter(p => p.pe > 0).sort((a, b) => b.pe - a.pe); if (!e.length) return '<p>None of your holdings has a P/E to show. A fund has none of its own, and neither does a company without profit.</p>';
+      const hi = e[0], lo = e.at(-1), n = x => x.toFixed(x < 100 ? 1 : 0);
+      return `<p>${cap1(lnm(hi))} earned ${lpx(hi.eps)} a share over the past year and a share costs ${lpx(hi.price)}, so buyers pay <b>$${hi.pe.toFixed(0)}</b> for each $1 of yearly profit.${e.length > 1 ? ` For ${lnm(lo)} they pay <b>$${lo.pe.toFixed(0)}</b>.` : ''} Large US companies as a group have mostly sold for somewhere between 15 and 25 times their profit.</p>`
+        + lnBars(e.map(p => ({ k: esc(label(p.symbol)), v: p.pe, t: n(p.pe), sub: p.fpe > 0 ? `${n(p.fpe)} on next year’s expected profit` : '', sw: colors[p.symbol], col: colors[p.symbol] }))); },
+    mind: 'A high P/E isn’t wrong and a low one isn’t a bargain. It tells you how much growth is already in the price: the higher it is, the more has to go right.',
+    go: ['overview', 'Open a holding’s details'], ask: 'What would have to happen for the P/E of my most expensive holding to make sense?' },
+  dividend: {
+    tease: f => f.dividends > 0 ? `${amt(f.dividends)} received so far` : 'A share of the profit, in cash', pv: 1,
+    idea: ['Some companies hand part of their profit to shareholders in cash, a few cents or dollars per share, usually every three months. That is a dividend. Young or fast-growing companies often pay none and put the money back into the business.', 'On the day a dividend is set aside, the share price drops by about the same amount. So a dividend is one way of receiving your return, not money on top of it.'],
+    you: f => { const pay = f.pos.filter(p => p.divRate > 0), non = leq(f).filter(p => !(p.divRate > 0)), acc = f.pos.find(p => p.fund && p.acc);
+      return `<p>${f.dividends > 0 ? `You have received ${lm(f.dividends)} in dividends so far.` : 'No dividend has reached you yet.'} ${pay.map(p => `${cap1(lnm(p))} pays ${lpx(p.divRate)} a share a year, ${p1(p.divYield, 2)} of its price; on your <span class="pv">${lqty(p.qty)}</span> shares that is about ${lm(p.divRate * p.qty)} a year.`).join(' ')}${non.length ? ` ${cap1(words(non.map(lnm)))} pay${non.length === 1 ? 's' : ''} nothing and keep${non.length === 1 ? 's' : ''} the profit in the business.` : ''}${acc ? ` ${cap1(lnm(acc))} collects its companies’ dividends and reinvests them inside the fund.` : ''}</p>`; },
+    go: ['overview', 'See what is coming up'], ask: 'Should it matter to me whether a company pays a dividend?' },
+  earnings: {
+    tease: f => { const p = leq(f).filter(p => p.earnings).sort((a, b) => a.earnings - b.earnings)[0]; return p ? `${label(p.symbol)} reports ${ltime(p.earnings)}` : 'Four times a year'; },
+    idea: ['Four times a year a company publishes its results: what it sold, what it earned, and what it expects next. Analysts publish their guesses beforehand, and the price reacts to the gap between the results and the guesses, not to whether the results were good.', 'A company can report its best quarter ever and fall, because more was expected. These are often the days a share moves most.'],
+    you: f => { const e = leq(f).filter(p => p.lastEps || p.earnings); if (!e.length) return '';
+      return `<ul>${e.map(p => { const l = p.lastEps, gap = l && l.estimate > 0 && l.actual != null ? (l.actual / l.estimate - 1) * 100 : null;
+        return `<li>${lnm(p)}${l && l.actual != null ? `: last reported ${lpx(l.actual)} a share against ${lpx(l.estimate)} expected${gap == null ? '' : Math.abs(gap) < 0.5 ? ', in line' : `, ${p1(gap, 0)} ${gap > 0 ? 'above' : 'below'}`}` : ''}${p.earnings ? `${l ? '. Next' : ': next'} report ${p.earnings * 1000 < Date.now() ? 'today' : 'around ' + ltime(p.earnings)}` : ''}.</li>`; }).join('')}</ul>`; },
+    mind: 'One quarter is a small sample. A share can be punished for a miss that says little about where the company will be in five years.',
+    go: ['overview', 'Open a holding’s earnings'], ask: 'What should I look at when one of my companies reports its results?' },
+  analysts: {
+    tease: f => { const p = leq(f).find(p => p.target); return p ? `${label(p.symbol)} from ${usd(p.target.low, 0)} to ${usd(p.target.high, 0)}` : ''; },
+    idea: ['Banks and research firms employ analysts who study a company and publish the price they think its share will reach within about a year, with a rating such as buy or hold. The average of those targets is quoted a lot.', 'Look at the spread instead. When the lowest and highest targets are far apart, the people paid to know disagree about what the company is worth, and the average hides that.'],
+    you: f => leq(f).filter(p => p.target && p.target.high > p.target.low).map(p => { const t = p.target, lo = Math.min(t.low, p.price), hi = Math.max(t.high, p.price), at = x => ((x - lo) / (hi - lo) * 100).toFixed(1);
+      return `<div class="ln-rng num"><div class="h">${lnm(p)}<span>${t.n ? many(t.n, 'analyst') + ', ' : ''}from ${lpx(t.low)} to ${lpx(t.high)}, average ${lpx(t.mean)}</span></div><div class="t"><i class="span" style="left:${at(t.low)}%;right:${(100 - at(t.high)).toFixed(1)}%"></i><i class="mean" style="left:${at(t.mean)}%" title="Average target"></i><i class="px" style="left:${at(p.price)}%;background:${colors[p.symbol] || 'var(--text)'}" title="Price now"></i></div><div class="s">The price is ${lpx(p.price)}, ${p.price < t.mean ? `${p1((1 - p.price / t.mean) * 100, 0)} under` : `${p1((p.price / t.mean - 1) * 100, 0)} over`} the average target. The highest target is ${(t.high / t.low).toFixed(1)} times the lowest.</div></div>`; }).join(''),
+    mind: 'Targets follow the price more often than they lead it, and analysts as a group lean hopeful. Read them as opinions.',
+    go: ['overview', 'Open a holding’s analysts'], ask: 'How much weight should I give analysts’ price targets for what I hold?' },
+  swing: {
+    tease: f => f.portfolio.vol ? `An ordinary day for you is ${p1(f.portfolio.vol / Math.sqrt(252))}` : 'How bumpy the ride is',
+    idea: ['Volatility is the name for how far a price usually moves. Folio gives it as a yearly swing: in about two years out of three, the price ends the year within that percentage of where a steady path would have put it.', 'Divide it by 16 and you have an ordinary day’s move. It measures how bumpy the ride is, not which way it goes.'],
+    you: f => { const v = f.portfolio.vol, b = f.bench.vol; if (!v) return lnMonth; const od = v / Math.sqrt(252), d = f.day.pct;
+      return `<p>Your portfolio’s yearly swing is <b>${p1(v)}</b>${b ? `, against ${p1(b)} for the S&amp;P 500` : ''}. An ordinary day for it is about <b>${p1(od)}</b> either way, or ${lm(f.invested * od / 100)}.${Math.abs(d) >= 0.05 ? ` Its latest session was ${pct(d, 1)}: <b>${(Math.abs(d) / od).toFixed(1)} ordinary days</b>.` : ''}</p>`
+        + lnHold(f, 'vol', x => p1(x, 0), [{ k: 'All together', v, t: p1(v, 0), me: 1, col: 'var(--text-2)' }, ...(b ? [{ k: 'S&amp;P 500', v: b, t: p1(b, 0), col: 'var(--neutral)' }] : [])]); },
+    mind: 'A swing measured over one year describes that year. Calm stretches end, and the figure only says so afterwards.',
+    go: ['analysis', 'See risk against return'], ask: 'What does my portfolio’s yearly swing mean in dollars, on a bad day and in a bad year?' },
+  beta: {
+    tease: f => f.portfolio.beta != null ? `${f.portfolio.beta.toFixed(1)} times as far as the index` : 'How far you move when the market does',
+    idea: ['Beta says how far something has tended to move when the whole market moves 1%. A beta of 1 moves with the market. A beta of 2 moves twice as far, up and down alike. Below 1, it moves less.', 'It is taken from the past year’s daily moves, so it describes behaviour so far. It is not a law.'],
+    you: f => { const b = f.portfolio.beta, m = f.market?.sp; if (b == null) return lnMonth;
+      return `<p>Your portfolio’s beta is <b>${b.toFixed(2)}</b>: on a day the S&amp;P 500 moves 1%, it has tended to move about ${b.toFixed(1)}% the same way.${m && Math.abs(m.day) >= 0.25 ? ` In the last session the index moved ${pct(m.day, 2)}, which on that habit means about ${pct(m.day * b, 1)} for you.` : ''}</p>`
+        + lnHold(f, 'beta', x => x.toFixed(2) + '×', [{ k: 'S&amp;P 500', v: 1, t: '1.00×', col: 'var(--neutral)' }]); },
+    mind: 'A high beta cuts both ways. It is the reason a portfolio outruns a rising market, and the reason it falls harder in a bad week.',
+    go: ['markets', 'See what the day meant for you'], ask: 'Why does my portfolio move so much more than the index, and what would bring that down?' },
+  together: {
+    tease: f => { const p = f.pairs[0]; return p ? `${cap1(lshort(p.a))} and ${lshort(p.b)}: ${p.c.toFixed(2)}` : 'Why several holdings can act like one'; },
+    idea: ['Holding several things lowers the swings only if they don’t all move together. Correlation measures that, from −1 (always opposite) through 0 (unrelated) to 1 (in step).', 'Three shares that rise and fall on the same days behave like one large holding. Three that move independently smooth each other out. That smoothing is what diversification means.'],
+    you: f => { const ps = f.pairs; if (!ps.length) return f.pos.length < 2 ? '<p>With one holding there is nothing to compare yet.</p>' : lnMonth;
+      const hi = ps[0], lo = ps.at(-1), w = f.pos.filter(p => p.vol), avg = w.reduce((a, p) => a + p.vol * p.value, 0) / (w.reduce((a, p) => a + p.value, 0) || 1), v = f.portfolio.vol;
+      return `<p>Your closest pair is ${lsym(hi.a)} and ${lsym(hi.b)} at <b>${hi.c.toFixed(2)}</b>: they ${pairWord(hi.c)}.${ps.length > 1 ? ` The loosest is ${lsym(lo.a)} and ${lsym(lo.b)} at <b>${lo.c.toFixed(2)}</b>.` : ''}</p>`
+        + (v && avg ? `<p>Held one at a time, your holdings swing ${p1(avg)} a year on average. Held together they swing ${p1(v)}. ${avg - v > 0.5 ? `The ${p1(avg - v)} that went missing is what spreading out has bought you.` : 'Almost nothing is gained, because they move so much alike.'}</p>` : ''); },
+    mind: 'In a real panic, things that usually move apart tend to fall together. Spreading out helps most in ordinary times.',
+    go: ['analysis', 'See how they move together'], ask: 'Which of my holdings actually spread my risk, and which just repeat each other?' },
+  concentration: {
+    tease: f => f.bets[0] ? `${f.bets[0].name}: ${p1(f.bets[0].share)}` : f.pos[0] ? `${label(f.pos[0].symbol)} is ${p1(f.pos[0].share)}` : '',
+    idea: ['Concentration is how much of your money depends on a single company, or on a group that the same news would hit. A concentrated portfolio can do far better than the market and far worse: the result hangs on fewer things going right.', 'There is nothing wrong with a large bet made on purpose. What matters is knowing its size, and what it would cost if it went badly.'],
+    you: f => { const top = f.pos[0]; if (!top) return ''; const risk = f.pos.filter(p => p.risk != null).sort((a, b) => b.risk - a.risk)[0];
+      return `<p>${cap1(lnm(top))} is your largest holding at <b>${p1(top.share)}</b> of the portfolio.${risk ? ` ${cap1(lnm(risk))} causes ${p1(risk.risk, 0)} of its day-to-day swings.` : ''}</p>`
+        + f.bets.map(b => `<p>Your <b>${esc(b.name)}</b> bet (${words(b.members.map(m => esc(label(m))))}) is <b>${p1(b.share)}</b> of the portfolio, and you set it to stay between ${b.lo}% and ${b.hi}%. If the bet halved, the portfolio would lose ${p1(b.share / 2)}, or ${lm(f.total * b.share / 200)}. ${b.share > b.hi + 0.5 ? 'It is above the range; new money sent elsewhere brings it down without selling anything.' : b.share < b.lo - 0.5 ? 'It is below the range.' : 'It is inside the range.'}</p>`).join('')
+        + `<div class="alloc ln-alloc">${f.pos.map(p => `<i style="flex:${p.share.toFixed(2)};background:${colors[p.symbol]}" title="${esc(label(p.symbol))} ${p1(p.share)}"></i>`).join('')}</div><div class="ln-key num">${f.pos.map(p => `<span><i class="sw" style="background:${colors[p.symbol]}"></i>${esc(label(p.symbol))} ${p1(p.share)}</span>`).join('')}</div>`; },
+    go: ['next', 'See your bets'], ask: 'What is the real risk of my largest bet, and how fast does new money change it?' },
+  fall: {
+    tease: f => f.fall ? (f.fall.now < -0.5 ? `${p1(-f.fall.now)} below your high` : 'At your high') : 'Why the way back is longer',
+    idea: ['A drawdown is how far something has fallen from its highest point so far. It is the measure closest to what a fall feels like, because the high is what you remember.', 'The way back is longer than the way down. After a fall of 20% it takes a rise of 25% to stand where you were; after 50% it takes 100%.'],
+    you: f => { const d = f.fall; if (!d) return ''; const back = x => (1 / (1 + x / 100) - 1) * 100, mine = d.now < -0.5;
+      const rows = [10, 20, 30, 50].map(x => ({ k: `After −${x}%`, v: back(-x), t: '+' + p1(back(-x)), col: 'var(--neutral)', x }));
+      if (mine) rows.push({ k: `You, at −${p1(-d.now)}`, v: back(d.now), t: '+' + p1(back(d.now)), me: 1, x: -d.now });
+      return `<p>With deposits taken out, your portfolio is ${mine ? `<b>${p1(-d.now)}</b> below its high` : 'at its high'}.${d.deepest < -0.5 && d.at ? ` The furthest below it has been is <b>${p1(-d.deepest)}</b>, on ${ltime(d.at)}.` : ''}${mine ? ` From here it takes a rise of <b>${p1(back(d.now))}</b> to stand at the high again.` : ''}</p>`
+        + lnBars(rows.sort((a, b) => a.x - b.x), 100); },
+    mind: 'Money you add on the way down is bought lower, so a portfolio you keep feeding gets back to its high sooner than the arithmetic alone says.',
+    go: ['analysis', 'See the falls from the high'], ask: 'How does my portfolio’s fall compare with the index’s, and what does getting back take?' },
+  currency: {
+    tease: f => { const x = f.fx; return x && x.put > 0 && f.deposited > 0 ? `${pct((f.total / f.deposited - 1) * 100, 1)} in dollars, ${pct((x.worth / x.put - 1) * 100, 1)} in euros` : 'The share’s price and the exchange rate'; },
+    idea: ['Anything priced in another currency has two prices moving at once: its own, and the exchange rate. If you live on euros and hold dollar shares, a weaker dollar takes from your result even while the shares stand still, and a stronger one adds to it.', 'A fund listed in euros that holds US companies doesn’t remove this. The dollar is still inside it.'],
+    you: f => { const x = f.fx; if (!x || !(x.put > 0) || !(f.deposited > 0)) return ''; const mv = (x.start / x.now - 1) * 100, us = (f.total / f.deposited - 1) * 100, eu = (x.worth / x.put - 1) * 100, nat = f.pos.find(p => p.native);
+      return `<p>On the day of your first entry a euro cost $${x.start.toFixed(3)}; now it costs $${x.now.toFixed(3)}. The dollar has ${mv >= 0 ? 'gained' : 'lost'} <b>${p1(mv)}</b> against the euro since then, which ${mv >= 0 ? 'helps' : 'hurts'} anyone who lives on euros and holds dollar shares.</p>
+        <p>In dollars you put in <b class="pv">${dollars(f.deposited, 0)}</b> and have <b class="pv">${dollars(f.total, 0)}</b>: ${pct(us, 1)}. Counted in euros at each day’s rate, you put in <b class="pv">${money(x.put, 0, 'EUR')}</b> and have <b class="pv">${money(x.worth, 0, 'EUR')}</b>: <b>${pct(eu, 1)}</b>.</p>`
+        + (nat ? `<p>${cap1(lnm(nat))} is priced in ${curWord(nat.native)}, yet the companies inside it earn and trade in dollars, so it carries the same exchange rate.</p>` : ''); },
+    mind: 'Exchange rates wander for years in either direction. Over a long time they have mattered much less than what the companies themselves did.',
+    go: ['overview', 'Switch dollars and euros with C'], ask: 'How has the dollar’s move against the euro changed my result so far?' },
+  averaging: {
+    tease: f => f.habit.days ? `${many(f.habit.days, 'buying day')}${f.habit.gap ? `, about every ${f.habit.gap} days` : ''}` : 'A fixed amount, on a rhythm',
+    idea: ['Putting in a fixed amount at regular intervals is called cost averaging. The same money buys more shares when the price is low and fewer when it is high, so your average price ends up below the plain average of the prices on those days.', 'Its real strength is that it needs no forecast. You never have to decide whether today is a good day.'],
+    you: f => { const h = f.habit, multi = f.pos.filter(p => p.buys > 1 && p.seenAvg);
+      return `<p>You have bought on <b>${many(h.days, 'day')}</b>${h.typical ? `, lately about ${lm(h.typical)} at a time` : ''}${h.gap ? `, usually ${many(h.gap, 'day')} apart` : ''}.${h.due ? ` By that rhythm the next one falls around ${lday(h.due)}.` : ''}</p>`
+        + (multi.length ? `<ul>${multi.map(p => `<li>${lnm(p)}: bought on ${many(p.buys, 'day')}, between ${lpx(p.paidLo)} and ${lpx(p.paidHi)}; your average is <b>${lpx(p.avg)}</b>. Over those months its price ran from ${lpx(p.seenLo)} to ${lpx(p.seenHi)} and averaged ${lpx(p.seenAvg)}.</li>`).join('')}</ul>` : ''); },
+    mind: 'When prices mostly rise, putting everything in at the start does better. Buying in steps spreads the risk of a bad first day, and it matches how money usually arrives: a bit at a time.',
+    go: ['next', 'See how you have been buying'], ask: 'Has buying in steps helped or hurt me so far, compared with one single purchase?' },
+  costs: {
+    tease: f => { const c = f.fees + f.costs.reduce((a, c) => a + Math.max(0, c.usd), 0); return `About ${amt(c)} so far`; }, pv: 1,
+    idea: ['Every trade has costs, some printed and some hidden. A commission or fee is the printed one. The spread is hidden: the price to buy always sits a little above the price to sell. Changing currency costs as well, through a rate slightly worse than the market’s.', 'A fund also charges a small yearly percentage, taken from inside the fund. Each of these is small. They matter because they repeat, and they come off the top whatever the market does.'],
+    you: f => { const c = f.costs.at(-1);
+      return `<p>Fees on your entries so far: ${lm(f.fees)}${f.deposited > 0 ? `, ${p1(f.fees / f.deposited * 100, 2)} of what you put in` : ''}.</p>`
+        + (c ? `<p>On ${lday(c.date)} you bought ${lsym(c.symbol)}, which is priced in ${curWord(c.currency)}. You paid $${c.paid.toFixed(4)} for each ${curOne(c.currency)}; the market’s rate closed that day at $${c.market.toFixed(4)}. ${c.usd > 0.005 ? `The gap, about ${lm(c.usd)} or ${p1(c.pct, 2)} of the purchase, is roughly what changing currency cost you.` : 'So changing currency cost you nothing you can see.'} The rate moves through the day, so read this as a rough figure.</p>` : '')
+        + (lfn(f).length ? '<p>Your fund’s yearly charge is printed in its factsheet as the ongoing charge, or TER. For a fund that tracks a large index it is usually a small fraction of one percent.</p>' : ''); },
+    go: ['journey', 'See every purchase'], ask: 'What do my purchases really cost me, counting the currency exchange and the fund’s yearly charge?' },
+  benchmark: {
+    tease: f => f.whatif ? `${usd(Math.abs(f.total - f.whatif), 0)} ${f.total >= f.whatif ? 'ahead of' : 'behind'} the index` : 'Compared with what?', pv: 1,
+    idea: ['A return means little by itself. The question is what the same money would have done in the plain alternative: the whole market, bought on the same days. That alternative is called a benchmark, and for US shares it is usually the S&amp;P 500.', 'Beating it over a few months says almost nothing. Being far from it, either way, shows how different your holdings are from the market.'],
+    you: f => { if (!f.whatif) return lnMonth; const d = f.total - f.whatif, b = f.portfolio.beta, m = Math.max(f.total, f.whatif, f.deposited);
+      return `<p>Your deposits, put into the S&amp;P 500 on the same days, would be worth ${lm(f.whatif)} now. Your portfolio is worth ${lm(f.total)}: <b class="pv ${cls(d)}">${usd(Math.abs(d), 0)} ${d >= 0 ? 'more' : 'less'}</b>.${b ? ` With a beta of ${b.toFixed(1)}, yours is built to move about ${b.toFixed(1)} times as far as the index, in both directions.` : ''}</p>`
+        + lnBars([{ k: 'You put in', v: f.deposited, t: usd(f.deposited, 0), pv: 1, col: 'var(--neutral)' }, { k: 'Your portfolio', v: f.total, t: usd(f.total, 0), pv: 1, me: 1 }, { k: 'Same money in the index', v: f.whatif, t: usd(f.whatif, 0), pv: 1, col: 'var(--text-2)' }], m); },
+    mind: 'The index is the comparison, not the goal. A portfolio built on a deliberate bet is supposed to differ from it.',
+    go: ['lab', 'Test it in the Lab'], ask: 'Why am I behind or ahead of the index, and is a few months long enough to tell anything?' },
+  rebalance: {
+    tease: f => { const t = [...f.target].sort((a, b) => (a.now - a.want) - (b.now - b.want))[0]; return t ? `${cap1(lshort(t.symbol))}: ${p1(t.now, 0)} against a target of ${t.want}%` : 'Keeping the mix you chose'; },
+    idea: ['A target mix is the share of the portfolio you want each holding to have. Prices move, so the real mix drifts: what rose takes up more room, what fell takes up less.', 'Rebalancing brings it back, either by selling what is above target or, more gently, by sending new money to whatever sits furthest below. Done with new money only, it costs nothing and settles no loss.'],
+    you: f => { if (!f.target.length) return '<p>You have not set a target mix. The Next page can hold one, and then steers each buy toward whatever sits furthest below its share.</p>';
+      const by = [...f.target].sort((a, b) => (a.now - a.want) - (b.now - b.want)), far = by[0], over = by.at(-1), m = Math.max(...f.target.map(t => Math.max(t.now, t.want)));
+      return `<p>${cap1(lsym(far.symbol))} is at <b>${p1(far.now)}</b> against a target of ${far.want}%: the furthest below, so that is where new money does the most.${over.now > over.want + 0.5 ? ` ${cap1(lsym(over.symbol))} is the furthest above, at ${p1(over.now)} against ${over.want}%.` : ''}</p>`
+        + lnBars(f.target.map(t => ({ k: esc(label(t.symbol)), v: t.now, mark: t.want, t: p1(t.now, 0), sub: `target ${t.want}%`, sw: colors[t.symbol], col: colors[t.symbol] })), m * 1.05); },
+    go: ['next', 'See your target and the road to it'], ask: 'How many buys does it take to reach my target mix with new money alone?' },
+  selling: {
+    tease: f => f.sales ? `${many(f.sales, 'sale')}, ${lsg(f.realized)} settled` : `No sales in ${many(f.held.days, 'day')}`, pv: 1,
+    idea: ['Selling turns a result on paper into a settled one, and two things follow. The first is tax, which in many countries is counted on settled gains, so a sale can bring a bill that holding would not. The second is that you now have to decide when to come back in, which means being right twice.', 'There are sound reasons to sell: needing the money, a holding grown beyond what you meant it to be, or a changed view of the company. A lower price, by itself, tells you what others think today, not what the company is worth.'],
+    you: f => f.sales ? `<p>You have sold ${many(f.sales, 'time')} so far, and those sales settled <b class="pv ${cls(f.realized)}">${lsg(f.realized)}</b>.</p>` : `<p>You have not sold anything in the ${many(f.held.days, 'day')} since your first entry. Nothing is settled: all of your <b class="pv ${cls(f.pl)}">${lsg(f.pl)}</b> is still on paper.</p>`,
+    go: ['journey', 'See every purchase, scored'], ask: 'What questions should I ask myself before I ever sell something?' },
+  patience: {
+    tease: (f, g) => g ? `Ahead in ${p1(g.odds[3].ahead, 0)} of years, ${p1(g.odds[7].ahead, 0)} of 20-year stretches` : 'Time in the market',
+    idea: ['Over a single day the market is close to a coin toss. The longer the stretch, the further the odds have leaned toward a gain, because companies as a group keep earning and growing while the daily noise cancels out.', 'This is the plain evidence behind holding on. Time in the market has done the work, not timing.'],
+    you: (f, g) => { if (!g) return ''; const o = n => g.odds.find(x => x.days === n);
+      return `<p>Folio took every stretch of each length in the S&amp;P 500 since ${g.since.slice(0, 4)}. Held for a day, it ended ahead <b>${p1(o(1).ahead, 0)}</b> of the time; for a year, <b>${p1(o(252).ahead, 0)}</b>; for ten years, <b>${p1(o(2520).ahead, 0)}</b>; for twenty, <b>${p1(o(5040).ahead, 0)}</b>. You have been in for ${many(f.held.days, 'day')}.</p>`
+        + lnBars(g.odds.map(x => ({ k: cap1(x.name), v: x.ahead, t: p1(x.ahead, 0), sub: `typically ${pct(x.mid, 0)}`, col: 'var(--up)' })), 100); },
+    mind: 'These figures are for the whole index, prices only. One company can fall and stay down for good, and the past is no promise: the worst twenty-year stretch still ended about 50% lower.',
+    go: ['learn', 'See the whole record below', 'lnWaitCard'], ask: 'What does history say about someone who started investing at a bad moment and kept buying?' },
+  corrections: {
+    tease: (f, g) => g ? `${g.falls.filter(x => x.from >= '1950').length} falls of 10% or more since 1950` : 'Falls of 10% and 20%',
+    idea: ['A fall of 10% or more from a high is called a correction, and one of 20% or more a bear market. They feel like emergencies and they are routine: the index has gone through one every few years for as long as it has existed, each time for a reason that sounded final.', 'Every one so far has ended with a new high. Nobody has been able to say reliably when one will start or stop.'],
+    you: (f, g) => { if (!g) return ''; const m = g.falls.filter(x => x.from >= '1950'), bear = m.filter(x => x.depth <= -20), done = m.filter(x => x.days), open = m.find(x => !x.back), yr = m.filter(x => x.after1 != null), up = yr.filter(x => x.after1 > 0).length, deep = Math.min(...m.map(x => x.depth));
+      return `<p>Since 1950 the S&amp;P 500 has fallen 10% or more from a high <b>${m.length} times</b>, ${bear.length} of them 20% or more. A typical one took ${lspan(lmid(done.map(x => x.down)))} from the high to the low and ${lspan(lmid(done.map(x => x.days)))} in all to stand at the old high again. A year after first crossing −10%, the index stood higher ${up} times out of ${yr.length}.</p>`
+        + (open ? `<p>One is running now: the index is <b>${p1(-g.now.from)}</b> below its high of ${lday(g.now.high)}, and was ${p1(-open.depth)} below at the worst so far. Nobody knows how deep or long it will be.${f.habit.gap ? ' For someone buying on a rhythm, each buy during it is made at a lower price.' : ''}</p>` : g.now.from < -1 ? `<p>The index is now ${p1(-g.now.from)} below its high of ${lday(g.now.high)}.</p>` : '<p>The index stands at or near its highest ever.</p>')
+        + `<div class="ln-falls tipbox num">${m.map((x, i) => `<i class="${x.depth <= -20 ? 'bear' : ''}${x.back ? '' : ' now'}" style="height:${(x.depth / deep * 100).toFixed(0)}%"${i % 4 === 0 || !x.back ? ` data-y="${x.back ? x.from.slice(0, 4) : 'now'}"` : ''} data-tip="${esc(`<b>${x.depth.toFixed(1)}%</b><span>High on ${lday(x.from)}<br>Low after ${lspan(x.down).replace('about ', '')}<br>${x.back ? `Back at the high after ${lspan(x.days).replace('about ', '')}` : 'Still running'}</span>`)}"></i>`).join('')}</div>`; },
+    mind: 'This is the record of the whole index. A single company in a deep fall has no such record to lean on.',
+    go: ['analysis', 'See past falls on your holdings', 'stressCard'], ask: 'The market is falling. What does history say usually happens next, and what does it not say?' },
+  bestdays: {
+    tease: (f, g) => g ? `$${g.best.all.toFixed(2)}, or $${g.best.miss10.toFixed(2)} without 10 days` : 'Why stepping out costs',
+    idea: ['The market’s biggest up days come in the middle of its worst stretches, often within days of the biggest falls. So stepping out after a hard fall to wait for calm tends to miss the rebound.', 'A handful of days carries a large part of the long-run gain, and nobody can tell them from the others in advance.'],
+    you: (f, g) => { if (!g) return ''; const b = g.best, d = x => '$' + x.toFixed(2);
+      return `<p>Over the past ${b.years} years, one dollar in the S&amp;P 500 became <b>${d(b.all)}</b>. Without its 10 best days it became ${d(b.miss10)}; without the 20 best, ${d(b.miss20)}. And <b>${b.near} of those 10 best days</b> came within two weeks of one of the 10 worst.</p>`
+        + lnBars([['Stayed in', b.all, 1], ['Missed the 10 best days', b.miss10], ['Missed the 20 best', b.miss20], ['Missed the 40 best', b.miss40]].map(([k, v, me]) => ({ k, v, t: d(v), me, col: me ? 'var(--up)' : 'var(--neutral)' }))); },
+    mind: 'Missing the worst days would help just as much. The point is that the two arrive together and can’t be separated beforehand.',
+    go: ['learn', 'See the whole record below', 'lnYearsCard'], ask: 'If the best and worst days come together, what does that mean for how I should act on a bad day?' },
+  compound: {
+    tease: f => `Doubling in about ${(72 / (f.plan.growth || 7)).toFixed(0)} years at ${f.plan.growth || 7}%`,
+    idea: ['Compounding is growth earning growth. This year’s gain joins the pile, and next year’s percentage is taken on the larger pile. Early on it looks like nothing. Later, most of each year’s gain comes from earlier gains and not from what you put in.', 'A rule of thumb: divide 72 by the yearly growth rate and you have the number of years it takes to double.'],
+    you: f => { const g = f.plan.growth || 7, m = f.plan.monthly || Math.max(10, Math.round((f.habit.monthly || 100) / 10) * 10), r = g / 1200, fv = y => f.total * (1 + r) ** (y * 12) + m * ((1 + r) ** (y * 12) - 1) / r, put = y => f.total + m * 12 * y, top = fv(30);
+      return `<p>At ${g}% a year, money doubles about every <b>${(72 / g).toFixed(1)} years</b>. ${f.plan.monthly ? `Your plan adds ${lm(m, 0)} a month` : `Say you add ${lm(m, 0)} a month`}, starting from today’s ${lm(f.total, 0)}:</p>`
+        + `<div class="ln-bars num">${[10, 20, 30].map(y => `<div class="r"><span class="k">${y} years</span><div class="t"><i class="b2" style="width:${(fv(y) / top * 100).toFixed(1)}%"></i><i style="width:${(put(y) / top * 100).toFixed(1)}%;background:var(--neutral)"></i></div><span class="v pv">${usd(fv(y), 0)}<small>${usd(put(y), 0)} put in</small></span></div>`).join('')}</div>`
+        + `<p>After thirty years, ${p1((1 - put(30) / fv(30)) * 100, 0)} of the total would be growth and not money you put in. After ten, ${p1((1 - put(10) / fv(10)) * 100, 0)}.</p>`; },
+    mind: 'A steady rate is an assumption, not a promise, and real years are never average. A year of +20% and a year of −15% are both ordinary.',
+    go: ['plan', 'See the range of futures'], ask: 'How much of my plan’s outcome depends on the growth rate I assumed?' },
+  single: {
+    tease: f => `${p1(leq(f).reduce((a, p) => a + p.share, 0), 0)} in single companies`,
+    idea: ['The index has always come back because it renews itself: companies that fail drop out, and stronger ones take their place. A single company has no such mechanism.', 'Most shares do worse than the index over their lifetime, and a small number of very large winners produce most of the market’s gain. Holding single companies is a bet that yours are among those few. Holding the index is owning the winners without having to know which they are.'],
+    you: f => { const e = leq(f), sh = e.reduce((a, p) => a + p.share, 0), fd = lfn(f).reduce((a, p) => a + p.share, 0), v = e.filter(p => p.vol);
+      return `<p><b>${p1(sh)}</b> of your portfolio is in ${many(e.length, 'single company', 'single companies')}${fd > 0 ? ` and ${p1(fd)} in ${lfn(f).length === 1 ? 'a fund' : 'funds'}` : ', and none of it in a fund'}.${v.length && f.bench.vol ? ` Over the past year ${words(v.map(p => `${esc(label(p.symbol))} swung ${p1(p.vol, 0)}`))}, against ${p1(f.bench.vol, 0)} for the index.` : ''}</p>`; },
+    mind: 'None of this says a particular company will fail. It says the evidence for patience is strongest for the whole market and weaker for any one name.',
+    go: ['next', 'See where new money could go'], ask: 'How should I think about patience with single companies, compared with an index fund?' },
+  vix: {
+    tease: f => f.market?.vix ? `The VIX stands at ${f.market.vix.level.toFixed(1)}` : 'How nervous traders are',
+    idea: ['The VIX is worked out from the price of insurance against swings in the S&amp;P 500 over the next month. When traders fear a fall they pay more for that insurance and the VIX rises; in calm times it sinks.', 'Below 15 is calm, 15 to 20 ordinary, 20 to 30 nervous, above 30 real fear. It measures the mood now. It has no record of telling what comes next.'],
+    you: f => { const v = f.market?.vix; if (!v) return ''; const word = v.level < 15 ? 'calm' : v.level < 20 ? 'an ordinary level' : v.level < 30 ? 'nervous' : 'real fear';
+      return `<p>The VIX stands at <b>${v.level.toFixed(1)}</b>: ${word}. It has been lower than this on ${v.below}% of days in the past ${v.years} years, and usually sits near ${v.median}.</p>`; },
+    go: ['markets', 'See the fear gauge', 'mkFearCard'], ask: 'What is the VIX telling me today, and should it change anything I do?' },
+  rates: {
+    tease: f => { const t = (f.market?.curve || []).find(x => x.label === '10 years'); return t ? `The US pays ${t.now.toFixed(2)}% for ten years` : 'The return without the risk'; },
+    idea: ['The US government borrows by selling bonds, and the interest it pays, the yield, is the return you can have without taking a company’s risk. When that safe return rises, shares have to offer more to be worth the risk, so their prices tend to fall. When it drops, shares look better.', 'Companies valued on profit expected far in the future react the most, because a distant dollar is worth less the more a safe dollar earns in the meantime.'],
+    you: f => { const c = f.market?.curve || [], t = c.find(x => x.label === '10 years'), s = c.find(x => x.label === '3 months'); if (!t) return ''; const hi = leq(f).filter(p => p.pe > 40);
+      return `<p>Lending to the US government for ten years pays <b>${t.now.toFixed(2)}%</b> a year now${s ? `, and for three months ${s.now.toFixed(2)}%` : ''}. A year ago the ten-year paid ${t.year.toFixed(2)}%.</p>`
+        + (hi.length ? `<p>${cap1(words(hi.map(lnm)))} ${hi.length > 1 ? 'are' : 'is'} priced at ${words(hi.map(p => p.pe.toFixed(0)))} times ${hi.length > 1 ? 'their' : 'its'} yearly profit, so most of what buyers are paying for lies years ahead. Shares like that tend to react most when yields move.</p>` : ''); },
+    go: ['markets', 'See what lending to the US pays', 'mkCurveCard'], ask: 'Why do my holdings react to interest rates, and which of them react most?' },
+  sectors: {
+    tease: f => f.sectors.length ? `Your companies sit in ${f.sectors.length} of 11` : 'Eleven groups of companies',
+    idea: ['The market is sorted into eleven sectors, such as technology, health care, energy and utilities. Companies in one sector tend to rise and fall together, because the same news reaches them all.', 'On a day when nearly every sector moves the same way, the whole market is being repriced. When they split, money is moving from one kind of business to another.'],
+    you: f => { const e = leq(f).filter(p => p.sector); if (!e.length) return ''; const ms = (f.market?.sectors || []).filter(x => x.pct != null), nm = s => ms.find(x => x.sector === s)?.name || s, by = {};
+      for (const p of e) (by[p.sector] ||= []).push(label(p.symbol));
+      const best = [...ms].sort((a, b) => b.pct - a.pct)[0], worst = [...ms].sort((a, b) => a.pct - b.pct)[0];
+      return `<p>Your companies sit in <b>${Object.keys(by).length} of the 11</b> sectors: ${words(Object.entries(by).map(([s, a]) => `${esc(low1(nm(s)))} (${esc(a.join(', '))})`))}.${lfn(f).some(p => p.tracks) ? ' The S&amp;P 500 fund holds all eleven.' : ''}</p>`
+        + (best && worst && best !== worst && best.pct !== worst.pct ? `<p>In the last session ${esc(low1(best.name))} did best (${pct(best.pct)}) and ${esc(low1(worst.name))} ${worst.pct > 0 ? 'least well' : 'worst'} (${pct(worst.pct)}).</p>` : ''); },
+    go: ['markets', 'See which parts moved', 'mkSecCard'], ask: 'Which sectors am I exposed to, and which am I missing entirely?' },
+};
+
+const lnList = () => LN ? LN_CH.flatMap(([ch, ids]) => ids.map(id => ({ ...LN.lessons.find(l => l.id === id), ch }))).filter(l => l.id && LN_L[l.id]) : [];
+const lnMetDay = l => !l.met ? null : lf()?.met?.[l.met];  // undefined: not met yet
+const lnState = l => LN.seen[l.id] ? 'seen' : l.met && lnMetDay(l) === undefined ? 'ahead' : l.met && lnMetDay(l) && (Date.now() - new Date(lnMetDay(l) + 'T12:00')) < 21 * 864e5 ? 'new' : 'open';
+const lnCur = () => { const all = lnList(); return all.find(l => l.id === lnSel) || all.find(l => lnState(l) === 'new') || all.find(l => lnState(l) === 'open') || all[0]; };
+const lnTry = (fn, ...a) => { try { return fn(...a) || ''; } catch (e) { console.warn('learn:', e); return ''; } };
+const lnAny = () => !!LN?.claude.busy;
+
+async function loadLearn(force) {
+  if (lnBusy || (!force && LN && Date.now() - lnAt < 60000)) return renderLearn();
+  lnBusy = true;
+  try { LN = await api('/api/learn'); lnAt = Date.now(); if (LN.claude.busy) lnWatch(); } catch (e) { lnErr = LN ? '' : e.message; }
+  lnBusy = false; renderLearn(); renderLearnCard();
+}
+function lnWatch() {
+  if (lnPoll) return;
+  lnPoll = setInterval(async () => {
+    for (const id of ['lnSecs', 'lnSecs2', 'lnSecs3']) { const el = $(id); if (el && LN?.claude.busy) el.textContent = `${Math.max(0, Math.round(Date.now() / 1000 - LN.claude.since))} s`; }
+    if (Date.now() % 2000 > 1000) return;
+    try { const v = await api('/api/learn'); LN = v; lnAt = Date.now(); if (!v.claude.busy) { clearInterval(lnPoll); lnPoll = null; lnAsked = ''; lnAbout = null; renderLearn(); } } catch {} }, 1000);
+}
+async function lnAsk(kind, body = {}) {
+  if (!LN || lnAny()) return;
+  lnErr = '';
+  if (kind === 'ask') { lnAsked = body.question; lnAbout = body.about || null; }
+  try { LN = await post(kind === 'ask' ? '/api/learn/ask' : '/api/learn/lesson', body); lnAt = Date.now(); if (kind === 'ask') $('lnQ').value = ''; lnWatch(); }
+  catch (e) { lnErr = e.message; lnAsked = ''; lnAbout = null; }
+  renderLearn();
+}
+async function lnPut(body) { try { LN = await post('/api/learn', body, 'PUT'); lnAt = Date.now(); } catch (e) { toast(e.message, true); } renderLearn(); }
+function lnOpen(id, scroll) {
+  const was = LN && lnCur(), lnSel0 = view === 'learn';
+  lnSel = id; store.set('lesson', id);
+  if (LN) { const mark = [id, lnSel0 && was?.id].filter(x => x && !LN.seen[x]); for (const x of mark) { LN.seen[x] = Math.floor(Date.now() / 1000); post('/api/learn', { seen: x }, 'PUT').catch(() => {}); } renderLearn(); }
+  if (scroll && view === 'learn') requestAnimationFrame(() => { const r = $('lnReadCard').getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.55) $('lnReadCard').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+}
+
+// the Overview's card: the first things that stand out today
+function renderLearnCard() {
+  const card = $('learnCard'), f = lf();
+  if (!S || !LN || !f?.pos.length) return void (card.hidden = true);
+  const n = lnNotice().items.slice(0, 2), all = lnList(), seen = all.filter(l => LN.seen[l.id]).length;
+  card.hidden = !n.length;
+  put($('learnBody'), `<div class="ln-items">${n.map(o => `<button class="ln-item" type="button" data-l="${o.lesson}" style="${o.tone ? `--tone:var(--${o.tone})` : ''}"><span class="ico">${ic(o.icon, 16)}</span><b>${o.title}</b><span class="s">${o.sub}</span></button>`).join('')}</div><p class="note">${seen} of ${all.length} lessons opened, each written from your own figures.</p>`);
+}
+$('learnBody').onclick = e => { const b = e.target.closest('[data-l]'); if (b) { lnOpen(b.dataset.l); go('learn'); } };
+$('learnMore').onclick = e => { e.preventDefault(); go('learn'); };
+// what stands out today, each with the lesson behind it
+function lnNotice() {
+  const f = lf(), g = LN.long, out = [], add = (icon, tone, title, sub, lesson) => { if (!out.some(o => o.lesson === lesson)) out.push({ icon, tone, title, sub, lesson }); };
+  const od = f.portfolio.vol ? f.portfolio.vol / Math.sqrt(252) : null, d = f.day.pct, big = od && Math.abs(d) >= 1.5 * od;
+  if (big) add(d < 0 ? 'fall' : 'trend', d < 0 ? 'down' : 'up', `Your portfolio ${d < 0 ? 'fell' : 'rose'} ${p1(d)} in its latest session`, `That is ${(Math.abs(d) / od).toFixed(1)} times its ordinary day of ${p1(od)}. Days like this are what a yearly swing of ${p1(f.portfolio.vol, 0)} looks like from the inside.`, 'swing');
+  if (g && g.now.from <= -10) add('wave', 'warn', `The S&amp;P 500 is ${p1(-g.now.from)} below its high`, `It has fallen 10% or more from a high ${g.falls.filter(x => x.from >= '1950').length} times since 1950, this one included. Every earlier one ended with a new high.`, 'corrections');
+  for (const b of f.bets) if (b.share > b.hi + 0.5 || b.share < b.lo - 0.5) add('pie', 'warn', `Your ${esc(b.name)} bet is ${p1(b.share)} of the portfolio`, `You set it to stay between ${b.lo}% and ${b.hi}%. ${b.share > b.hi ? 'New money sent elsewhere brings it down without selling.' : 'It has slipped under its floor.'}`, 'concentration');
+  const soon = f.pos.filter(p => p.earnings && p.earnings * 1000 - Date.now() < 10 * 864e5).sort((a, b) => a.earnings - b.earnings)[0];
+  if (soon) add('cal', null, `${esc(label(soon.symbol))} reports its results ${soon.earnings * 1000 < Date.now() ? 'today' : 'on ' + ltime(soon.earnings)}`, 'The price will react to the gap between the results and what was expected, not to whether they were good.', 'earnings');
+  if (f.fall && f.fall.now <= -10 && !big) add('fall', 'down', `Your portfolio is ${p1(-f.fall.now)} below its high`, `It takes a rise of ${p1((1 / (1 + f.fall.now / 100) - 1) * 100)} to stand there again: the way back is longer than the way down.`, 'fall');
+  if (f.habit.due) { const left = Math.round((new Date(f.habit.due + 'T12:00') - new Date(f.today + 'T12:00')) / 864e5);
+    if (left <= 3) add('target', null, left < 0 ? `Your usual buy is ${many(-left, 'day')} past` : left === 0 ? 'By your rhythm, today is a buying day' : `Your next buy falls in ${many(left, 'day')}`, 'A fixed amount on a rhythm needs no forecast, which is its whole strength.', 'averaging'); }
+  for (const l of lnList()) if (lnState(l) === 'new' && out.length < 4) add('spark', null, `New on your path: ${esc(low1(l.title))}`, `You met it on ${lday(lnMetDay(l))}, ${LN_MET[l.met][0]}.`, l.id);
+  if (out.length < 3) { const nx = lnList().find(l => lnState(l) === 'open' && !out.some(o => o.lesson === l.id)); if (nx) add('book', null, `Next on your path: ${esc(low1(nx.title))}`, esc(lnTry(LN_L[nx.id].tease, f, g)), nx.id); }
+  return { big, d, items: out.slice(0, 4) };
+}
+function lnSuggest() {
+  const f = lf(), out = [], last = LN.notes[0], les = LN.notes.find(n => n.kind === 'lesson'), asked = new Set(LN.notes.filter(n => n.kind === 'answer').map(n => n.q.toLowerCase()));
+  if (last?.kind === 'answer') out.push(...(last.more || []));
+  if (les?.ask) out.push(les.ask);
+  const od = f.portfolio.vol ? f.portfolio.vol / Math.sqrt(252) : null, worst = [...f.pos].sort((a, b) => a.plPct - b.plPct)[0];
+  if (od && Math.abs(f.day.pct) >= 1.5 * od) out.push(`Why did my portfolio ${f.day.pct < 0 ? 'fall' : 'rise'} ${p1(f.day.pct)} in a day?`);
+  if (worst && worst.plPct < -10) out.push(`Why is ${label(worst.symbol)} down ${p1(worst.plPct, 0)} since I bought it?`);
+  if (f.portfolio.beta) out.push(`What does a beta of ${f.portfolio.beta.toFixed(1)} mean for me in a bad month?`);
+  for (const b of f.bets) if (b.share > b.hi) out.push(`What does it take to bring my ${b.name} bet into its range?`);
+  if (f.pos.some(p => p.native)) out.push('What happens to my euro-listed fund if the dollar falls?');
+  out.push('What should I look at first on a day when everything falls?');
+  return [...new Set(out)].filter(q => !asked.has(q.toLowerCase())).slice(0, 4);
+}
+// the rules a steady investor keeps, read off your own entries and settings
+function lnRules() {
+  const f = lf(), h = f.habit, out = [];
+  if (h.gap) { const late = h.since > h.gap + Math.max(4, h.gap / 2);
+    out.push({ t: `Buy on your rhythm, about every ${many(h.gap, 'day')}`, tone: late ? 'warn' : 'up', st: late ? 'Overdue' : 'On time', l: 'averaging',
+      s: `${many(h.days, 'buying day')} so far${h.inTime > 1 ? `, the last ${h.inTime + 1} in rhythm` : ''}. ${late ? `It has been ${many(h.since, 'day')} since the last one.` : `The next falls around ${lday(h.due)}.`}` }); }
+  out.push(f.sales ? { t: 'Hold through the falls', tone: 'text-3', st: many(f.sales, 'sale'), s: `You have sold ${many(f.sales, 'time')} in ${many(f.held.days, 'day')}.`, l: 'selling' }
+    : { t: 'Hold through the falls', tone: 'up', st: 'Kept', s: `No sales in ${many(f.held.days, 'day')}${f.fall && f.fall.deepest <= -5 ? `, through a fall of ${p1(-f.fall.deepest, 0)} from the high` : ''}.`, l: 'corrections' });
+  for (const b of f.bets) { const over = b.share > b.hi + 0.5, under = b.share < b.lo - 0.5;
+    out.push({ t: `Keep ${esc(b.name)} between ${b.lo}% and ${b.hi}%`, tone: over || under ? 'warn' : 'up', st: over ? 'Above' : under ? 'Below' : 'Inside', l: 'concentration',
+      s: `Now ${p1(b.share)} of the portfolio.${over ? ' New money sent elsewhere brings it down without selling.' : under ? ' New money sent to it brings it back.' : ''}` }); }
+  if (f.target.length) { const far = [...f.target].sort((a, b) => (a.now - a.want) - (b.now - b.want))[0], gap = far.want - far.now;
+    out.push({ t: 'Send new money toward your target mix', tone: gap > 5 ? 'warn' : 'up', st: gap > 5 ? 'On the way' : 'There', l: 'rebalance',
+      s: gap > 0.5 ? `${cap1(lsym(far.symbol))} is furthest below: ${p1(far.now)} against ${far.want}%.` : 'Every holding is at or above its share.' }); }
+  const cost = f.fees + f.costs.reduce((a, c) => a + Math.max(0, c.usd), 0), share = f.deposited > 0 ? cost / f.deposited * 100 : 0;
+  out.push({ t: 'Keep costs small', tone: share < 0.5 ? 'up' : 'warn', st: share < 0.5 ? 'Kept' : 'Watch', l: 'costs', s: `About ${lm(cost)} in fees and currency exchange so far, ${p1(share, 2)} of what you put in.` });
+  return out;
+}
+
+const lnLessonHtml = n => `<p class="ai-head">${esc(n.title)}</p><p class="ln-why pv">${esc(n.why)}</p><h3>The idea</h3><p>${esc(n.idea)}</p><h3>In your numbers</h3><p class="pv">${esc(n.you)}</p>${n.mind ? `<h3>Keep in mind</h3><p>${esc(n.mind)}</p>` : ''}${n.terms?.length ? `<h3>Words used</h3><dl class="ln-terms">${n.terms.map(t => `<div><dt>${esc(t.term)}:</dt> <dd>${esc(t.meaning)}</dd></div>`).join('')}</dl>` : ''}`;
+const lnTitle = id => LN.lessons.find(l => l.id === id)?.title || '';
+const lnOff = () => lnAny() || !LN.claude.available ? ' disabled' : '';
+
+function renderLearn(light) {
+  if (view !== 'learn' || light || !S) return;
+  if (!LN) return void put($('lnToday'), `<div class="flat" style="font-size:13px">${lnErr ? esc(lnErr) : 'Gathering your figures…'}</div>`);
+  const f = lf(), g = LN.long, c = LN.claude, all = lnList();
+  $('learn').classList.toggle('none', !f);
+  if (!f || !f.pos.length) {
+    put($('lnToday'), LN.failed ? '<p class="mk-head">Couldn’t gather your figures</p><p>The prices Folio builds the lessons from didn’t arrive. It tries again by itself within a minute.</p>' : '<p class="mk-head">Lessons from your own portfolio</p><p>Folio teaches from what you hold: what a share of your company is, how far your portfolio swings, what waiting has done. Record your first buy and the page fills in. The long record of the S&amp;P 500 below is there from the start.</p>');
+    put($('lnAi'), ''); put($('lnPath'), ''); put($('lnReader'), ''); put($('lnRules'), ''); put($('lnSugg'), ''); put($('lnQa'), ''); put($('lnBook'), '');
+    for (const id of ['lnPathCard', 'lnReadCard', 'lnAskCard', 'lnRulesCard', 'lnBookCard']) $(id).hidden = true;
+    renderLnLong(); return;
+  }
+  for (const id of ['lnPathCard', 'lnReadCard', 'lnAskCard', 'lnRulesCard', 'lnBookCard']) $(id).hidden = false;
+  const seen = all.filter(l => LN.seen[l.id]).length, met = Object.keys(f.met).length;
+  // ---- today ----
+  { const n = lnNotice(), sp = f.market?.sp;
+    const head = n.big ? (n.d < 0 ? 'A hard day, and one worth understanding' : 'A strong day, and one worth understanding') : n.items.length > 1 ? `${['Two', 'Three', 'Four'][n.items.length - 2]} things worth understanding today` : 'Worth understanding today';
+    put($('lnTag'), `${many(f.held.days, 'day')} since your first entry`);
+    put($('lnToday'), `<p class="mk-head">${head}</p><div class="ln-items">${n.items.map(o => `<button class="ln-item" type="button" data-l="${o.lesson}" style="${o.tone ? `--tone:var(--${o.tone})` : ''}"><span class="ico">${ic(o.icon, 16)}</span><b>${o.title}</b><span class="to">${esc(lnTitle(o.lesson))}${ic('arrow', 13)}</span><span class="s">${o.sub}</span></button>`).join('')}</div>
+      <div class="mk-you num">${[['Lessons opened', `${seen} of ${all.length}`, seen ? 'on your path' : 'none yet'], ['Met along the way', many(met, 'thing'), `since ${lday(f.held.since)}`], ['Buying days', String(f.habit.days), f.habit.gap ? `about every ${f.habit.gap} days` : 'so far'], ['In your notebook', String(LN.notes.length), 'lessons and answers']].map(([k, v, s]) => `<div class="st"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}</div>`); }
+  // ---- Claude's lesson ----
+  { const n = LN.notes.find(x => x.kind === 'lesson'), busy = c.busy && c.kind === 'lesson', today = n && new Date(n.at * 1000).toDateString() === new Date().toDateString();
+    put($('lnAi'), (busy ? `<div class="ai-busy" role="status"><i class="spin"></i><b>Claude is writing a lesson from your figures…</b><span class="num" id="lnSecs"></span></div>` : '')
+      + (n ? `${lnLessonHtml(n)}<div class="ln-next">${n.page && n.look ? `<button class="ln-go" type="button" data-go="${n.page}">${ic('arrow', 16)}<b>See it on ${LN_PAGE[n.page]}</b><span>${esc(n.look)}</span></button>` : ''}${n.ask ? `<button class="ln-go" type="button" data-ask="${esc(n.ask)}"${lnOff()}>${ic('chat', 16)}<b>Ask next</b><span>${esc(n.ask)}</span></button>` : ''}${n.lesson ? `<button class="ln-go" type="button" data-l="${n.lesson}">${ic('book', 16)}<b>On your path</b><span>${esc(lnTitle(n.lesson))}</span></button>` : ''}</div>
+          <div class="ai-acts"><button class="mini" type="button" data-lesson${lnOff()}>${today ? 'Another lesson' : 'Today’s lesson'}</button><label class="ln-daily" title="Each morning Folio asks Claude for a lesson and leaves a line in the inbox. It counts as one of the day’s questions."><input type="checkbox" id="lnDaily"${LN.daily ? ' checked' : ''}>One each morning</label><span class="tag">${esc(n.model)} · ${aiAgo(n.at)}</span></div>`
+        : busy ? '<p class="hint">This usually takes about a minute.</p>'
+        : `<p class="ai-lead">The lessons below change only when your figures do. Claude can look at where your portfolio and the markets stand today and write the one lesson most worth reading now, worked through in your own numbers.</p>${c.available ? `<div><button class="btn" type="button" data-lesson>${ic('spark', 15)}Ask Claude for today’s lesson</button></div>` : '<p class="hint">Folio reaches Claude through Claude Code, which it can’t find on this computer.</p>'}`)
+      + `<div class="err" role="alert">${esc(c.kind === 'lesson' ? c.error || '' : '')}</div>`); }
+  // ---- the path ----
+  put($('lnProg'), `${seen} of ${all.length} opened`);
+  $('lnBar').firstElementChild.style.width = (seen / all.length * 100).toFixed(1) + '%';
+  { const cur = lnCur();
+    put($('lnPath'), LN_CH.map(([ch, ids]) => { const ls = all.filter(l => l.ch === ch);
+      return `<div class="ln-ch"><h3>${ch}<span>${ls.filter(l => LN.seen[l.id]).length}/${ls.length}</span></h3><ol>${ls.map(l => { const st = lnState(l), L = LN_L[l.id], tz = st === 'ahead' ? cap1(LN_MET[l.met][1]) : lnTry(L.tease, f, g);
+        return `<li><button class="ln-l ${st}" type="button" data-l="${l.id}"${cur.id === l.id ? ' aria-current="true"' : ''}><i class="m">${st === 'seen' ? ic('check', 11) : ''}</i><span class="n"><b>${esc(l.title)}</b><span class="${L.pv && st !== 'ahead' ? 'pv' : ''}">${esc(tz)}</span></span><span class="w">${st === 'new' ? 'New' : st === 'ahead' ? 'Ahead' : ''}</span></button></li>`; }).join('')}</ol></div>`; }).join('')); }
+  // ---- the lesson being read ----
+  { const l = lnCur(), L = LN_L[l.id], i = all.findIndex(x => x.id === l.id), st = lnState(l), md = lnMetDay(l), nx = all[i + 1], you = lnTry(L.you, f, g);
+    const qa = LN.notes.filter(n => n.kind === 'answer' && n.about === l.id).slice(0, 3), mine = c.busy && c.kind === 'learnask' && lnAbout === l.id;
+    put($('lnReader'), `<p class="ln-kick"><span>${l.ch} · ${i + 1} of ${all.length}</span>${l.met ? (md === undefined ? `<span>Ahead of you: ${LN_MET[l.met][1]}</span>` : `<span class="${st === 'new' ? 'new' : 'met'}">${md ? `You met this on ${lday(md)}, ${LN_MET[l.met][0]}` : cap1(LN_MET[l.met][0])}</span>`) : ''}</p>
+      <h3 class="ln-title">${esc(l.title)}</h3>
+      <div class="ln-body two"><div><div class="idea">${L.idea.map(p => `<p>${p}</p>`).join('')}</div>${L.mind ? `<div class="ln-mind"><p><b>Keep in mind.</b> ${L.mind}</p></div>` : ''}</div>${you ? `<div><h3>In your portfolio</h3><div class="ln-you num">${you}</div></div>` : ''}</div>
+      <div class="ln-acts">${L.go ? `<button class="btn ghost" type="button" data-go="${L.go[0]}" data-at="${L.go[2] || ''}">${ic('arrow', 14)}${L.go[1]}</button>` : ''}<button class="btn ghost" type="button" data-ask="${esc(L.ask)}" data-about="${l.id}" title="${esc(L.ask)}"${lnOff()}>${ic('spark', 14)}Ask Claude to go deeper</button><span class="grow"></span><button class="mini" type="button" data-l="${all[i - 1]?.id || ''}"${i ? '' : ' disabled'}>Back</button>${nx ? `<button class="mini" type="button" data-l="${nx.id}">Next: ${esc(nx.title)}</button>` : ''}</div>
+      <div class="ln-qa">${mine ? `<div><div class="ai-busy" role="status"><i class="spin"></i><b>Claude is thinking about it…</b><span class="num" id="lnSecs3"></span></div><p class="q">${esc(lnAsked)}</p></div>` : ''}${qa.map(n => `<div><p class="q">${esc(n.q)}</p><p class="a pv">${esc(n.a)}</p><span class="tag">${esc(n.model)} · ${aiAgo(n.at)}</span></div>`).join('')}</div>`);
+    tips($('lnReader')); }
+  // ---- ask anything ----
+  { const busy = c.busy && c.kind === 'learnask', qa = LN.notes.filter(n => n.kind === 'answer').slice(0, 3);
+    $('lnSend').disabled = lnAny() || !c.available; $('lnQ').disabled = !c.available;
+    put($('lnAskTag'), c.available ? `${esc(c.model)} · ${c.left} left today` : 'Needs Claude Code on this computer');
+    put($('lnSugg'), lnSuggest().map(q => `<button type="button" data-ask="${esc(q)}"${lnOff()}>${esc(q)}</button>`).join(''));
+    put($('lnAskErr'), esc(lnErr || (c.kind === 'learnask' ? c.error || '' : '')));
+    put($('lnQa'), (busy ? `<div><div class="ai-busy" role="status"><i class="spin"></i><b>Claude is thinking about it…</b><span class="num" id="lnSecs2"></span></div>${lnAsked ? `<p class="q">${esc(lnAsked)}</p>` : ''}</div>` : '')
+      + qa.map(n => `<div><p class="q">${esc(n.q)}</p><p class="a pv">${esc(n.a)}</p>${n.lesson ? `<div class="more"><button class="mini" type="button" data-l="${n.lesson}">${ic('book', 12)}${esc(lnTitle(n.lesson))}</button><span class="tag">${aiAgo(n.at)}</span></div>` : `<span class="tag">${aiAgo(n.at)}</span>`}</div>`).join('')); }
+  // ---- rules ----
+  put($('lnRules'), lnRules().map(r => `<li style="--tone:var(--${r.tone})"><i class="m">${ic(r.tone === 'up' ? 'check' : 'target', 12)}</i><b>${r.t}</b><span class="st">${r.st}</span><span class="s">${r.s}</span><button class="why" type="button" data-l="${r.l}">Why it matters: ${esc(low1(lnTitle(r.l)))}${ic('arrow', 12)}</button></li>`).join('')
+    + LN.rules.map((r, i) => `<li style="--tone:var(--text-3)"><i class="m">${ic('pencil', 11)}</i><b>${esc(r)}</b><button class="x" type="button" data-rule="${i}" title="Remove this rule" aria-label="Remove this rule">${ic('x', 14)}</button><span class="s">Your own rule.</span></li>`).join(''));
+  // ---- the notebook ----
+  { const ns = LN.notes, a = ns.filter(n => n.kind === 'answer').length;
+    put($('lnBookTag'), ns.length ? `${many(ns.length - a, 'lesson')} · ${many(a, 'answer')}` : '');
+    put($('lnBook'), ns.length ? ns.map(n => `<details><summary>${ic(n.kind === 'lesson' ? 'spark' : 'chat', 15)}<b>${esc(n.kind === 'lesson' ? n.title : n.q)}</b><span class="tag">${day(n.at)}</span></summary><div class="in">${n.kind === 'lesson' ? lnLessonHtml(n).replace(/^<p class="ai-head">.*?<\/p>/, '') : `<p class="pv">${esc(n.a)}</p>`}<button class="mini" type="button" data-drop="${n.id}">Remove</button></div></details>`).join('')
+      : '<div class="flat" style="font-size:13px">Every lesson Claude writes for you and every answer it gives is kept here, newest first.</div>'); }
+  renderLnLong();
+}
+// the long record of the index: what waiting has done, and every calendar year
+function renderLnLong() {
+  const g = LN.long, f = lf();
+  $('lnWaitCard').hidden = $('lnYearsCard').hidden = !g;
+  if (!g) return;
+  const td = f ? f.held.days * 252 / 365 : 0, me = td >= 1 ? g.odds.reduce((a, o) => Math.abs(Math.log(o.days / td)) < Math.abs(Math.log(a.days / td)) ? o : a) : null, o = n => g.odds.find(x => x.days === n);
+  put($('lnWaitTag'), `S&P 500, ${g.since.slice(0, 4)} to today`);
+  put($('lnOdds'), g.odds.map(x => `<div class="r${x === me ? ' me' : ''}" data-tip="${esc(`<b>Held for ${x.name}</b><div class="o"><i>Ended ahead</i><em>${x.ahead}%</em><i>Typical result</i><em>${pct(x.mid, 1)}</em><i>One in ten ended below</i><em>${pct(x.low, 1)}</em><i>One in ten ended above</i><em>${pct(x.high, 1)}</em><i>Worst</i><em>${pct(x.worst, 1)}</em><i>Best</i><em>${pct(x.best, 1)}</em></div><span>${x.n.toLocaleString('en-US')} stretches</span>`)}"><span class="k">${cap1(x.name)}</span><div class="t"><i style="width:${x.ahead}%"></i><em class="half"></em><span>typically ${pct(x.mid, x.days > 21 ? 0 : 1)}</span></div><b class="v">${x.ahead.toFixed(0)}%</b>${x === me ? `<span class="you">You are about here: ${many(f.held.days, 'day')} in</span>` : ''}</div>`).join('')
+    + '<div class="ln-odds-x"><span></span><div><span>0%</span><span>half</span><span>100%</span></div><span></span></div>');
+  tips($('lnOdds'));
+  put($('lnOddsSay'), `Held for a single day, the index ended higher <b>${p1(o(1).ahead, 0)}</b> of the time: close to a coin toss. Held for a year, <b>${p1(o(252).ahead, 0)}</b>; for ten years, <b>${p1(o(2520).ahead, 0)}</b>; for twenty, <b>${p1(o(5040).ahead, 0)}</b>. Time has tilted the odds without ever making them certain: the worst twenty-year stretch still ended ${p1(o(5040).worst, 0)} lower.`);
+  const ys = g.years, up = ys.filter(y => y.pct > 0).length, cur = new Date().getFullYear(), full = ys.filter(y => y.y !== cur), best = full.reduce((a, y) => y.pct > a.pct ? y : a), worst = full.reduce((a, y) => y.pct < a.pct ? y : a);
+  put($('lnYearsTag'), `${ys[0].y} to ${ys.at(-1).y}`);
+  { const by = Object.fromEntries(ys.map(y => [y.y, y])), d0 = Math.floor(ys[0].y / 10) * 10, d1 = Math.floor(ys.at(-1).y / 10) * 10, rows = [];
+    for (let d = d0; d <= d1; d += 10) rows.push(`<span>${d}s</span>` + Array.from({ length: 10 }, (_, k) => { const y = by[d + k]; return y ? `<i class="${y.y === cur ? 'cur' : ''}" style="--c:var(--${y.pct < 0 ? 'down' : 'up'});--k:${clamp(Math.abs(y.pct) / 30 * 80 + 20, 20, 100).toFixed(0)}%" data-tip="${esc(`<b>${y.y}${y.y === cur ? ' so far' : ''}</b><span>${pct(y.pct, 1)}</span>`)}"></i>` : '<i class="no"></i>'; }).join(''));
+    put($('lnYears'), '<span></span>' + Array.from({ length: 10 }, (_, k) => `<span class="c">’${k}</span>`).join('') + rows.join('')); }
+  tips($('lnYears'));
+  put($('lnYearsSay'), `<b>${up} of ${ys.length}</b> calendar years ended higher. The best was ${best.y} (${pct(best.pct, 0)}) and the worst ${worst.y} (${pct(worst.pct, 0)}). A losing year has come about one year in ${Math.round(ys.length / (ys.length - up))}, with no pattern anyone could have traded on. The outlined square is this year so far.`);
+}
+
+$('learn').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.l) lnOpen(b.dataset.l, true);
+  else if (b.dataset.ask) lnAsk('ask', { question: b.dataset.ask, about: b.dataset.about || undefined });
+  else if ('lesson' in b.dataset) lnAsk('lesson');
+  else if (b.dataset.go) { const at = b.dataset.at; if (b.dataset.go !== 'learn') go(b.dataset.go); if (at) setTimeout(() => $(at)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), b.dataset.go === 'learn' ? 0 : 350); }
+  else if (b.dataset.drop) lnPut({ drop: b.dataset.drop });
+  else if (b.dataset.rule) lnPut({ rules: LN.rules.filter((_, i) => i !== +b.dataset.rule) });
+});
+$('learn').addEventListener('change', e => { if (e.target.id === 'lnDaily') lnPut({ daily: e.target.checked }); });
+$('lnAsk').onsubmit = e => { e.preventDefault(); const q = $('lnQ').value.trim(); if (q.length < 3) return void $('lnQ').focus(); lnAsk('ask', { question: q }); };
+$('lnRuleForm').onsubmit = e => { e.preventDefault(); const r = $('lnRule').value.trim(); if (!r || !LN) return; $('lnRule').value = ''; lnPut({ rules: [...LN.rules, r] }); };
+
+// a small "?" on cards elsewhere: the lesson behind the figure, with your numbers, where you are looking
+const LN_AT = { holdCard: 'paper', calCard: 'earnings', rrCard: 'swing', riskCard: 'concentration', corrCard: 'together', ddCard: 'fall', stressCard: 'corrections', secCard: 'sectors', mktCard: 'sectors', goalCard: 'compound', mixCard: 'rebalance',
+  mkOddCard: 'swing', mkFearCard: 'vix', mkSecCard: 'sectors', mkCurveCard: 'rates', clockCard: 'price', labCard: 'benchmark', jLotCard: 'averaging', nxBetCard: 'concentration', nxHabitCard: 'averaging', nxRoadCard: 'rebalance' };
+for (const [card, id] of Object.entries(LN_AT)) $(card)?.querySelector('h2')?.insertAdjacentHTML('beforeend', `<button class="lrn" type="button" data-lrn="${id}" title="What is this? The idea behind it, in your own figures" aria-label="What is this?" aria-expanded="false">${ic('help', 15)}</button>`);
+let lnPopBtn = null;
+function lnPopClose() { $('lnPop').hidden = true; lnPopBtn?.setAttribute('aria-expanded', 'false'); lnPopBtn = null; }
+async function lnPop(btn) {
+  if (lnPopBtn === btn) return lnPopClose();
+  lnPopClose(); lnPopBtn = btn; btn.setAttribute('aria-expanded', 'true');
+  const el = $('lnPop'), place = () => { const r = btn.getBoundingClientRect(); el.style.left = clamp(r.left - 20, 12, Math.max(12, innerWidth - el.offsetWidth - 12)) + 'px'; el.style.top = (r.bottom + 10 + el.offsetHeight > innerHeight - 12 ? Math.max(12, r.top - el.offsetHeight - 10) : r.bottom + 10) + 'px'; };
+  el.hidden = false; el.innerHTML = '<div class="flat" style="font-size:13px">Gathering your figures…</div>'; place();
+  if (!LN) { try { LN = await api('/api/learn'); lnAt = Date.now(); } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; return; } }
+  if (lnPopBtn !== btn) return;
+  const id = btn.dataset.lrn, L = LN_L[id], f = lf(), you = f?.pos.length ? lnTry(L.you, f, LN.long) : '';
+  el.innerHTML = `<h4>${esc(lnTitle(id))}</h4><div class="ln-body"><div class="idea">${L.idea.map(p => `<p>${p}</p>`).join('')}</div>${you ? `<h3>In your portfolio</h3><div class="ln-you num">${you}</div>` : ''}</div><div class="ln-acts"><button class="btn ghost" type="button" data-open="${id}">${ic('book', 14)}Open the lesson</button></div>`;
+  tips(el); place();
+  if (f && !LN.seen[id]) { LN.seen[id] = Math.floor(Date.now() / 1000); post('/api/learn', { seen: id }, 'PUT').catch(() => {}); }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.lrn'); if (b) { e.preventDefault(); e.stopPropagation(); return void lnPop(b); }
+  const o = e.target.closest('#lnPop [data-open]'); if (o) { lnPopClose(); lnOpen(o.dataset.open); go('learn'); return; }
+  if (!$('lnPop').hidden && !e.target.closest('#lnPop')) lnPopClose();
+});
+addEventListener('scroll', () => { if (!$('lnPop').hidden) lnPopClose(); }, { passive: true });
 
 refresh();
 setInterval(() => { if (!document.hidden && !document.querySelector('dialog[open]')) refresh(); }, 5000);
